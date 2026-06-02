@@ -1,0 +1,30 @@
+# Runtime logs (logs default to the user temp folder; ignore any written locally)
+logs/
+*.log
+
+# Build / release output
+dist/
+release/
+*.zip
+
+# PowerShell / editor cruft
+*.user
+.vs/
+.vscode/
+*.tmp
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Never commit firmware binaries or user ROMs.
+# (Note: .md is intentionally NOT ignored to avoid clobbering Markdown docs; do not
+# commit Mega Drive .md ROMs.)
+*.bin
+*.gba
+*.gbc
+*.sfc
+*.smc
+
+# Keep the tiny placeholder ROMs used by test mode.
+!examples/fake-sd-source/**

@@ -1,0 +1,16 @@
+{
+  "$schema": "./schemas/firmware.schema.json",
+  "_comment": "Official Analogue Pocket firmware releases. Source: https://www.analogue.co/support/pocket/firmware . The download URL is the stable analogue.co redirect endpoint; it 308-redirects to assets.analogue.co. MD5 is published on each firmware page and is used to validate downloads. Update this file when Analogue ships a new firmware - no code change required.",
+  "latest": "2.5",
+  "releases": [
+    {
+      "version": "2.5",
+      "releaseDate": "2025-03-18",
+      "url": "https://www.analogue.co/support/pocket/firmware/2.5/download",
+      "fileName": "pocket_firmware_2_5.bin",
+      "md5": "42cd214fd21111f60390167ce8cf1ff9",
+      "sizeBytes": 54525952,
+      "notes": "GB/GBC save-state export fix; TG16 Hucard fixes; expanded Switch/8BitDo/Wii controller support."
+    }
+  ]
+}
