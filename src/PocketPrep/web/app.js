@@ -141,23 +141,43 @@ async function stepFolders() {
 /* ---- Step 4: Cores ---- */
 async function stepCores() {
   panel('<h2>5. openFPGA cores (optional)</h2><p>Loading…</p>');
-  let cores = [];
+  let cores = [], installed = [];
   try { cores = (await api('/api/cores')).cores || []; } catch {}
-  const rows = cores.map((c, i) => `
-    <div class="card"><strong>${c.DisplayName}</strong> <span class="meta">${c.Identifier}</span>
+  try { installed = (await api('/api/installed-cores')).cores || []; } catch {}
+  const instById = {}; installed.forEach(ic => { instById[ic.Identifier] = ic; });
+  const instLine = installed.length
+    ? `<p>Already installed: ${installed.map(ic => `${ic.Identifier} <span class="meta">v${ic.Version}</span>`).join(', ')}</p>`
+    : '<p class="meta">No cores installed yet.</p>';
+  const rows = cores.map((c, i) => {
+    const have = instById[c.Identifier];
+    return `<div class="card"><strong>${c.DisplayName}</strong> <span class="meta">${c.Identifier}</span>
+      ${have ? `<span class="tag rm">installed v${have.Version}</span>` : ''}
       <div class="row">
-        <button data-i="${i}" data-mode="download">Download &amp; install</button>
+        <button data-i="${i}" data-mode="download" data-ow="${have ? 1 : 0}">${have ? 'Reinstall / update' : 'Download & install'}</button>
         <input type="text" id="cz${i}" placeholder="or path to ${c.Identifier} .zip">
-        <button data-i="${i}" data-mode="offline" class="secondary">Install local zip</button>
-      </div><div id="cout${i}"></div></div>`).join('');
+        <button data-i="${i}" data-mode="offline" data-ow="${have ? 1 : 0}" class="secondary">Install local zip</button>
+      </div><div id="cout${i}"></div></div>`;
+  }).join('');
   panel(`<h2>5. openFPGA cores (optional)</h2>
     <p class="warnote">Cores are made by independent authors under their own licences.</p>
+    ${instLine}
+    <p><button id="chk" class="secondary">Check for updates</button> <span id="updout" class="meta"></span></p>
     ${cores.length ? rows : '<p>No cores manifest available.</p>'}
     <button id="c">Continue →</button>`);
   $('#c').onclick = () => go(5);
+  $('#chk').onclick = async () => {
+    $('#updout').textContent = 'checking…'; busy(true);
+    try {
+      const u = (await api('/api/cores/updates')).updates || [];
+      $('#updout').innerHTML = u.length
+        ? u.map(x => `${x.Identifier}: ${x.UpdateAvailable ? `<span class="warnote">update ${x.Installed}→${x.Latest}</span>` : `up to date (${x.Installed})`}`).join(' · ')
+        : 'no installed cores from the manifest.';
+    } catch (e) { $('#updout').innerHTML = errLine(e.message); } finally { busy(false); }
+  };
   document.querySelectorAll('button[data-mode]').forEach(btn => btn.onclick = async () => {
     const i = +btn.dataset.i, mode = btn.dataset.mode, out = $('#cout' + i);
     const body = { coreId: cores[i].Id, mode };
+    if (btn.dataset.ow === '1') body.overwrite = true;
     if (mode === 'offline') { const p = $('#cz' + i).value.trim(); if (!p) { out.innerHTML = errLine('Enter a zip path.'); return; } body.localZip = p; }
     busy(true);
     try { const r = await api('/api/cores/install', 'POST', body); S.cores.push(r);
@@ -189,7 +209,8 @@ async function stepRoms() {
     busy(true);
     try {
       if (act === 'plan') { const p = await api('/api/rom/plan', 'POST', body);
-        out.innerHTML = `<p>${p.FileCount} match (${(p.TotalBytes / 1048576).toFixed(1)} MB); ${p.SkippedNonMatching} other files ignored.</p>`;
+        const warn = p.PlatformProvided === false ? `<p class="warnote">No installed core provides platform "${systems[i].PlatformId}" yet — install the core (step 5) or these ROMs won't load.</p>` : '';
+        out.innerHTML = `<p>${p.FileCount} match (${(p.TotalBytes / 1048576).toFixed(1)} MB); ${p.SkippedNonMatching} other files ignored.</p>${warn}`;
       } else { const r = await api('/api/rom/copy', 'POST', body); S.roms = S.roms.filter(x => x.SystemId !== r.SystemId); S.roms.push(r);
         out.innerHTML = `<p class="ok">Copied ${r.CopiedCount}, skipped ${r.SkippedCount}, failed ${r.FailedCount}${r.DryRun ? ' [dry-run]' : ''}.</p>`;
       }

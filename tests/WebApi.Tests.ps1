@@ -69,6 +69,21 @@ Describe 'Invoke-PocketApiRoute' {
         $r.Status | Should -Be 400
         $r.Body.verdict | Should -Not -BeNullOrEmpty
     }
+    It 'POST /api/rom/plan includes PlatformProvided' {
+        $src = Join-Path $script:root '_src2'; New-Item -ItemType Directory $src -Force | Out-Null
+        'x' | Set-Content (Join-Path $src 'g.gb')
+        $body = [pscustomobject]@{ systemId='gb'; sourceFolder=$src }
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = $body } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/rom/plan' -Body $b -State $s }
+        $r.Body.PSObject.Properties.Name | Should -Contain 'PlatformProvided'
+        $r.Body.PlatformProvided | Should -BeFalse   # no cores installed in this temp root
+    }
+    It 'GET /api/cores/updates returns an updates array' {
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method GET -Path '/api/cores/updates' -State $s }
+        $r.Status | Should -Be 200
+        $r.Body.ContainsKey('updates') | Should -BeTrue
+    }
     It 'unknown route returns 404' {
         $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
             Invoke-PocketApiRoute -Method GET -Path '/api/nope' -State $s }
