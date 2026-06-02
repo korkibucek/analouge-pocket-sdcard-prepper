@@ -23,6 +23,10 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   127.0.0.1 only) exposing the engine as JSON. Per-session token required on every
   `/api` call, with Host/Origin checks (CSRF / DNS-rebinding defence). Pure routing
   (`Invoke-PocketApiRoute`) and auth (`Test-PocketApiRequest`) are fully unit-tested.
+- **Browser wizard UI** (closes #22): a vanilla-JS single-page wizard served by the
+  local server (drive/target selection, card checks, firmware, folders, cores, ROM
+  import, summary) with loading/empty/error states and no external dependencies. Added
+  `POST /api/target` so the target can be chosen in the browser (mutable server state).
 
 ## [0.1.0] - 2026-06-02
 

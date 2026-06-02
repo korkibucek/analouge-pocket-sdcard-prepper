@@ -9,16 +9,23 @@
 <body>
   <header>
     <h1>Analogue Pocket SD Card Prepper</h1>
-    <p class="warn">Local tool · copies files only · never formats or deletes · not affiliated with Analogue.</p>
+    <p class="warn">Local tool · copies files only · never formats or deletes your data · copies ROMs you already own · not affiliated with Analogue.</p>
+    <p id="ctx" class="ctx"></p>
   </header>
+
+  <nav id="steps" aria-label="Steps"></nav>
+
   <main id="app">
-    <p id="status">Connecting to the local server…</p>
-    <pre id="out" hidden></pre>
+    <section id="panel" class="panel"><p>Connecting to the local server…</p></section>
   </main>
-  <script>
-    // The server injects the session token here when serving this page.
-    window.POCKETPREP_TOKEN = "__POCKETPREP_TOKEN__";
-  </script>
+
+  <footer>
+    <button id="backBtn" class="secondary" hidden>← Back</button>
+    <button id="nextBtn" hidden>Next →</button>
+    <span id="busy" class="busy" hidden>working…</span>
+  </footer>
+
+  <script>window.POCKETPREP_TOKEN = "__POCKETPREP_TOKEN__";</script>
   <script src="/app.js"></script>
 </body>
 </html>
