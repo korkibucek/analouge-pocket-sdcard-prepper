@@ -13,8 +13,11 @@ outcome is "files copied to the wrong folder"** — never data loss.
    folder.)
 2. **Removable-only by default.** `Get-PocketRemovableDrive` returns removable media
    only; fixed disks appear only with `-IncludeFixed` (advanced).
-3. **The system drive can never be targeted.** `Test-PocketDriveSafety` rejects the
-   `%SystemDrive%` (e.g. `C:`) even when the advanced override is supplied.
+3. **System volumes can never be targeted (any OS).** `Test-PocketDriveSafety` rejects
+   the Windows `%SystemDrive%` (e.g. `C:`) and, on Linux/macOS, protected mountpoints
+   (`/`, `/boot`, `/usr`, `/home`, `/System`, the volume holding `$HOME`, etc.) — even
+   when the advanced override is supplied. Volumes are identified by `RootPath`
+   (mountpoint on Linux/macOS, drive root on Windows).
 4. **Fixed/large disks require a deliberate override.** A non-removable drive is
    refused unless `-AllowAdvancedOverride` is explicitly passed, and a non-removable
    drive larger than 512 GB is additionally flagged as a likely internal/backup disk.
