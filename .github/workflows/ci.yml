@@ -6,6 +6,18 @@ on:
   pull_request:
 
 jobs:
+  lint:
+    name: Lint (PSScriptAnalyzer)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: Install-Module PSScriptAnalyzer -Force -Scope CurrentUser
+      - name: Lint
+        shell: pwsh
+        run: ./scripts/Invoke-Lint.ps1
+
   test:
     name: Pester (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
