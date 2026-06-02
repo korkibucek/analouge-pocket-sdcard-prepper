@@ -4,7 +4,7 @@
     GUID              = 'b6f2c1a4-9d3e-4c2b-8a17-3f0e6d2c9a55'
     Author            = 'Analogue Pocket SD Card Prepper contributors'
     CompanyName       = 'Community project'
-    Copyright         = 'See repository LICENSE'
+    Copyright         = '(c) 2026 korkibucek. MIT License.'
     Description       = 'Engine for preparing an Analogue Pocket SD card: safe drive detection, filesystem/emptiness validation, openFPGA folder structure, firmware install, and ROM import. Not affiliated with Analogue.'
     PowerShellVersion = '7.2'
     FunctionsToExport = @(
