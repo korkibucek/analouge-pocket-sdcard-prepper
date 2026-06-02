@@ -27,7 +27,8 @@
         'New-PocketTarget',
         'New-PocketLogger',
         'Write-PocketLog',
-        'New-PocketInstallSummary'
+        'New-PocketInstallSummary',
+        'Start-PocketPrepServer'
     )
     CmdletsToExport   = @()
     VariablesToExport = @()
