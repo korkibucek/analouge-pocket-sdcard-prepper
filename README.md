@@ -50,34 +50,70 @@ from folders you point it at. You are responsible for the legality of your ROMs.
 
 ## Requirements
 
-- **Windows 10 or 11** (live drive detection uses Windows storage APIs).
-- **PowerShell 7.2+** (`pwsh`). Install from <https://aka.ms/powershell>.
-- **No Administrator rights needed** for the normal copy workflow. (Reading drive
+- **Windows 10/11, Linux (Ubuntu/Debian, Fedora/RHEL/AlmaLinux), or macOS.**
+- **PowerShell 7.2+** (`pwsh`). Install from <https://aka.ms/powershell> (Windows),
+  your distro's package/Microsoft apt repo (Linux), or `brew install --cask powershell` (macOS).
+- A modern browser for the web UI (Chrome/Firefox/Edge/Safari).
+- **No Administrator/root rights needed** for the normal copy workflow. (Reading drive
   metadata and copying files to a removable card do not require elevation.)
-
-The cross-platform *logic* and tests also run on Linux/macOS via PowerShell 7, which
-is how the project is tested in CI — but **live SD detection is Windows-only**.
 
 ---
 
+## Supported platforms
+
+| OS | Drive detection | How to run |
+|---|---|---|
+| Windows 10/11 | Windows Storage APIs | `PocketPrep.cmd` (web UI) |
+| Linux (Ubuntu/Debian, Fedora/RHEL/AlmaLinux) | `lsblk` | `pocketprep` / `scripts/pocketprep.sh` |
+| macOS | `system_profiler` | `scripts/pocketprep.sh` |
+
+All three need **PowerShell 7.2+** (`pwsh`). The engine and tests are cross-platform; CI
+runs on Windows, Linux, and macOS.
+
 ## How to run
 
-### Easiest (Windows)
-Download/clone the repo and **double-click `PocketPrep.cmd`**. It launches the wizard
-with the right execution policy. If `pwsh` isn't installed it tells you where to get it.
+The default front-end is a **local web UI** (a wizard in your browser). A text **CLI
+wizard** is also available with `--cli` (Linux/macOS) or `PocketPrep.cmd cli` (Windows).
+
+### Windows
+Double-click **`PocketPrep.cmd`** — it starts the web UI in your browser. For the text
+wizard: `PocketPrep.cmd cli`.
+
+### Linux / macOS
+```bash
+./scripts/pocketprep.sh                 # web UI (opens your browser)
+./scripts/pocketprep.sh --cli           # text wizard
+./scripts/pocketprep.sh --test --dry-run
+```
+Install PowerShell 7 first: Ubuntu/Debian via Microsoft's apt repo
+(<https://learn.microsoft.com/powershell>), Fedora/RHEL `sudo dnf install -y powershell`,
+macOS `brew install --cask powershell`.
+
+### Packages
+Build a native package (output in `dist/`):
+```bash
+bash scripts/Build-Deb.sh    # .deb for Debian/Ubuntu (needs dpkg-deb)
+bash scripts/Build-Rpm.sh    # .rpm for Fedora/RHEL/AlmaLinux (needs rpmbuild)
+```
+Both install a `pocketprep` command and a desktop entry, and depend on `powershell`.
 
 ### From source
 ```powershell
-git clone https://github.com/korkibucek/analouge-pocket-sdcard-prepper.git
-cd analouge-pocket-sdcard-prepper
-pwsh ./src/Start-PocketPrep.ps1
+pwsh ./src/Start-PocketPrepWeb.ps1      # web UI
+pwsh ./src/Start-PocketPrep.ps1         # CLI wizard
 ```
 
 ### Try it safely with no SD card (test mode)
-```powershell
-pwsh ./src/Start-PocketPrep.ps1 -TestMode -DryRun
+```bash
+./scripts/pocketprep.sh --test --dry-run            # web UI, writes nothing
+pwsh ./src/Start-PocketPrep.ps1 -TestMode -DryRun   # CLI
 ```
-This uses a fake SD root in your temp folder and writes nothing. See [`examples/`](examples/).
+This uses a fake SD root in your temp folder. See [`examples/`](examples/).
+
+### Web UI security
+The server binds to **127.0.0.1 only** and requires a per-session token (printed in the
+console and injected into the page) on every API call, with Host/Origin checks. It is not
+reachable from other machines. See [docs/safety-model.md](docs/safety-model.md).
 
 ### Execution policy
 If PowerShell blocks the script, the launcher already passes `-ExecutionPolicy Bypass`.

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Analogue Pocket SD Card Prepper
+Comment=Prepare an SD card for an Analogue Pocket (firmware, folders, ROMs)
+Exec=/usr/lib/pocketprep/scripts/pocketprep.sh
+Terminal=true
+Categories=Utility;
+Keywords=analogue;pocket;openfpga;sdcard;retro;
