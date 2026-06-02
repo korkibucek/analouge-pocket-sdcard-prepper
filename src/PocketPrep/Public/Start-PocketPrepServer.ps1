@@ -137,9 +137,9 @@ function Start-PocketPrepServer {
                     }
                 }
             } catch {
-                try { Write-PocketServerJson $res 500 @{ error = "$($_.Exception.Message)" } } catch {}
+                try { Write-PocketServerJson $res 500 @{ error = "$($_.Exception.Message)" } } catch { $null = $_ }
             } finally {
-                try { $res.OutputStream.Close() } catch {}
+                try { $res.OutputStream.Close() } catch { $null = $_ }
             }
         }
     } finally {

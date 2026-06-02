@@ -36,6 +36,10 @@ function Install-PocketCore {
 .PARAMETER Logger
     Optional logger from New-PocketLogger.
 #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'Logger',
+        Justification = 'Used inside the $log closure scriptblock, which the analyzer does not trace.')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'Download',
+        Justification = 'Switch selects the Download parameter set; not referenced directly in the body.')]
     [CmdletBinding(DefaultParameterSetName = 'Offline')]
     param(
         [Parameter(Mandatory)]

@@ -20,6 +20,8 @@ function Invoke-PocketRomCopyPlan {
 .PARAMETER Logger
     Optional logger from New-PocketLogger.
 #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'Logger',
+        Justification = 'Used inside the $log closure scriptblock, which the analyzer does not trace.')]
     [CmdletBinding()]
     param(
         [Parameter(Mandatory, ValueFromPipeline)]

@@ -47,6 +47,11 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   `GET /api/cores/updates`, a non-breaking `PlatformProvided` flag on `/api/rom/plan`, and
   `overwrite` support on `/api/cores/install`.
 
+- **Linting** (closes #35): PSScriptAnalyzer ruleset (`PSScriptAnalyzerSettings.psd1`),
+  `scripts/Invoke-Lint.ps1`, and a CI lint job. Code is lint-clean; three rules are
+  excluded with documented justifications (Write-Host for the interactive UI, explicit
+  `-DryRun` instead of ShouldProcess, and MD5 required to match Analogue's checksums).
+
 ## [0.1.0] - 2026-06-02
 
 Initial MVP.
