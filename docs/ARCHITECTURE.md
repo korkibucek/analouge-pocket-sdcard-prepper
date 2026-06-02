@@ -8,7 +8,21 @@ module as small, pure, individually testable functions. The wizard only handles
 prompts and sequencing; it contains no business logic that isn't also callable
 directly.
 
-### Why PowerShell 7 (not C#/.NET or a GUI yet)
+### Front-ends
+Two front-ends share the same engine: a **CLI wizard** (`Start-PocketPrep.ps1`) and a
+**local web UI** (`Start-PocketPrepServer` serving a static SPA from `web/` over a
+localhost-only, token-secured HTTP API). The API dispatcher and auth check are pure
+functions (`Invoke-PocketApiRoute`, `Test-PocketApiRequest`), so the whole API is
+unit-tested without sockets. See [SECURITY.md](SECURITY.md).
+
+### Cross-platform
+The engine runs on Windows, Linux, and macOS (PowerShell 7). The only OS-specific code
+is drive enumeration, isolated in `Get-PocketRawDriveData`, which delegates to pure
+parsers (`ConvertFrom-PocketLsblk`, `ConvertFrom-PocketSystemProfiler`) that are
+fixture-tested. Volumes are identified by `RootPath` (mountpoint on *nix, `X:\` on
+Windows); safety rejects platform-appropriate system volumes.
+
+### Why PowerShell 7 (not C#/.NET or a heavyweight GUI)
 
 - The core logic (drive filtering, safety rules, validation, path generation,
   copy planning, manifest parsing) is **pure data transformation** and is fully
@@ -36,8 +50,10 @@ Layer separation:
 
 | Layer | Where |
 |---|---|
-| UI | `Start-PocketPrep.ps1`, `PocketPrep.cmd` |
-| Drive detection | `Get-PocketRemovableDrive` + `Private/Get-PocketRawDriveData` (CIM) |
+| UI (CLI) | `Start-PocketPrep.ps1`, `PocketPrep.cmd` |
+| UI (web) | `Start-PocketPrepServer` + `web/` (SPA); `Start-PocketPrepWeb.ps1`, `scripts/pocketprep.sh` |
+| Web API/auth | `Private/Invoke-PocketApiRoute`, `Private/Test-PocketApiRequest` (pure) |
+| Drive detection | `Get-PocketRemovableDrive` + `Private/Get-PocketRawDriveData` (Windows CIM / Linux `lsblk` / macOS `system_profiler`, via pure `ConvertFrom-Pocket*` parsers) |
 | Validation | `Test-PocketDriveSafety`, `Test-PocketFilesystem`, `Test-PocketCardEmpty` |
 | Firmware | `Get-PocketFirmwareManifest`, `Resolve-PocketFirmwareRelease`, `Test-PocketFirmwareFile`, `Install-PocketFirmware` |
 | ROM copy | `Get-PocketSystem`, `New-PocketRomCopyPlan`, `Invoke-PocketRomCopyPlan` |

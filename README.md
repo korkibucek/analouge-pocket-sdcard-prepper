@@ -220,6 +220,7 @@ More in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — design and data flow
 - [docs/safety-model.md](docs/safety-model.md) — exactly how destructive actions are prevented
+- [docs/SECURITY.md](docs/SECURITY.md) — web server threat model + engine security
 - [docs/manifests.md](docs/manifests.md) — editing firmware/system manifests
 - [docs/testing.md](docs/testing.md) — test mode and the Pester suite
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — contributing / dev setup
