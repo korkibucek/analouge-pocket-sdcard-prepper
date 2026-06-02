@@ -27,6 +27,11 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   local server (drive/target selection, card checks, firmware, folders, cores, ROM
   import, summary) with loading/empty/error states and no external dependencies. Added
   `POST /api/target` so the target can be chosen in the browser (mutable server state).
+- **Cross-platform launchers & packaging** (closes #23): `Start-PocketPrepWeb.ps1`
+  entry script; `PocketPrep.cmd` now launches the web UI (`cli` arg for the wizard);
+  `scripts/pocketprep.sh` launcher for Linux/macOS (Unix-style flags); a `.desktop`
+  entry; and `scripts/Build-Deb.sh` / `scripts/Build-Rpm.sh` producing native packages
+  that install a `pocketprep` command and depend on `powershell`.
 
 ## [0.1.0] - 2026-06-02
 
