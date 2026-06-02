@@ -107,7 +107,7 @@ if ($TestMode) {
     if ($verdict.RequiresOverride) {
         if (-not (Confirm-YesNo "This drive needed the advanced override. Continue?" $false)) { return }
     }
-    $target = New-PocketTarget -Root ($chosen.DriveLetter + '\')
+    $target = New-PocketTarget -Root $chosen.RootPath
 }
 
 # Logger

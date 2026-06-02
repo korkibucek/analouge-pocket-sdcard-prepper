@@ -1,30 +1,32 @@
 function Test-PocketDriveSafety {
 <#
 .SYNOPSIS
-    Decides whether a drive is safe to use as the target SD card.
+    Decides whether a drive/volume is safe to use as the target SD card, on any OS.
 
 .DESCRIPTION
-    Pure decision function (no side effects). It never formats or deletes anything;
-    it only classifies a drive. Rules, in order of severity:
+    Pure decision function (no side effects). It never formats or deletes anything; it
+    only classifies a volume. Rules, in order of severity:
 
-      * The system drive (e.g. C:) is ALWAYS rejected and can never be overridden.
-      * A non-removable (fixed) drive is rejected unless -AllowAdvancedOverride.
-      * A non-removable drive larger than the large-disk threshold is flagged as
-        an internal/backup-disk risk and also needs the override.
-      * A removable drive with no obvious risk is safe.
-
-    Note: this tool only ever copies files into folders. It performs no wipe,
-    format, or repartition, so "safe" here means "safe to copy onto".
+      * A system volume is ALWAYS rejected and can never be overridden. On Windows that
+        is the system drive (e.g. C:); on Linux/macOS it is a protected mountpoint such
+        as /, /boot, /usr, /home, /System, or the volume holding your home directory.
+      * A non-removable (fixed) volume is rejected unless -AllowAdvancedOverride.
+      * A non-removable volume larger than the large-disk threshold is flagged as an
+        internal/backup-disk risk and also needs the override.
+      * A removable volume with no obvious risk is safe.
 
 .PARAMETER Drive
     A drive-info object from Get-PocketRemovableDrive.
 
 .PARAMETER AllowAdvancedOverride
-    Permit a non-removable drive to pass (still never the system drive).
+    Permit a non-removable volume to pass (never a system volume).
 
 .PARAMETER SystemDrive
-    Override the detected system drive letter (mainly for testing). Defaults to
-    the SystemDrive environment value, e.g. "C:".
+    Override the detected Windows system drive letter (mainly for testing).
+
+.PARAMETER ProtectedRoot
+    Override the set of protected mountpoints (mainly for testing). When supplied, the
+    OS defaults are not used.
 #>
     [CmdletBinding()]
     param(
@@ -33,59 +35,88 @@ function Test-PocketDriveSafety {
 
         [switch] $AllowAdvancedOverride,
 
-        [string] $SystemDrive
+        [string] $SystemDrive,
+
+        [string[]] $ProtectedRoot
     )
 
     process {
-        if (-not $SystemDrive) {
-            $SystemDrive = if ($env:SystemDrive) { $env:SystemDrive } else { 'C:' }
+        # Identifier to evaluate: prefer RootPath (mountpoint / X:\), fall back to letter.
+        $id = if ($Drive.PSObject.Properties['RootPath'] -and $Drive.RootPath) {
+            [string]$Drive.RootPath
+        } else {
+            [string]$Drive.DriveLetter
         }
-        $SystemDrive = $SystemDrive.TrimEnd('\')
+
+        $normalize = {
+            param($p)
+            $p = ([string]$p).Trim()
+            if ($p -eq '/') { return '/' }
+            return $p.TrimEnd('\', '/')
+        }
+        $idNorm = & $normalize $id
+
+        # Build the protected set.
+        $protected = [System.Collections.Generic.List[string]]::new()
+        if ($PSBoundParameters.ContainsKey('ProtectedRoot')) {
+            foreach ($p in $ProtectedRoot) { $protected.Add((& $normalize $p)) }
+        } elseif ($IsLinux -or $IsMacOS) {
+            foreach ($p in '/', '/boot', '/boot/efi', '/usr', '/var', '/etc', '/home',
+                           '/opt', '/srv', '/nix', '/System', '/System/Volumes/Data',
+                           '/private', '/Applications', '/Users') {
+                $protected.Add($p)
+            }
+            if ($HOME) { $protected.Add((& $normalize $HOME)) }
+        }
+
+        # System drive (Windows, or explicitly provided for tests).
+        $sysDrive = $SystemDrive
+        if (-not $sysDrive -and $IsWindows) { $sysDrive = $env:SystemDrive }
+        if ($sysDrive) { $protected.Add((& $normalize $sysDrive)) }
 
         $reasons          = [System.Collections.Generic.List[string]]::new()
-        $isSystemDrive    = $false
+        $isSystemVolume   = $false
         $requiresOverride = $false
         $safe             = $true
 
-        $letter = ([string]$Drive.DriveLetter).TrimEnd('\')
-
-        if ([string]::IsNullOrWhiteSpace($letter)) {
-            $reasons.Add('Drive has no drive letter; cannot target it safely.')
+        if ([string]::IsNullOrWhiteSpace($idNorm)) {
+            $reasons.Add('Volume has no path/letter; cannot target it safely.')
             $safe = $false
         }
 
-        if ($letter -and ($letter -ieq $SystemDrive)) {
-            $isSystemDrive = $true
+        if ($idNorm -and ($protected | Where-Object { $_ -ieq $idNorm })) {
+            $isSystemVolume = $true
             $safe = $false
-            $reasons.Add("This is the Windows system drive ($SystemDrive). It can never be used as the SD card target.")
+            $reasons.Add("This is a system/protected volume ($idNorm). It can never be used as the SD card target.")
         }
 
-        if (-not $isSystemDrive) {
+        if (-not $isSystemVolume) {
             if (-not $Drive.IsRemovable) {
                 $requiresOverride = $true
-                $reasons.Add('Drive does not appear to be removable media. Fixed/internal disks are blocked unless the advanced override is used.')
+                $reasons.Add('Volume does not appear to be removable media. Fixed/internal disks are blocked unless the advanced override is used.')
 
                 if ($Drive.SizeBytes -gt $script:PocketDefaults.LargeNonRemovableThresholdBytes) {
-                    $reasons.Add("Drive is large for an SD card ($([math]::Round($Drive.SizeBytes/1GB,0)) GB) and is not removable. This looks like an internal or backup disk.")
+                    $reasons.Add("Volume is large for an SD card ($([math]::Round($Drive.SizeBytes/1GB,0)) GB) and is not removable. This looks like an internal or backup disk.")
                 }
-
                 if (-not $AllowAdvancedOverride) {
                     $safe = $false
                 } else {
-                    $reasons.Add('Advanced override supplied: proceeding on a non-removable drive at your own risk.')
+                    $reasons.Add('Advanced override supplied: proceeding on a non-removable volume at your own risk.')
                 }
             }
         }
 
         if ($safe -and $reasons.Count -eq 0) {
-            $reasons.Add('Drive appears to be removable media and is safe to copy onto.')
+            $reasons.Add('Volume appears to be removable media and is safe to copy onto.')
         }
 
         [pscustomobject]@{
             PSTypeName       = 'PocketPrep.SafetyVerdict'
-            DriveLetter      = $letter
+            DriveLetter      = [string]$Drive.DriveLetter
+            RootPath         = $idNorm
             Safe             = $safe
-            IsSystemDrive    = $isSystemDrive
+            IsSystemDrive    = $isSystemVolume   # kept for backwards compatibility
+            IsSystemVolume   = $isSystemVolume
             RequiresOverride = $requiresOverride
             OverrideApplied  = [bool]$AllowAdvancedOverride
             Reasons          = $reasons.ToArray()
