@@ -86,6 +86,39 @@ Sources:
 - Folder structure: <https://www.analogue.co/developer/docs/directories-and-sd-folder-structure>
 - Firmware + SD format: <https://www.analogue.co/support/resource/updating-firmware>
 
+## cores.json
+
+```jsonc
+{
+  "cores": [
+    {
+      "id": "nes",
+      "identifier": "agg23.NES",         // also the folder created under Cores/
+      "displayName": "NES (agg23)",
+      "platformIds": ["nes"],
+      "owner": "agg23",                   // GitHub owner/repo used to resolve the release zip
+      "repo": "openfpga-NES",
+      "homepage": "https://github.com/agg23/openfpga-NES",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "..."
+    }
+  ]
+}
+```
+
+| Field | Notes |
+|---|---|
+| `identifier` | `Author.CoreName`; the installer expects `Cores/<identifier>/` inside the zip. |
+| `owner`/`repo` | GitHub coordinates. Download mode resolves the **latest release** (or a given `-Tag`) and picks its `.zip` asset via the GitHub API. We deliberately do **not** hardcode per-release asset URLs. |
+| `homepage` | Where a user can download the zip themselves for offline install. |
+| `biosRequired`/`biosFiles` | Informational; BIOS is never installed automatically. |
+
+Adding a core: find its `identifier` and GitHub `owner`/`repo` in the
+[openFPGA Cores Inventory](https://github.com/joshcampbell191/openfpga-cores-inventory),
+add an entry, and run the tests. Download mode uses the unauthenticated GitHub API
+(60 requests/hour) — offline mode has no such limit.
+
 ## Schemas
 
 `manifests/schemas/*.schema.json` document the expected shape. The loaders perform

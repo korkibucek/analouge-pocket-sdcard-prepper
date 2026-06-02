@@ -25,9 +25,10 @@ This installs Pester 5 automatically if missing (CurrentUser scope).
 | `Manifest.Tests.ps1` | Systems parse, destination path, lowercasing, duplicate/invalid rejection |
 | `Rom.Tests.ps1` | Extension matching, destination, flatten, dry-run, real copy, skip-existing |
 | `Logging.Tests.ps1` | Logger file+memory, install summary content |
+| `Cores.Tests.ps1` | Cores manifest parse/resolve, zip validation, **zip-slip rejection**, offline extract (merge, non-destructive, overwrite, dry-run) |
 | `TestMode.Tests.ps1` | End-to-end against a fake SD root |
 
-48 tests total at v0.1.0.
+61 tests total.
 
 ## Test mode (manual)
 

@@ -9,18 +9,21 @@ Tracked in detail on [GitHub Issues](https://github.com/korkibucek/analouge-pock
 - openFPGA folder structure
 - Data-driven system manifest + ROM import wizard
 - Logging + summary
-- Safe test mode + 48-test Pester suite
+- Safe test mode + Pester test suite
 - Documentation + CI
 
+## Done after MVP
+- **MIT licence** (#16).
+- **openFPGA core installation** (#13): `cores.json` manifest + `Install-PocketCore`
+  (offline zip or GitHub-release download), zip-slip-safe, non-destructive, for a
+  curated set. Tested + a real download validated.
+
 ## Next
-- **openFPGA core installation** (#13): `cores.json` manifest, download/place cores,
-  assets, platforms; per-core platform-ids; BIOS handling; updater. Implement for a
-  small, well-tested supported set first.
-- **GUI layer**: a WPF (or .NET) front-end over the existing engine. The engine API is
-  already GUI-agnostic.
+- **Expand the core set** and add an **updater** (re-install when a newer release exists).
 - **Per-core platform-id discovery**: read installed cores' platform definitions to
-  auto-fill/verify ROM destinations instead of relying solely on the manifest.
-- **Choose and add a LICENSE** (e.g. MIT) if the project is to be open source.
+  auto-fill/verify ROM destinations.
+- **GUI layer** (#15): a WPF (or .NET) front-end over the existing engine. The engine
+  API is already GUI-agnostic.
 - **Optional verified manual wipe/clean** with strong safeguards (typed-label
   confirmation, removable-only hard gate, dry-run preview).
 

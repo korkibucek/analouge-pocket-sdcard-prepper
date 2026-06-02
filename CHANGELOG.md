@@ -7,6 +7,14 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 - MIT `LICENSE` (closes #16).
+- **openFPGA core installation** (closes #13): `manifests/cores.json` (+ schema) and
+  `Get-PocketCoreManifest`, `Resolve-PocketCore`, `Test-PocketCoreZip`,
+  `Install-PocketCore`. Installs a curated set of cores either by downloading the core's
+  official GitHub release zip or from a user-supplied `.zip` (offline). Extraction is
+  zip-slip-protected and non-destructive (skips existing files unless `-Overwrite`),
+  with `-DryRun`. Wizard gained an optional core-install step; install summary now
+  reports cores. Core download verified end-to-end against a real release (agg23.NES).
+- Corrected `suggestedCore` identifiers in `systems.json` to match real core names.
 
 ## [0.1.0] - 2026-06-02
 

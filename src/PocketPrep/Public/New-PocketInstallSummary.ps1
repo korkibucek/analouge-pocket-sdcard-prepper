@@ -25,7 +25,8 @@ function New-PocketInstallSummary {
         [psobject] $Target,
         [psobject] $FirmwareResult,
         [psobject] $FolderResult,
-        [psobject[]] $RomResults = @()
+        [psobject[]] $RomResults = @(),
+        [psobject[]] $CoreResults = @()
     )
 
     $totalRoms = ($RomResults | Measure-Object -Property CopiedCount -Sum).Sum
@@ -53,6 +54,16 @@ function New-PocketInstallSummary {
         $lines.Add('Folders: skipped')
     }
 
+    if ($CoreResults.Count -gt 0) {
+        $lines.Add("Cores installed: $($CoreResults.Count)")
+        foreach ($c in $CoreResults) {
+            $tag = if ($c.DryRun) { ' [dry-run]' } else { '' }
+            $lines.Add(("  - {0}: {1} files placed, {2} skipped (v{3}){4}" -f $c.Identifier, $c.PlacedCount, $c.SkippedCount, $c.Version, $tag))
+        }
+    } else {
+        $lines.Add('Cores: none installed')
+    }
+
     if ($RomResults.Count -gt 0) {
         $lines.Add("ROMs copied: $totalRoms total across $($RomResults.Count) system(s)")
         foreach ($r in $RomResults) {
@@ -71,6 +82,7 @@ function New-PocketInstallSummary {
         FirmwareResult = $FirmwareResult
         FolderResult   = $FolderResult
         RomResults     = $RomResults
+        CoreResults    = $CoreResults
         TotalRomsCopied = $totalRoms
         Text           = ($lines -join [Environment]::NewLine)
     }
