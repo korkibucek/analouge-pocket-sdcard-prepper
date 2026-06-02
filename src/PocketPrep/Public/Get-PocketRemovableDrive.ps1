@@ -33,6 +33,7 @@ function Get-PocketRemovableDrive {
         [pscustomobject]@{
             PSTypeName  = 'PocketPrep.Drive'
             DriveLetter = [string]$r.DriveLetter
+            RootPath    = if ($r.PSObject.Properties['RootPath'] -and $r.RootPath) { [string]$r.RootPath } else { [string]$r.DriveLetter }
             Label       = [string]$r.Label
             FileSystem  = [string]$r.FileSystem
             SizeBytes   = [int64]$r.SizeBytes
