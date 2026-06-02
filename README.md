@@ -34,12 +34,15 @@ from folders you point it at. You are responsible for the legality of your ROMs.
 4. Checks the filesystem (**FAT32 or exFAT**) and whether the card is empty.
 5. Installs the latest supported **Pocket firmware** — official download (MD5-verified) or a file you already have (offline mode).
 6. Creates the expected **openFPGA folder structure**.
-7. Walks you through **ROM import per system**, copying your ROMs into the correct folders.
-8. Prints a **summary** and writes a **log** (locally, and optionally to the card).
+7. Optionally installs **openFPGA cores** from a curated set — either by downloading the
+   core's official GitHub release or from a `.zip` you already have — extracted safely
+   (zip-slip-protected, non-destructive).
+8. Walks you through **ROM import per system**, copying your ROMs into the correct folders.
+9. Prints a **summary** and writes a **log** (locally, and optionally to the card).
 
-## What it does NOT do (yet)
+## What it does NOT do
 
-- It does **not** automatically install openFPGA **cores** (tracked in [issue #13](https://github.com/korkibucek/analouge-pocket-sdcard-prepper/issues/13)). You add cores yourself; this tool sets up the folders and your ROMs.
+- It installs only a **curated set** of openFPGA cores ([`manifests/cores.json`](manifests/cores.json)), not the entire community inventory. Add more by editing the manifest, or install any core manually. Cores remain under their authors' licences; this tool does not bundle or relicense them.
 - It does **not** format cards. If the filesystem is wrong, it tells you how to fix it.
 - It does **not** ship a graphical UI in this version — it's a clear interactive wizard (GUI is on the roadmap, [issue ...]).
 
@@ -111,6 +114,22 @@ Shipped manifest: **Pocket firmware 2.5** (2025-03-18),
 MD5 `42cd214fd21111f60390167ce8cf1ff9`. Source:
 <https://www.analogue.co/support/pocket/firmware>.
 
+## How core installation works
+
+Cores are defined in [`manifests/cores.json`](manifests/cores.json) with their
+`Author.CoreName` identifier and GitHub repository. For each core you choose, the tool:
+
+- **downloads** the core's latest official GitHub **release** zip (hosts restricted to
+  GitHub), **or** uses a **`.zip` you already downloaded** from the core's homepage; then
+- validates the zip is a real openFPGA package and **rejects unsafe paths** (zip-slip), then
+- extracts only the recognised openFPGA folders (`Assets`, `Cores`, `Platforms`,
+  `Presets`, `Settings`) onto the card, **skipping files that already exist** unless you
+  overwrite.
+
+Core identifiers/repos come from the community
+[openFPGA Cores Inventory](https://github.com/joshcampbell191/openfpga-cores-inventory).
+BIOS files are never installed automatically.
+
 ## How ROM import works
 
 Systems are defined in [`manifests/systems.json`](manifests/systems.json) (data-driven,
@@ -156,7 +175,7 @@ More in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 ## Known limitations
 
-- No automatic core installation yet ([#13](https://github.com/korkibucek/analouge-pocket-sdcard-prepper/issues/13)).
+- Core installation covers a curated set, not the full community inventory (extend via the manifest).
 - Live drive detection is Windows-only.
 - Platform-ids may need per-core adjustment (see above).
 - No GUI in this version (CLI wizard only).

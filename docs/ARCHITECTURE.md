@@ -41,6 +41,7 @@ Layer separation:
 | Validation | `Test-PocketDriveSafety`, `Test-PocketFilesystem`, `Test-PocketCardEmpty` |
 | Firmware | `Get-PocketFirmwareManifest`, `Resolve-PocketFirmwareRelease`, `Test-PocketFirmwareFile`, `Install-PocketFirmware` |
 | ROM copy | `Get-PocketSystem`, `New-PocketRomCopyPlan`, `Invoke-PocketRomCopyPlan` |
+| Cores | `Get-PocketCoreManifest`, `Resolve-PocketCore`, `Test-PocketCoreZip`, `Install-PocketCore` |
 | Folders | `New-PocketFolderStructure` |
 | Config/data | `manifests/*.json` |
 | Logging | `New-PocketLogger`, `Write-PocketLog` |

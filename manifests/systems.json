@@ -9,7 +9,7 @@
       "platformId": "gb",
       "supportedExtensions": [".gb"],
       "requiresCore": true,
-      "suggestedCore": "Spiritualized1997.GB",
+      "suggestedCore": "Spiritualized.GB",
       "biosRequired": false,
       "biosFiles": [],
       "notes": "ROMs go to Assets/gb/common."
@@ -21,7 +21,7 @@
       "platformId": "gbc",
       "supportedExtensions": [".gbc", ".gb"],
       "requiresCore": true,
-      "suggestedCore": "Spiritualized1997.GBC",
+      "suggestedCore": "Spiritualized.GBC",
       "biosRequired": false,
       "biosFiles": [],
       "notes": "ROMs go to Assets/gbc/common."
@@ -33,7 +33,7 @@
       "platformId": "gba",
       "supportedExtensions": [".gba"],
       "requiresCore": true,
-      "suggestedCore": "Spiritualized1997.GBA",
+      "suggestedCore": "Spiritualized.GBA",
       "biosRequired": false,
       "biosFiles": [],
       "notes": "ROMs go to Assets/gba/common. Some GBA cores can use an optional BIOS; not required and not copied by default."
@@ -45,7 +45,7 @@
       "platformId": "nes",
       "supportedExtensions": [".nes"],
       "requiresCore": true,
-      "suggestedCore": "Spiritualized1997.NES",
+      "suggestedCore": "agg23.NES",
       "biosRequired": false,
       "biosFiles": [],
       "notes": "ROMs go to Assets/nes/common."
@@ -69,7 +69,7 @@
       "platformId": "genesis",
       "supportedExtensions": [".md", ".gen", ".bin"],
       "requiresCore": true,
-      "suggestedCore": "nullobject.Genesis",
+      "suggestedCore": "Spiritualized.Genesis",
       "biosRequired": false,
       "biosFiles": [],
       "notes": "ROMs go to Assets/genesis/common. The .bin extension is ambiguous (also used by other systems); confirm before bulk-copying a mixed folder."
@@ -81,7 +81,7 @@
       "platformId": "sms",
       "supportedExtensions": [".sms"],
       "requiresCore": true,
-      "suggestedCore": "Spiritualized1997.SMS",
+      "suggestedCore": "Spiritualized.SMS",
       "biosRequired": false,
       "biosFiles": [],
       "notes": "ROMs go to Assets/sms/common."
@@ -93,7 +93,7 @@
       "platformId": "gg",
       "supportedExtensions": [".gg"],
       "requiresCore": true,
-      "suggestedCore": "Spiritualized1997.GG",
+      "suggestedCore": "Spiritualized.SMS",
       "biosRequired": false,
       "biosFiles": [],
       "notes": "ROMs go to Assets/gg/common."
@@ -105,7 +105,7 @@
       "platformId": "pce",
       "supportedExtensions": [".pce"],
       "requiresCore": true,
-      "suggestedCore": "Mazamars312.PCEngine",
+      "suggestedCore": "agg23.PC Engine",
       "biosRequired": false,
       "biosFiles": [],
       "notes": "HuCard ROMs go to Assets/pce/common. CD-based games need additional setup not covered by the MVP."

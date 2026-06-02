@@ -42,6 +42,7 @@ param(
     [switch] $AllowAdvancedOverride,
     [string] $FirmwareManifest,
     [string] $SystemsManifest,
+    [string] $CoresManifest,
     [string] $LogDirectory
 )
 
@@ -52,6 +53,7 @@ Import-Module (Join-Path $here 'PocketPrep/PocketPrep.psd1') -Force
 $repoRoot = Split-Path -Parent $here
 if (-not $FirmwareManifest) { $FirmwareManifest = Join-Path $repoRoot 'manifests/firmware.json' }
 if (-not $SystemsManifest)  { $SystemsManifest  = Join-Path $repoRoot 'manifests/systems.json' }
+if (-not $CoresManifest)    { $CoresManifest    = Join-Path $repoRoot 'manifests/cores.json' }
 if (-not $LogDirectory)     { $LogDirectory     = Join-Path ([System.IO.Path]::GetTempPath()) 'PocketPrepLogs' }
 
 function Write-Banner($text) { Write-Host ""; Write-Host "=== $text ===" -ForegroundColor Cyan }
@@ -162,8 +164,34 @@ Write-Host "Created: $($folderResult.Created -join ', ')"
 Write-Host "Already present: $($folderResult.Existing -join ', ')"
 Write-PocketLog -Logger $logger -Message "Folders created: $($folderResult.Created -join ',')" | Out-Null
 
+# --- Step 5b: openFPGA cores (optional) -------------------------------------
+Write-Banner '6. openFPGA cores (optional)'
+Write-Host "Cores are made by independent authors under their own licences." -ForegroundColor Yellow
+$coreResults = [System.Collections.Generic.List[object]]::new()
+if ((Test-Path -LiteralPath $CoresManifest) -and (Confirm-YesNo "Install any openFPGA cores now?" $false)) {
+    $cores = Resolve-PocketCore -Manifest (Get-PocketCoreManifest -Path $CoresManifest)
+    foreach ($core in $cores) {
+        if (-not (Confirm-YesNo "Install $($core.DisplayName) [$($core.Id)]?" $false)) { continue }
+        $useLocal = Confirm-YesNo "  Use a core .zip you already downloaded (offline)? (No = download from GitHub)" $false
+        try {
+            if ($useLocal) {
+                $cz = Read-Host "  Path to $($core.Identifier) .zip (from $($core.Homepage))"
+                if ([string]::IsNullOrWhiteSpace($cz)) { continue }
+                $cr = Install-PocketCore -Root $target.Root -LocalZip $cz -Core $core -DryRun:$DryRun -Logger $logger
+            } else {
+                $cr = Install-PocketCore -Root $target.Root -Core $core -Download -DryRun:$DryRun -Logger $logger
+            }
+            Write-Host "  $($core.Identifier): placed $($cr.PlacedCount), skipped $($cr.SkippedCount) (v$($cr.Version))." -ForegroundColor Green
+            $coreResults.Add($cr)
+        } catch {
+            Write-Host "  Core install failed: $_" -ForegroundColor Red
+            Write-PocketLog -Logger $logger -Message "Core $($core.Id) failed: $_" -Level ERROR | Out-Null
+        }
+    }
+}
+
 # --- Step 8/9: ROM import ----------------------------------------------------
-Write-Banner '6. ROM import'
+Write-Banner '7. ROM import'
 $systems = Get-PocketSystem -Path $SystemsManifest
 $romResults = [System.Collections.Generic.List[object]]::new()
 foreach ($sys in $systems) {
@@ -187,8 +215,8 @@ foreach ($sys in $systems) {
 }
 
 # --- Step 10/11: summary + log ----------------------------------------------
-Write-Banner '7. Summary'
-$summary = New-PocketInstallSummary -Target $target -FirmwareResult $firmwareResult -FolderResult $folderResult -RomResults $romResults.ToArray()
+Write-Banner '8. Summary'
+$summary = New-PocketInstallSummary -Target $target -FirmwareResult $firmwareResult -FolderResult $folderResult -RomResults $romResults.ToArray() -CoreResults $coreResults.ToArray()
 Write-Host $summary.Text
 Write-PocketLog -Logger $logger -Message $summary.Text | Out-Null
 Write-Host ""
