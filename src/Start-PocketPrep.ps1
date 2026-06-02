@@ -171,6 +171,14 @@ $coreResults = [System.Collections.Generic.List[object]]::new()
 $installedCores = Get-PocketInstalledCore -Root $target.Root
 if ($installedCores.Count -gt 0) {
     Write-Host "Already installed: $(($installedCores | ForEach-Object { "$($_.Identifier) v$($_.Version)" }) -join ', ')"
+    if ((Test-Path -LiteralPath $CoresManifest) -and (Confirm-YesNo "Check for and apply core updates now?" $false)) {
+        try {
+            $updates = Update-PocketCore -Root $target.Root -CoresManifest $CoresManifest -DryRun:$DryRun -Logger $logger
+            if (@($updates).Count -eq 0) { Write-Host "  All installed cores are up to date." -ForegroundColor Green }
+            else { $updates | ForEach-Object { Write-Host "  $($_.Identifier): $($_.Action) $($_.From) -> $($_.To)" -ForegroundColor Green } }
+            $installedCores = Get-PocketInstalledCore -Root $target.Root
+        } catch { Write-Host "  Update check failed: $_" -ForegroundColor Red }
+    }
 }
 if ((Test-Path -LiteralPath $CoresManifest) -and (Confirm-YesNo "Install any openFPGA cores now?" $false)) {
     $cores = Resolve-PocketCore -Manifest (Get-PocketCoreManifest -Path $CoresManifest)
