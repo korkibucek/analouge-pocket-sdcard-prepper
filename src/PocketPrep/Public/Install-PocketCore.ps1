@@ -64,30 +64,20 @@ function Install-PocketCore {
     }
     $log = { param($m, $lvl = 'INFO') if ($Logger) { Write-PocketLog -Logger $Logger -Message $m -Level $lvl | Out-Null } }
 
-    $allowedHosts = @('github.com', 'objects.githubusercontent.com',
-                      'release-assets.githubusercontent.com', 'api.github.com', 'codeload.github.com')
-    $allowedTop   = @('Assets', 'Cores', 'Platforms', 'Presets', 'Settings')
+    $allowedTop = @('Assets', 'Cores', 'Platforms', 'Presets', 'Settings')
 
     $zipPath = $null
     $cleanup = $false
     $resolvedVersion = $null
     try {
         if ($PSCmdlet.ParameterSetName -eq 'Download') {
-            $relUrl = if ($Tag) {
-                "https://api.github.com/repos/$($Core.Owner)/$($Core.Repo)/releases/tags/$Tag"
-            } else {
-                "https://api.github.com/repos/$($Core.Owner)/$($Core.Repo)/releases/latest"
-            }
-            & $log "Resolving core release: $relUrl" 'INFO'
-            $rel = Invoke-RestMethod -Uri $relUrl -Headers @{ 'User-Agent' = 'PocketPrep' } -ErrorAction Stop
-            $resolvedVersion = $rel.tag_name
-            $asset = $rel.assets | Where-Object { $_.name -match '\.zip$' } | Select-Object -First 1
-            if (-not $asset) { throw "No .zip asset found in release '$resolvedVersion' for $($Core.Owner)/$($Core.Repo)." }
+            & $log "Resolving core release for $($Core.Owner)/$($Core.Repo)" 'INFO'
+            $rel = Get-PocketLatestRelease -Owner $Core.Owner -Repo $Core.Repo -Tag $Tag
+            $resolvedVersion = $rel.Version
+            if (-not $rel.ZipUrl) { throw "No .zip asset found in release '$resolvedVersion' for $($Core.Owner)/$($Core.Repo)." }
+            $assetUrl  = $rel.ZipUrl
+            $assetName = $rel.ZipName
 
-            $dlHost = ([Uri]$asset.browser_download_url).Host
-            if ($allowedHosts -notcontains $dlHost) {
-                throw "Refusing to download core from non-GitHub host '$dlHost'."
-            }
             if ($DryRun) {
                 & $log "DRYRUN core: would download $($asset.name) ($resolvedVersion) and install to $Root" 'INFO'
                 return [pscustomobject]@{
@@ -99,9 +89,9 @@ function Install-PocketCore {
             $tmpDir = Join-Path ([System.IO.Path]::GetTempPath()) ("PocketPrepCore_" + [System.IO.Path]::GetRandomFileName())
             New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
             $cleanup = $true
-            $zipPath = Join-Path $tmpDir $asset.name
+            $zipPath = Join-Path $tmpDir $assetName
             & $log "Downloading core $($Core.Identifier) $resolvedVersion" 'INFO'
-            Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zipPath -MaximumRedirection 5 -ErrorAction Stop
+            Invoke-WebRequest -Uri $assetUrl -OutFile $zipPath -MaximumRedirection 5 -ErrorAction Stop
         } else {
             if (-not (Test-Path -LiteralPath $LocalZip -PathType Leaf)) {
                 throw "Local core zip not found: $LocalZip"

@@ -35,6 +35,12 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 - **CI matrix + docs** (closes #24): CI now runs the Pester suite on Windows, Linux,
   and macOS. Added `docs/SECURITY.md` (web server threat model) and updated
   ARCHITECTURE/ROADMAP/README for the web UI and cross-platform support.
+- **Installed-core inventory, update check & platform-id discovery** (closes #31):
+  `Get-PocketInstalledCore` (reads `Cores/<id>/core.json` for version + `platform_ids`),
+  `Compare-PocketVersion`, `Test-PocketPlatformIdInstalled`, and `Get-PocketCoreUpdateStatus`
+  (compares installed cores to their latest GitHub release). Added `GET /api/installed-cores`.
+  Refactored GitHub release resolution into a shared `Get-PocketLatestRelease` helper.
+  Verified end-to-end against agg23.NES (inventory, platform-id discovery, update check).
 
 ## [0.1.0] - 2026-06-02
 

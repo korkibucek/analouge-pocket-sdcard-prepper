@@ -97,6 +97,9 @@ function Invoke-PocketApiRoute {
                 $res = Invoke-PocketRomCopyPlan -Plan $plan -DryRun:([bool]$State.DryRun) -Overwrite:([bool]$Body.overwrite)
                 return @{ Status = 200; Body = $res }
             }
+            '^GET /api/installed-cores$' {
+                return @{ Status = 200; Body = @{ cores = @(Get-PocketInstalledCore -Root $State.Root) } }
+            }
             '^GET /api/cores$' {
                 if (-not (Test-Path -LiteralPath $State.CoresManifest)) { return @{ Status = 200; Body = @{ cores = @() } } }
                 $cores = Resolve-PocketCore -Manifest (Get-PocketCoreManifest -Path $State.CoresManifest)
