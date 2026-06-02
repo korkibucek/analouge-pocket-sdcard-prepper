@@ -1,0 +1,49 @@
+# Testing
+
+Because this tool touches storage, **no test ever requires a real SD card or real
+ROMs.** Tests use injected fake drive data and temporary folders.
+
+## Run the suite
+
+```powershell
+pwsh ./scripts/Run-Tests.ps1        # normal output
+pwsh ./scripts/Run-Tests.ps1 -CI    # detailed; exits non-zero on failure (used in CI)
+```
+
+This installs Pester 5 automatically if missing (CurrentUser scope).
+
+## What is covered
+
+| File | Component |
+|---|---|
+| `DriveDetection.Tests.ps1` | Removable-only filtering, `-IncludeFixed`, object shape (fake provider) |
+| `Safety.Tests.ps1` | System-drive block, fixed-disk override, large-disk flag, no-letter |
+| `Filesystem.Tests.ps1` | FAT32/exFAT accept, NTFS reject, case-insensitivity, remediation |
+| `Emptiness.Tests.ps1` | Empty vs non-empty, benign-entry ignoring |
+| `FolderStructure.Tests.ps1` | Folder creation, idempotency, dry-run |
+| `Firmware.Tests.ps1` | Manifest parse/validate, release resolve, MD5/size verify, offline placement, mismatch refusal, dry-run, duplicate-firmware warning |
+| `Manifest.Tests.ps1` | Systems parse, destination path, lowercasing, duplicate/invalid rejection |
+| `Rom.Tests.ps1` | Extension matching, destination, flatten, dry-run, real copy, skip-existing |
+| `Logging.Tests.ps1` | Logger file+memory, install summary content |
+| `TestMode.Tests.ps1` | End-to-end against a fake SD root |
+
+48 tests total at v0.1.0.
+
+## Test mode (manual)
+
+```powershell
+# Fake SD root in %TEMP%\PocketSDTest, nothing written:
+pwsh ./src/Start-PocketPrep.ps1 -TestMode -DryRun
+
+# Actually copy into the fake root, using the bundled placeholder ROMs:
+pwsh ./src/Start-PocketPrep.ps1 -TestMode
+#   When asked about Game Boy, point it at examples/fake-sd-source/GameBoy
+```
+
+## Notes for contributors
+
+- Keep new logic in `Public/`/`Private/` functions (pure where possible) and add a
+  Pester file alongside.
+- Use the `-DataProvider` parameter to test drive logic without hardware.
+- Network is never required: firmware tests use the offline path and locally computed
+  MD5s.
