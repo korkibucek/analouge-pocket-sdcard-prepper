@@ -17,6 +17,9 @@ jobs:
       - name: Lint
         shell: pwsh
         run: ./scripts/Invoke-Lint.ps1
+      - name: Validate manifests
+        shell: pwsh
+        run: ./scripts/Validate-Manifests.ps1
 
   test:
     name: Pester (${{ matrix.os }})

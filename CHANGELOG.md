@@ -52,6 +52,10 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   excluded with documented justifications (Write-Host for the interactive UI, explicit
   `-DryRun` instead of ShouldProcess, and MD5 required to match Analogue's checksums).
 
+- **Manifest validation** (closes #36): `scripts/Validate-Manifests.ps1` checks all
+  three manifests (structure + consistency) and is run in CI; a `ManifestIntegrity`
+  test covers the shipped manifests and a broken fixture.
+
 ## [0.1.0] - 2026-06-02
 
 Initial MVP.
