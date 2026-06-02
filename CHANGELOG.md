@@ -56,6 +56,11 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   three manifests (structure + consistency) and is run in CI; a `ManifestIntegrity`
   test covers the shipped manifests and a broken fixture.
 
+- **Update-all-cores** (closes #37): `Update-PocketCore` reinstalls every installed core
+  that has a newer GitHub release (download + overwrite), with `-DryRun`. Added
+  `POST /api/cores/update-all`, an "Update all" button in the web UI, and a CLI prompt.
+  Verified end-to-end (0.9.0 → 1.0.1 against agg23.NES).
+
 ## [0.1.0] - 2026-06-02
 
 Initial MVP.

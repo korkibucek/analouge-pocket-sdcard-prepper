@@ -161,7 +161,9 @@ async function stepCores() {
   panel(`<h2>5. openFPGA cores (optional)</h2>
     <p class="warnote">Cores are made by independent authors under their own licences.</p>
     ${instLine}
-    <p><button id="chk" class="secondary">Check for updates</button> <span id="updout" class="meta"></span></p>
+    <p><button id="chk" class="secondary">Check for updates</button>
+       <button id="updall" class="secondary">Update all</button>
+       <span id="updout" class="meta"></span></p>
     ${cores.length ? rows : '<p>No cores manifest available.</p>'}
     <button id="c">Continue →</button>`);
   $('#c').onclick = () => go(5);
@@ -172,6 +174,15 @@ async function stepCores() {
       $('#updout').innerHTML = u.length
         ? u.map(x => `${x.Identifier}: ${x.UpdateAvailable ? `<span class="warnote">update ${x.Installed}→${x.Latest}</span>` : `up to date (${x.Installed})`}`).join(' · ')
         : 'no installed cores from the manifest.';
+    } catch (e) { $('#updout').innerHTML = errLine(e.message); } finally { busy(false); }
+  };
+  $('#updall').onclick = async () => {
+    $('#updout').textContent = 'updating…'; busy(true);
+    try {
+      const r = (await api('/api/cores/update-all', 'POST', {})).results || [];
+      $('#updout').innerHTML = r.length
+        ? r.map(x => `${x.Identifier}: <span class="ok">${x.Action} ${x.From}→${x.To}</span>`).join(' · ')
+        : 'nothing to update.';
     } catch (e) { $('#updout').innerHTML = errLine(e.message); } finally { busy(false); }
   };
   document.querySelectorAll('button[data-mode]').forEach(btn => btn.onclick = async () => {

@@ -26,6 +26,7 @@
         'Compare-PocketVersion',
         'Test-PocketPlatformIdInstalled',
         'Get-PocketCoreUpdateStatus',
+        'Update-PocketCore',
         'New-PocketRomCopyPlan',
         'Invoke-PocketRomCopyPlan',
         'New-PocketTarget',

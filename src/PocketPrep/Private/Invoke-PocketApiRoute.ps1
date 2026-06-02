@@ -107,6 +107,11 @@ function Invoke-PocketApiRoute {
                 if (-not (Test-Path -LiteralPath $State.CoresManifest)) { return @{ Status = 200; Body = @{ updates = @() } } }
                 return @{ Status = 200; Body = @{ updates = @(Get-PocketCoreUpdateStatus -Root $State.Root -CoresManifest $State.CoresManifest) } }
             }
+            '^POST /api/cores/update-all$' {
+                if (-not (Test-Path -LiteralPath $State.CoresManifest)) { return @{ Status = 200; Body = @{ results = @() } } }
+                $res = Update-PocketCore -Root $State.Root -CoresManifest $State.CoresManifest -DryRun:([bool]$State.DryRun)
+                return @{ Status = 200; Body = @{ results = @($res) } }
+            }
             '^GET /api/cores$' {
                 if (-not (Test-Path -LiteralPath $State.CoresManifest)) { return @{ Status = 200; Body = @{ cores = @() } } }
                 $cores = Resolve-PocketCore -Manifest (Get-PocketCoreManifest -Path $State.CoresManifest)
