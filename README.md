@@ -172,5 +172,6 @@ More in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 ## Licence
 
-No licence has been chosen yet, so default copyright applies. If you intend this to be
-open source, add a `LICENSE` file (e.g. MIT). Tracked as a follow-up.
+[MIT](LICENSE). You may use, modify, and redistribute it freely; it comes with no
+warranty. (MIT was chosen as a sensible permissive default for a community tool — open
+a PR if you'd prefer a different licence.)

@@ -3,6 +3,11 @@
 All notable changes to this project are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+- MIT `LICENSE` (closes #16).
+
 ## [0.1.0] - 2026-06-02
 
 Initial MVP.
