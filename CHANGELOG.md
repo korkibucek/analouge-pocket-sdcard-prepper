@@ -15,6 +15,14 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   with `-DryRun`. Wizard gained an optional core-install step; install summary now
   reports cores. Core download verified end-to-end against a real release (agg23.NES).
 - Corrected `suggestedCore` identifiers in `systems.json` to match real core names.
+- **Cross-platform drive detection** (closes #19): Linux (`lsblk`) and macOS
+  (`system_profiler`) providers + a `RootPath` field on drive objects.
+- **Cross-platform safety** (closes #20): `Test-PocketDriveSafety` rejects protected
+  Linux/macOS mountpoints (and the Windows system drive); mountpoint-based targets.
+- **Local web server + REST API** (closes #21): `Start-PocketPrepServer` (HttpListener,
+  127.0.0.1 only) exposing the engine as JSON. Per-session token required on every
+  `/api` call, with Host/Origin checks (CSRF / DNS-rebinding defence). Pure routing
+  (`Invoke-PocketApiRoute`) and auth (`Test-PocketApiRequest`) are fully unit-tested.
 
 ## [0.1.0] - 2026-06-02
 
