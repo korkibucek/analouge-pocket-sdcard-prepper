@@ -14,18 +14,21 @@ Tracked in detail on [GitHub Issues](https://github.com/korkibucek/analouge-pock
 
 ## Done after MVP
 - **MIT licence** (#16).
-- **openFPGA core installation** (#13): `cores.json` manifest + `Install-PocketCore`
-  (offline zip or GitHub-release download), zip-slip-safe, non-destructive, for a
-  curated set. Tested + a real download validated.
+- **openFPGA core installation** (#13): `cores.json` + `Install-PocketCore` (offline zip
+  or GitHub-release download), zip-slip-safe, non-destructive. Tested + real download.
+- **Cross-platform** (#19, #20): Linux (`lsblk`) and macOS (`system_profiler`) drive
+  detection; mountpoint-aware safety. CI on Windows/Linux/macOS (#24).
+- **Local web UI** (#21, #22): localhost, token-secured REST API + browser wizard —
+  replaces the old WPF GUI plan (#15).
+- **Launchers + packaging** (#23): Windows/.deb/.rpm/macOS launchers and package scripts.
 
 ## Next
 - **Expand the core set** and add an **updater** (re-install when a newer release exists).
 - **Per-core platform-id discovery**: read installed cores' platform definitions to
   auto-fill/verify ROM destinations.
-- **GUI layer** (#15): a WPF (or .NET) front-end over the existing engine. The engine
-  API is already GUI-agnostic.
 - **Optional verified manual wipe/clean** with strong safeguards (typed-label
   confirmation, removable-only hard gate, dry-run preview).
+- **Native installers** beyond .deb/.rpm (e.g. a signed Windows MSI, a macOS .pkg).
 
 ## Maybe later
 - ROM library scanning / no-intro-style matching

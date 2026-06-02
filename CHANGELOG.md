@@ -32,6 +32,9 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   `scripts/pocketprep.sh` launcher for Linux/macOS (Unix-style flags); a `.desktop`
   entry; and `scripts/Build-Deb.sh` / `scripts/Build-Rpm.sh` producing native packages
   that install a `pocketprep` command and depend on `powershell`.
+- **CI matrix + docs** (closes #24): CI now runs the Pester suite on Windows, Linux,
+  and macOS. Added `docs/SECURITY.md` (web server threat model) and updated
+  ARCHITECTURE/ROADMAP/README for the web UI and cross-platform support.
 
 ## [0.1.0] - 2026-06-02
 
