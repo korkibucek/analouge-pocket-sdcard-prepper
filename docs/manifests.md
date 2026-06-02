@@ -82,6 +82,12 @@ most widely used community cores at time of writing. **If you use a different co
 open it, check its platform id, and edit `platformId` here.** This is exactly why the
 design is data-driven.
 
+Once a core is installed, the tool can read the truth directly:
+`Get-PocketInstalledCore` returns each installed core's declared `platform_ids` (from
+`Cores/<id>/core.json`), and `Test-PocketPlatformIdInstalled` checks whether any
+installed core provides a given platform id — so ROM destinations can be verified
+against reality rather than only the manifest.
+
 Sources:
 - Folder structure: <https://www.analogue.co/developer/docs/directories-and-sd-folder-structure>
 - Firmware + SD format: <https://www.analogue.co/support/resource/updating-firmware>
