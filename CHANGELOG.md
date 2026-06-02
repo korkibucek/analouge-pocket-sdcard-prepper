@@ -41,6 +41,11 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   (compares installed cores to their latest GitHub release). Added `GET /api/installed-cores`.
   Refactored GitHub release resolution into a shared `Get-PocketLatestRelease` helper.
   Verified end-to-end against agg23.NES (inventory, platform-id discovery, update check).
+- **Surfaced cores in the UIs** (closes #33): web UI and CLI now show already-installed
+  cores + versions, offer "check for updates" / reinstall-update (overwrite), and warn in
+  the ROM step when no installed core provides a system's platform. Added
+  `GET /api/cores/updates`, a non-breaking `PlatformProvided` flag on `/api/rom/plan`, and
+  `overwrite` support on `/api/cores/install`.
 
 ## [0.1.0] - 2026-06-02
 

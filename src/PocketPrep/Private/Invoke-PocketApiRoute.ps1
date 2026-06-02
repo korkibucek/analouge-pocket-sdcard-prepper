@@ -88,6 +88,9 @@ function Invoke-PocketApiRoute {
                 $sys = Get-PocketSystem -Path $State.SystemsManifest -Id ([string]$Body.systemId)
                 $plan = New-PocketRomCopyPlan -System $sys -SourceFolder ([string]$Body.sourceFolder) -Root $State.Root `
                     -Recurse:([bool]$Body.recurse) -PreserveStructure:([bool]$Body.preserveStructure)
+                $pidCheck = Test-PocketPlatformIdInstalled -Root $State.Root -PlatformId $sys.PlatformId
+                $plan | Add-Member -NotePropertyName PlatformProvided -NotePropertyValue $pidCheck.Installed -Force
+                $plan | Add-Member -NotePropertyName PlatformProvidedBy -NotePropertyValue $pidCheck.ProvidedBy -Force
                 return @{ Status = 200; Body = $plan }
             }
             '^POST /api/rom/copy$' {
@@ -100,6 +103,10 @@ function Invoke-PocketApiRoute {
             '^GET /api/installed-cores$' {
                 return @{ Status = 200; Body = @{ cores = @(Get-PocketInstalledCore -Root $State.Root) } }
             }
+            '^GET /api/cores/updates$' {
+                if (-not (Test-Path -LiteralPath $State.CoresManifest)) { return @{ Status = 200; Body = @{ updates = @() } } }
+                return @{ Status = 200; Body = @{ updates = @(Get-PocketCoreUpdateStatus -Root $State.Root -CoresManifest $State.CoresManifest) } }
+            }
             '^GET /api/cores$' {
                 if (-not (Test-Path -LiteralPath $State.CoresManifest)) { return @{ Status = 200; Body = @{ cores = @() } } }
                 $cores = Resolve-PocketCore -Manifest (Get-PocketCoreManifest -Path $State.CoresManifest)
@@ -109,9 +116,9 @@ function Invoke-PocketApiRoute {
                 $core = Resolve-PocketCore -Manifest (Get-PocketCoreManifest -Path $State.CoresManifest) -Id ([string]$Body.coreId)
                 if ([string]$Body.mode -eq 'offline') {
                     if (-not $Body.localZip) { return @{ Status = 400; Body = @{ error = 'Offline mode needs localZip.' } } }
-                    $res = Install-PocketCore -Root $State.Root -LocalZip ([string]$Body.localZip) -Core $core -DryRun:([bool]$State.DryRun)
+                    $res = Install-PocketCore -Root $State.Root -LocalZip ([string]$Body.localZip) -Core $core -DryRun:([bool]$State.DryRun) -Overwrite:([bool]$Body.overwrite)
                 } else {
-                    $res = Install-PocketCore -Root $State.Root -Core $core -Download -DryRun:([bool]$State.DryRun)
+                    $res = Install-PocketCore -Root $State.Root -Core $core -Download -DryRun:([bool]$State.DryRun) -Overwrite:([bool]$Body.overwrite)
                 }
                 return @{ Status = 200; Body = $res }
             }

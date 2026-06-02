@@ -168,18 +168,25 @@ Write-PocketLog -Logger $logger -Message "Folders created: $($folderResult.Creat
 Write-Banner '6. openFPGA cores (optional)'
 Write-Host "Cores are made by independent authors under their own licences." -ForegroundColor Yellow
 $coreResults = [System.Collections.Generic.List[object]]::new()
+$installedCores = Get-PocketInstalledCore -Root $target.Root
+if ($installedCores.Count -gt 0) {
+    Write-Host "Already installed: $(($installedCores | ForEach-Object { "$($_.Identifier) v$($_.Version)" }) -join ', ')"
+}
 if ((Test-Path -LiteralPath $CoresManifest) -and (Confirm-YesNo "Install any openFPGA cores now?" $false)) {
     $cores = Resolve-PocketCore -Manifest (Get-PocketCoreManifest -Path $CoresManifest)
     foreach ($core in $cores) {
-        if (-not (Confirm-YesNo "Install $($core.DisplayName) [$($core.Id)]?" $false)) { continue }
+        $already = $installedCores | Where-Object { $_.Identifier -ieq $core.Identifier } | Select-Object -First 1
+        $label = if ($already) { "$($core.DisplayName) [$($core.Id)] (installed v$($already.Version) - reinstall/update?)" } else { "$($core.DisplayName) [$($core.Id)]" }
+        if (-not (Confirm-YesNo "Install $label`?" $false)) { continue }
+        $ow = [bool]$already
         $useLocal = Confirm-YesNo "  Use a core .zip you already downloaded (offline)? (No = download from GitHub)" $false
         try {
             if ($useLocal) {
                 $cz = Read-Host "  Path to $($core.Identifier) .zip (from $($core.Homepage))"
                 if ([string]::IsNullOrWhiteSpace($cz)) { continue }
-                $cr = Install-PocketCore -Root $target.Root -LocalZip $cz -Core $core -DryRun:$DryRun -Logger $logger
+                $cr = Install-PocketCore -Root $target.Root -LocalZip $cz -Core $core -DryRun:$DryRun -Overwrite:$ow -Logger $logger
             } else {
-                $cr = Install-PocketCore -Root $target.Root -Core $core -Download -DryRun:$DryRun -Logger $logger
+                $cr = Install-PocketCore -Root $target.Root -Core $core -Download -DryRun:$DryRun -Overwrite:$ow -Logger $logger
             }
             Write-Host "  $($core.Identifier): placed $($cr.PlacedCount), skipped $($cr.SkippedCount) (v$($cr.Version))." -ForegroundColor Green
             $coreResults.Add($cr)
@@ -206,6 +213,9 @@ foreach ($sys in $systems) {
     $recurse = Confirm-YesNo "  Search subfolders too?" $false
     $plan = New-PocketRomCopyPlan -System $sys -SourceFolder $src -Root $target.Root -Recurse:$recurse
     Write-Host "  Found $($plan.FileCount) matching file(s) ($([math]::Round($plan.TotalBytes/1MB,1)) MB). Skipping $($plan.SkippedNonMatching) non-matching."
+    if (-not (Test-PocketPlatformIdInstalled -Root $target.Root -PlatformId $sys.PlatformId).Installed) {
+        Write-Host "  Note: no installed core provides platform '$($sys.PlatformId)' yet - install the core so these ROMs will load." -ForegroundColor Yellow
+    }
     if ($plan.FileCount -eq 0) { continue }
     if (Confirm-YesNo "  Copy $($plan.FileCount) file(s) to $($plan.Destination)?" $true) {
         $res = Invoke-PocketRomCopyPlan -Plan $plan -DryRun:$DryRun -Logger $logger
