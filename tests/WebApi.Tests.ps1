@@ -53,6 +53,22 @@ Describe 'Invoke-PocketApiRoute' {
             Invoke-PocketApiRoute -Method POST -Path '/api/rom/plan' -Body $b -State $s }
         $r.Body.FileCount | Should -Be 1
     }
+    It 'POST /api/target sets a test-mode root' {
+        $newRoot = Join-Path $script:root 'chosen'
+        $body = [pscustomobject]@{ testMode = $true; rootPath = $newRoot }
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = $body } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/target' -Body $b -State $s }
+        $r.Status | Should -Be 200
+        $r.Body.ready | Should -BeTrue
+        $script:state.Root | Should -Be (Resolve-Path $newRoot).Path
+    }
+    It 'POST /api/target rejects an unsafe (system) drive' {
+        $body = [pscustomobject]@{ drive = [pscustomobject]@{ DriveLetter='/'; RootPath='/'; IsRemovable=$false; SizeBytes=1TB } }
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = $body } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/target' -Body $b -State $s }
+        $r.Status | Should -Be 400
+        $r.Body.verdict | Should -Not -BeNullOrEmpty
+    }
     It 'unknown route returns 404' {
         $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
             Invoke-PocketApiRoute -Method GET -Path '/api/nope' -State $s }

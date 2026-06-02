@@ -20,7 +20,27 @@ function Invoke-PocketApiRoute {
                 return @{ Status = 200; Body = @{
                     ok = $true; product = 'Analogue Pocket SD Card Prepper'
                     root = $State.Root; testMode = [bool]$State.IsTestMode; dryRun = [bool]$State.DryRun
+                    targetReady = [bool]$State.TargetReady
                 } }
+            }
+            '^POST /api/target$' {
+                if ($Body.testMode) {
+                    $rp = [string]$Body.rootPath
+                    if (-not $rp) { return @{ Status = 400; Body = @{ error = 'Missing rootPath for test mode.' } } }
+                    if (-not (Test-Path -LiteralPath $rp)) { New-Item -ItemType Directory -Path $rp -Force | Out-Null }
+                    $State.Root = (Resolve-Path -LiteralPath $rp).Path
+                    $State.IsTestMode = $true; $State.TargetReady = $true
+                    return @{ Status = 200; Body = @{ root = $State.Root; isTestMode = $true; ready = $true } }
+                }
+                if (-not $Body.drive) { return @{ Status = 400; Body = @{ error = 'Missing drive.' } } }
+                $v = Test-PocketDriveSafety -Drive $Body.drive -AllowAdvancedOverride:([bool]$Body.allowOverride)
+                if (-not $v.Safe) { return @{ Status = 400; Body = @{ error = 'Drive is not safe to use.'; verdict = $v } } }
+                $rp = [string]$Body.drive.RootPath
+                if (-not $rp) { $rp = [string]$Body.drive.DriveLetter }
+                if (-not (Test-Path -LiteralPath $rp)) { return @{ Status = 400; Body = @{ error = "Target root not found: $rp" } } }
+                $State.Root = (Resolve-Path -LiteralPath $rp).Path
+                $State.IsTestMode = $false; $State.TargetReady = $true
+                return @{ Status = 200; Body = @{ root = $State.Root; isTestMode = $false; ready = $true; verdict = $v } }
             }
             '^GET /api/drives$' {
                 $drives = if ($State.DriveProvider) {

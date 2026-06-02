@@ -53,8 +53,9 @@ function Start-PocketPrepServer {
 
     if ($TestMode -and -not $Root) { $Root = Join-Path ([System.IO.Path]::GetTempPath()) 'PocketSDTest' }
     if ($TestMode -and -not (Test-Path -LiteralPath $Root)) { New-Item -ItemType Directory -Path $Root -Force | Out-Null }
-    if (-not $Root) { throw "Specify -Root (or use -TestMode)." }
-    $Root = (Resolve-Path -LiteralPath $Root).Path
+    # A target may be set now (via -Root/-TestMode) or chosen later in the browser.
+    $targetReady = $false
+    if ($Root) { $Root = (Resolve-Path -LiteralPath $Root).Path; $targetReady = $true }
 
     if ($Port -eq 0) {
         $probe = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
@@ -64,7 +65,7 @@ function Start-PocketPrepServer {
     $token = [Convert]::ToHexString([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(16))
 
     $state = @{
-        Root = $Root; IsTestMode = [bool]$TestMode; DryRun = [bool]$DryRun
+        Root = $Root; IsTestMode = [bool]$TestMode; DryRun = [bool]$DryRun; TargetReady = $targetReady
         FirmwareManifest = $FirmwareManifest; SystemsManifest = $SystemsManifest; CoresManifest = $CoresManifest
         IncludeFixed = [bool]$IncludeFixed; DriveProvider = $DriveProvider
     }
@@ -77,7 +78,7 @@ function Start-PocketPrepServer {
     Write-Host "Analogue Pocket SD Card Prepper - web UI" -ForegroundColor Green
     Write-Host "  URL:   $url" -ForegroundColor Cyan
     Write-Host "  Token: $token"
-    Write-Host "  Root:  $Root$(if($TestMode){' (TEST MODE)'})$(if($DryRun){' [DRY-RUN]'})"
+    Write-Host "  Root:  $(if($Root){$Root}else{'(choose in the browser)'})$(if($TestMode){' (TEST MODE)'})$(if($DryRun){' [DRY-RUN]'})"
     Write-Host "  (Press Ctrl+C to stop, or click Finish in the page.)"
 
     if (-not $NoBrowser) {
