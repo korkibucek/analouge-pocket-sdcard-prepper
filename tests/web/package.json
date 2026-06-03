@@ -1,0 +1,13 @@
+{
+  "name": "pocketprep-web-tests",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dev-only headless tests for the PocketPrep web UI (jsdom). Not a runtime dependency of the app.",
+  "type": "module",
+  "scripts": {
+    "test": "node test.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^24.0.0"
+  }
+}

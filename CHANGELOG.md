@@ -67,6 +67,10 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   `-DryRun`. Added `POST /api/saves/backup` and `/api/saves/restore`; the CLI offers a
   backup when the card isn't empty, and the web UI shows a backup widget on a non-empty card.
 
+- **Headless web UI test** (closes #39): `tests/web/` runs `app.js` in jsdom with a
+  stubbed fetch and asserts the wizard bootstraps, calls the API, and renders the first
+  step. Runs in CI on Node 20; dev-only (not a runtime dependency).
+
 ## [0.1.0] - 2026-06-02
 
 Initial MVP.
