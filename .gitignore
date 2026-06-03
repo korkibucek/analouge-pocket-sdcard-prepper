@@ -13,6 +13,9 @@ release/
 .vscode/
 *.tmp
 
+# Node modules (dev-only web UI tests)
+node_modules/
+
 # OS cruft
 .DS_Store
 Thumbs.db

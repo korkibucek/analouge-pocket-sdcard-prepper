@@ -30,6 +30,17 @@ This installs Pester 5 automatically if missing (CurrentUser scope).
 
 61 tests total.
 
+## Web UI test (jsdom)
+
+The browser wizard has a headless test under `tests/web/` (Node + jsdom + a stubbed
+fetch) that asserts `app.js` bootstraps, calls the API, and renders without errors:
+
+```bash
+cd tests/web && npm install && npm test
+```
+
+CI runs it on Node 20. It is dev-only and not a runtime dependency.
+
 ## Test mode (manual)
 
 ```powershell

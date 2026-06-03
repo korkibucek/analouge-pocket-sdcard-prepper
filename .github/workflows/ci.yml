@@ -21,6 +21,21 @@ jobs:
         shell: pwsh
         run: ./scripts/Validate-Manifests.ps1
 
+  web-ui:
+    name: Web UI test (jsdom)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install web test deps
+        working-directory: tests/web
+        run: npm ci || npm install
+      - name: Run web UI test
+        working-directory: tests/web
+        run: npm test
+
   test:
     name: Pester (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
