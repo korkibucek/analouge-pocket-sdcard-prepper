@@ -47,11 +47,28 @@ outcome is "files copied to the wrong folder"** — never data loss.
 Decision order: no drive letter → unsafe; system drive → unsafe (non-overridable);
 non-removable → needs override (and flagged if large); otherwise safe.
 
-## What we deliberately did **not** build for the MVP
+## The one destructive feature: `Clear-PocketCard` (opt-in)
 
-- A wipe/clean-card feature. Any such feature would need very strong safeguards
-  (re-typed volume label confirmation, removable-only hard gate, dry-run preview).
-  It is out of scope for v0.1 by design.
+`Clear-PocketCard` is the **only** function that deletes user data. It exists so a used
+card can be re-prepped, and it is gated so the worst realistic outcome requires the user
+to actively defeat several safeguards:
+
+1. **Removable + non-system only.** The target must be a *detected removable volume* and
+   must pass `Test-PocketDriveSafety`. A fixed disk needs the explicit advanced override;
+   the system/protected volumes are never allowed. If the path isn't a detected removable
+   volume, it refuses (it cannot verify safety).
+2. **Typed confirmation.** `-ConfirmToken` must exactly match the volume label or the
+   resolved root path — a deliberate, typed action.
+3. **Contents only.** It deletes the contents of the root, never the root itself, and
+   skips OS-managed entries (e.g. `System Volume Information`).
+4. **Dry-run.** `-DryRun` lists exactly what would be removed and deletes nothing; the
+   CLI always shows a dry-run preview before asking for confirmation.
+5. **Logged.** Every removal is logged at WARN.
+
+It is **never** invoked by default. The CLI exposes it only via the explicit
+`-CleanFirst` flag (and still requires the typed confirmation). It is intentionally
+**not** exposed over the web API, to avoid a destructive operation behind an HTTP
+endpoint. Always back up saves first (`Backup-PocketSaves`); there is no undo.
 
 ## Privileges
 
