@@ -71,6 +71,13 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   stubbed fetch and asserts the wizard bootstraps, calls the API, and renders the first
   step. Runs in CI on Node 20; dev-only (not a runtime dependency).
 
+- **Guarded card clean/wipe** (closes #40): `Clear-PocketCard` — the only destructive
+  function — deletes a card's contents to allow re-prepping, gated by a removable+non-system
+  safety re-check, a typed confirmation token (label or root path), contents-only deletion
+  (skips OS entries), mandatory `-DryRun` preview, and WARN-level logging. Never default;
+  exposed only via the CLI `-CleanFirst` flag and intentionally **not** over the web API.
+  Documented in docs/safety-model.md.
+
 ## [0.1.0] - 2026-06-02
 
 Initial MVP.

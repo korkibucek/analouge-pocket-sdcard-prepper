@@ -40,6 +40,7 @@ param(
     [string] $Root,
     [switch] $DryRun,
     [switch] $AllowAdvancedOverride,
+    [switch] $CleanFirst,
     [string] $FirmwareManifest,
     [string] $SystemsManifest,
     [string] $CoresManifest,
@@ -141,6 +142,22 @@ if ($empty.IsEmpty) {
                 Write-Host "  Backed up $($br.FileCount) file(s) to $($br.Destination)$(if($DryRun){' [dry-run]'})." -ForegroundColor Green
                 Write-PocketLog -Logger $logger -Message "Saves backup: $($br.FileCount) files -> $($br.Destination)" | Out-Null
             } catch { Write-Host "  Backup failed: $_" -ForegroundColor Red }
+        }
+    }
+    if ($CleanFirst -and -not $target.IsTestMode) {
+        Write-Host ""
+        Write-Host "!! DESTRUCTIVE: -CleanFirst will DELETE all contents of $($target.Root). There is no undo." -ForegroundColor Red
+        if ((($empty.Entries -contains 'Saves')) ) { Write-Host "   Make sure you backed up your Saves above." -ForegroundColor Yellow }
+        if (Confirm-YesNo "Do you want to wipe the card before preparing it?" $false) {
+            Write-Host "   Dry-run preview of what would be removed:" -ForegroundColor Yellow
+            try {
+                $dry = Clear-PocketCard -Root $target.Root -ConfirmToken $target.Root -AllowAdvancedOverride:$AllowAdvancedOverride -DryRun -Logger $logger
+                $dry.Removed | ForEach-Object { Write-Host "     - $_" }
+                $typed = Read-Host "   To confirm deletion, type the volume label or the exact root path"
+                $cl = Clear-PocketCard -Root $target.Root -ConfirmToken $typed -AllowAdvancedOverride:$AllowAdvancedOverride -Logger $logger
+                Write-Host "   Removed $($cl.RemovedCount) item(s)." -ForegroundColor Green
+                Write-PocketLog -Logger $logger -Message "Card cleaned: removed $($cl.RemovedCount) item(s)" -Level WARN | Out-Null
+            } catch { Write-Host "   Clean aborted: $_" -ForegroundColor Red }
         }
     }
     if (-not (Confirm-YesNo "Existing files will be left in place (nothing is deleted). Continue?" $false)) { return }
