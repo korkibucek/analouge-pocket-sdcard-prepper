@@ -131,6 +131,18 @@ if ($empty.IsEmpty) {
 } else {
     Write-Host "Card is NOT empty. Top-level items ($($empty.EntryCount)):" -ForegroundColor Yellow
     $empty.Entries | Select-Object -First 15 | ForEach-Object { Write-Host "  - $_" }
+    if (($empty.Entries -contains 'Saves') -and (Confirm-YesNo "Back up existing Saves first?" $true)) {
+        $bdest = Read-Host "  Backup destination folder (blank to skip)"
+        if (-not [string]::IsNullOrWhiteSpace($bdest)) {
+            try {
+                $stamp = (Get-Date -Format 'yyyyMMdd-HHmmss')
+                $incMem = Confirm-YesNo "  Also back up Memories?" $false
+                $br = Backup-PocketSaves -Root $target.Root -Destination $bdest -Stamp $stamp -IncludeMemories:$incMem -DryRun:$DryRun
+                Write-Host "  Backed up $($br.FileCount) file(s) to $($br.Destination)$(if($DryRun){' [dry-run]'})." -ForegroundColor Green
+                Write-PocketLog -Logger $logger -Message "Saves backup: $($br.FileCount) files -> $($br.Destination)" | Out-Null
+            } catch { Write-Host "  Backup failed: $_" -ForegroundColor Red }
+        }
+    }
     if (-not (Confirm-YesNo "Existing files will be left in place (nothing is deleted). Continue?" $false)) { return }
 }
 

@@ -127,6 +127,18 @@ function Invoke-PocketApiRoute {
                 }
                 return @{ Status = 200; Body = $res }
             }
+            '^POST /api/saves/backup$' {
+                if (-not $Body.destination) { return @{ Status = 400; Body = @{ error = 'Missing destination.' } } }
+                $res = Backup-PocketSaves -Root $State.Root -Destination ([string]$Body.destination) `
+                    -Stamp ([string]($Body.stamp ?? 'backup')) -IncludeMemories:([bool]$Body.includeMemories) -DryRun:([bool]$State.DryRun)
+                return @{ Status = 200; Body = $res }
+            }
+            '^POST /api/saves/restore$' {
+                if (-not $Body.source) { return @{ Status = 400; Body = @{ error = 'Missing source.' } } }
+                $res = Restore-PocketSaves -Root $State.Root -Source ([string]$Body.source) `
+                    -Overwrite:([bool]$Body.overwrite) -DryRun:([bool]$State.DryRun)
+                return @{ Status = 200; Body = $res }
+            }
             '^POST /api/summary$' {
                 $res = New-PocketInstallSummary -Target $target -FirmwareResult $Body.firmware `
                     -FolderResult $Body.folder -RomResults @($Body.roms) -CoreResults @($Body.cores)

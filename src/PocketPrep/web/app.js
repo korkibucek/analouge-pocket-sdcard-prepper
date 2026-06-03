@@ -97,11 +97,24 @@ async function stepCard() {
     }
     html += `<p class="warnote">Card is NOT empty (${empty.EntryCount} item(s)). Nothing will be deleted.</p>`;
     html += '<ul class="list">' + empty.Entries.slice(0, 12).map(x => `<li>${x}</li>`).join('') + '</ul>';
+    if (empty.Entries.includes('Saves')) {
+      html += `<div class="card"><strong>Back up existing Saves</strong>
+        <div class="row"><input type="text" id="bdest" placeholder="backup destination folder">
+        <label class="row"><input type="checkbox" id="bmem"> include Memories</label>
+        <button id="bbtn" class="secondary">Back up</button></div><div id="bout"></div></div>`;
+    }
     html += '<label class="row"><input type="checkbox" id="ok"> I understand; leave existing files in place and continue</label>';
     html += '<button id="c" disabled>Continue →</button>';
     panel(html);
     $('#ok').onchange = (e) => { $('#c').disabled = !e.target.checked; };
     $('#c').onclick = () => go(2);
+    if ($('#bbtn')) $('#bbtn').onclick = async () => {
+      const d = $('#bdest').value.trim(); if (!d) { $('#bout').innerHTML = errLine('Enter a destination.'); return; }
+      busy(true);
+      try { const r = await api('/api/saves/backup', 'POST', { destination: d, includeMemories: $('#bmem').checked });
+        $('#bout').innerHTML = `<p class="ok">Backed up ${r.FileCount} file(s) to ${r.Destination}${r.DryRun ? ' [dry-run]' : ''}.</p>`;
+      } catch (e) { $('#bout').innerHTML = errLine(e.message); } finally { busy(false); }
+    };
   } catch (e) { panel(html + errLine(e.message) + '<button id="c">Continue →</button>'); $('#c').onclick = () => go(2); }
 }
 
