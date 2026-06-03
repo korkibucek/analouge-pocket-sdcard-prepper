@@ -33,6 +33,8 @@
         'New-PocketLogger',
         'Write-PocketLog',
         'New-PocketInstallSummary',
+        'Backup-PocketSaves',
+        'Restore-PocketSaves',
         'Start-PocketPrepServer'
     )
     CmdletsToExport   = @()

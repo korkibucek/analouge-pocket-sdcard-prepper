@@ -61,6 +61,12 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   `POST /api/cores/update-all`, an "Update all" button in the web UI, and a CLI prompt.
   Verified end-to-end (0.9.0 → 1.0.1 against agg23.NES).
 
+- **Save backup & restore** (closes #38): `Backup-PocketSaves` (copies `Saves/`, and
+  optionally `Memories/`, to a timestamped folder) and `Restore-PocketSaves` (copies
+  back, skip-existing unless `-Overwrite`). Copy-only, never deletes; both support
+  `-DryRun`. Added `POST /api/saves/backup` and `/api/saves/restore`; the CLI offers a
+  backup when the card isn't empty, and the web UI shows a backup widget on a non-empty card.
+
 ## [0.1.0] - 2026-06-02
 
 Initial MVP.
