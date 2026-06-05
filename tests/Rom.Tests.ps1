@@ -42,6 +42,25 @@ Describe 'New-PocketRomCopyPlan' {
     It 'throws on a missing source folder' {
         { New-PocketRomCopyPlan -System $script:gb -SourceFolder (Join-Path $script:src 'nope') -Root $script:root } | Should -Throw
     }
+
+    It 'flags flatten collisions (same basename in different subfolders)' {
+        $a = Join-Path $script:src 'a'; $b = Join-Path $script:src 'b'
+        New-Item -ItemType Directory -Path $a, $b -Force | Out-Null
+        'x' | Set-Content (Join-Path $a 'dup.gb')
+        'y' | Set-Content (Join-Path $b 'dup.gb')
+        $plan = New-PocketRomCopyPlan -System $script:gb -SourceFolder $script:src -Root $script:root -Recurse
+        ($plan.Problems | Where-Object Reason -match 'duplicate').Count | Should -Be 1
+        $plan.CopyableCount | Should -Be ($plan.FileCount - 1)
+    }
+
+    It 'flags filenames with characters invalid on FAT/exFAT' {
+        # ':' and '?' are invalid on FAT; create such names literally on the (Linux) source
+        # (avoid -Path wildcard interpretation of '?').
+        [System.IO.File]::WriteAllText((Join-Path $script:src 'bad:name.gb'), 'x')
+        [System.IO.File]::WriteAllText((Join-Path $script:src 'whats?.gb'), 'y')
+        $plan = New-PocketRomCopyPlan -System $script:gb -SourceFolder $script:src -Root $script:root
+        ($plan.Problems | Where-Object Reason -match 'not allowed on FAT').Count | Should -Be 2
+    }
 }
 
 Describe 'Invoke-PocketRomCopyPlan' {
@@ -75,6 +94,17 @@ Describe 'Invoke-PocketRomCopyPlan' {
         $r2 = Invoke-PocketRomCopyPlan -Plan $script:plan
         $r2.SkippedCount | Should -Be 2
         $r2.CopiedCount | Should -Be 0
+    }
+
+    It 'skips problem items (collision) instead of clobbering or failing' {
+        $a = Join-Path $script:src 'a'; $b = Join-Path $script:src 'b'
+        New-Item -ItemType Directory -Path $a, $b -Force | Out-Null
+        'x' | Set-Content (Join-Path $a 'dup.gb')
+        'y' | Set-Content (Join-Path $b 'dup.gb')
+        $plan = New-PocketRomCopyPlan -System $script:gb -SourceFolder $script:src -Root $script:root -Recurse
+        $res = Invoke-PocketRomCopyPlan -Plan $plan
+        $res.SkippedProblemCount | Should -Be 1
+        $res.FailedCount | Should -Be 0
     }
 
     It 'flags a truncated copy as failed (post-copy size verification)' {

@@ -55,6 +55,10 @@ function New-PocketRomCopyPlan {
 
     $sourceFull = (Resolve-Path -LiteralPath $SourceFolder).Path
 
+    # Characters that are invalid in FAT32/exFAT file names (besides the path separators).
+    $invalidFatChars = [char[]]('<', '>', ':', '"', '|', '?', '*') + @(0..31 | ForEach-Object { [char]$_ })
+    $seenDest = @{}
+
     $items = foreach ($f in $matched) {
         if ($PreserveStructure -and $Recurse) {
             $rel = $f.FullName.Substring($sourceFull.Length).TrimStart([char]'\', [char]'/')
@@ -63,15 +67,36 @@ function New-PocketRomCopyPlan {
             $rel = $f.Name
             $dest = Join-Path $destRoot $f.Name
         }
+
+        # Detect problems that would otherwise fail or silently clobber on the card.
+        $problem = $null
+        $leaf = Split-Path -Leaf $dest
+        if ($leaf.IndexOfAny($invalidFatChars) -ge 0) {
+            $problem = "name contains characters not allowed on FAT/exFAT"
+        } elseif ($dest.Length -gt 259) {
+            $problem = "destination path is too long (>259 chars)"
+        } else {
+            $key = $dest.ToLowerInvariant()
+            if ($seenDest.ContainsKey($key)) {
+                $problem = "duplicate destination name (collides with $($seenDest[$key]))"
+            } else {
+                $seenDest[$key] = $f.Name
+            }
+        }
+
         [pscustomobject]@{
             Source       = $f.FullName
             Destination  = $dest
             RelativePath = $rel
             SizeBytes    = $f.Length
+            Problem      = $problem
         }
     }
     $items = @($items)
-    $totalBytes = [int64]((($items | Measure-Object -Property SizeBytes -Sum).Sum) ?? 0)
+    $problemItems = @($items | Where-Object { $_.Problem })
+    $copyableItems = @($items | Where-Object { -not $_.Problem })
+    # Free-space requirement is based only on files that will actually be copied.
+    $totalBytes = [int64]((($copyableItems | Measure-Object -Property SizeBytes -Sum).Sum) ?? 0)
 
     # Best-effort free-space info so callers can warn before executing the copy.
     $freeBytes = $null
@@ -88,6 +113,9 @@ function New-PocketRomCopyPlan {
         Destination        = $destRoot
         Flatten            = (-not $PreserveStructure)
         FileCount          = $items.Count
+        CopyableCount      = $copyableItems.Count
+        ProblemCount       = $problemItems.Count
+        Problems           = @($problemItems | ForEach-Object { [pscustomobject]@{ Source = $_.Source; RelativePath = $_.RelativePath; Reason = $_.Problem } })
         TotalBytes         = $totalBytes
         DestinationFreeBytes = $freeBytes
         FitsInDestination  = $fits
