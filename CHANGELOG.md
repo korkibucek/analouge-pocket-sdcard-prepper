@@ -6,6 +6,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Added
+- **Supply-chain scanning** (closes #56): CI runs `npm audit --audit-level=high` on the
+  web test deps, and a Dependabot config keeps GitHub Actions and the npm dev deps patched.
 - MIT `LICENSE` (closes #16).
 - **openFPGA core installation** (closes #13): `manifests/cores.json` (+ schema) and
   `Get-PocketCoreManifest`, `Resolve-PocketCore`, `Test-PocketCoreZip`,
