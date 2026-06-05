@@ -42,6 +42,32 @@ rather than failing half-way and leaving a partly-written card. Free up space on
 card (or use a larger one) and retry. The ROM step also shows a pre-copy warning when a
 selection won't fit.
 
+## Core download fails / "rate limit"
+Core downloads come from the author's GitHub releases. GitHub's unauthenticated API allows
+~60 requests/hour; if you hit it you'll see a clear rate-limit message — wait an hour or set
+`GITHUB_TOKEN` to raise the limit. Offline/404 errors are reported plainly. You can always
+download a core zip from its homepage and install it via the offline option.
+
+## "Update all" found nothing / a core won't update
+Update detection compares the installed core's `core.json` version to its latest GitHub
+release. If a core wasn't installed by this tool (no `core.json`) or isn't in the manifest,
+it won't be checked. Reinstall the core to refresh it.
+
+## Backup/restore didn't copy anything
+Backup only copies the card's `Saves/` (and `Memories/` if you opt in). If those folders
+are empty there's nothing to back up. Restore skips files that already exist unless you
+choose overwrite.
+
+## The web page looks frozen during a download
+The local server is single-threaded; while it downloads firmware/a core (up to ~a minute)
+the page is intentionally unresponsive and shows a "please wait" message. Downloads have a
+timeout, so it won't hang forever. Use the CLI (`--cli`) for a fully headless flow.
+
+## Web UI won't load / "Could not reach the local server"
+Make sure you opened the URL the launcher printed (it's `127.0.0.1` only). The page carries
+the session token automatically. If you left it idle for an hour it auto-shut-down — re-run
+the launcher.
+
 ## Where are the logs?
 By default in `%TEMP%\PocketPrepLogs\pocketprep-<timestamp>.log`, and optionally copied
 to the SD card root at the end of a real run.

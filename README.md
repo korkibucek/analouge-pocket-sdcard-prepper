@@ -222,10 +222,13 @@ More in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 ## Known limitations
 
+Highlights (full list in [docs/KNOWN-LIMITATIONS.md](docs/KNOWN-LIMITATIONS.md)):
+
 - Core installation covers a curated set, not the full community inventory (extend via the manifest).
-- Live drive detection is Windows-only.
+- Live drive detection works on Windows/Linux/macOS but is hardware-verified via manual UAT, not CI.
 - Platform-ids may need per-core adjustment (see above).
-- No GUI in this version (CLI wizard only).
+- Neo Geo / arcade / CD systems are experimental (BIOS/romset handling not fully managed).
+- Windows builds aren't code-signed yet (expect SmartScreen/Unblock; see the first-run guide).
 
 ## Documentation
 
@@ -235,6 +238,10 @@ More in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 - [docs/manifests.md](docs/manifests.md) — editing firmware/system manifests
 - [docs/testing.md](docs/testing.md) — test mode and the Pester suite
 - [docs/UAT.md](docs/UAT.md) — real-device acceptance checklist (release gate)
+- [docs/RELEASE.md](docs/RELEASE.md) — release checklist + rollback
+- [docs/KNOWN-LIMITATIONS.md](docs/KNOWN-LIMITATIONS.md) — what it does not do / caveats
+- [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) — common problems
+- [docs/WINDOWS-FIRST-RUN.md](docs/WINDOWS-FIRST-RUN.md) — unblock/SmartScreen on Windows
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — contributing / dev setup
 - [docs/ROADMAP.md](docs/ROADMAP.md) — what's next
 
