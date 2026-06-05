@@ -137,6 +137,12 @@ function Install-PocketCore {
 
         $zip = [System.IO.Compression.ZipFile]::OpenRead($zipPath)
         try {
+            # Preflight: ensure the card has room for the extracted (uncompressed) payload.
+            $payloadBytes = [int64](($zip.Entries |
+                Where-Object { $allowedTop -contains (($_.FullName -replace '\\', '/') -split '/')[0] } |
+                Measure-Object -Property Length -Sum).Sum)
+            Assert-PocketFreeSpace -Root $rootFull -RequiredBytes $payloadBytes -Label "core $($Core.Identifier)"
+
             foreach ($entry in $zip.Entries) {
                 $rel = $entry.FullName -replace '\\', '/'
                 if ([string]::IsNullOrEmpty($rel)) { continue }

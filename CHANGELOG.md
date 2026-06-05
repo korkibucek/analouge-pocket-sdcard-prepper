@@ -78,6 +78,14 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   exposed only via the CLI `-CleanFirst` flag and intentionally **not** over the web API.
   Documented in docs/safety-model.md.
 
+- **Robust downloads** (closes #50): shared HTTP layer (`Invoke-PocketHttp`) with
+  timeouts, bounded retry on transient failures, and size caps; clear GitHub
+  rate-limit/offline errors + optional `GITHUB_TOKEN`.
+- **Free-space preflight** (closes #49): firmware, ROM, and core writes now check the
+  card has room first and refuse with a clear message instead of failing mid-write.
+  The ROM plan exposes `DestinationFreeBytes`/`FitsInDestination`; CLI and web UI warn
+  before copying. `Invoke-PocketRomCopyPlan -SkipSpaceCheck` overrides.
+
 ## [0.1.0] - 2026-06-02
 
 Initial MVP.

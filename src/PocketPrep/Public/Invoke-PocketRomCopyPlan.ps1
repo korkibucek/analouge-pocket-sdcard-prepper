@@ -31,10 +31,16 @@ function Invoke-PocketRomCopyPlan {
 
         [switch] $Overwrite,
 
+        [switch] $SkipSpaceCheck,
+
         [psobject] $Logger
     )
 
     process {
+        if (-not $DryRun -and $Plan.FileCount -gt 0 -and $Plan.Root) {
+            Assert-PocketFreeSpace -Root $Plan.Root -RequiredBytes ([int64]$Plan.TotalBytes) `
+                -Label "$($Plan.SystemId) ROMs" -Skip:$SkipSpaceCheck
+        }
         $log = { param($m, $lvl = 'INFO') if ($Logger) { Write-PocketLog -Logger $Logger -Message $m -Level $lvl | Out-Null } }
 
         $copied  = [System.Collections.Generic.List[string]]::new()

@@ -147,6 +147,10 @@ function Install-PocketFirmware {
             & $log 'No expected MD5 available; firmware not checksum-verified.' 'WARN'
         }
 
+        # Preflight: ensure the card has room for the firmware before placing it.
+        $fwBytes = (Get-Item -LiteralPath $sourceFile).Length
+        Assert-PocketFreeSpace -Root $Root -RequiredBytes $fwBytes -Label "firmware v$version"
+
         Copy-Item -LiteralPath $sourceFile -Destination $destination -Force
         & $log "Firmware placed at $destination" 'INFO'
 
