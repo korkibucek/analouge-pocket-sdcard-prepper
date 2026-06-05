@@ -92,6 +92,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 - **Installable packages** (closes #54): `.deb`/`.rpm` now declare PowerShell as a weak dependency (`Recommends`) instead of a hard one, so they install on stock distros where `pwsh` is not in the default repos; a postinst/posttrans message guides the user to install PowerShell 7 if missing.
 
+- **Wizard tests** (closes #55): the `Start-PocketPrep.ps1` CLI wizard is now tested end-to-end as a subprocess with scripted stdin against a fake SD root — happy path, real Game Boy ROM import, and the abort-on-decline branch for a non-empty card.
+
 ## [0.1.0] - 2026-06-02
 
 Initial MVP.
