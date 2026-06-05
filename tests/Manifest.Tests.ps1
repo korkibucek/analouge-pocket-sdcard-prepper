@@ -25,6 +25,12 @@ Describe 'Get-PocketSystem' {
         { Get-PocketSystem -Path $script:systemsPath -Id 'nope' } | Should -Throw
     }
 
+    It 'marks Neo Geo experimental and standard systems not' {
+        (Get-PocketSystem -Path $script:systemsPath -Id 'neogeo').Experimental | Should -BeTrue
+        (Get-PocketSystem -Path $script:systemsPath -Id 'gb').Experimental | Should -BeFalse
+        (Get-PocketSystem -Path $script:systemsPath -Id 'nes').Experimental | Should -BeFalse
+    }
+
     It 'rejects a manifest with duplicate ids' {
         $bad = Join-Path ([System.IO.Path]::GetTempPath()) ("sys_" + [System.IO.Path]::GetRandomFileName() + '.json')
         '{ "systems":[{"id":"gb","displayName":"a","platformId":"gb","supportedExtensions":[".gb"]},{"id":"gb","displayName":"b","platformId":"gb","supportedExtensions":[".gb"]}] }' | Set-Content $bad

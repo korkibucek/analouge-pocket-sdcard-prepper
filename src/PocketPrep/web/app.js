@@ -229,6 +229,7 @@ async function stepRoms() {
   try { systems = (await api('/api/systems')).systems || []; } catch (e) { panel('<h2>6. ROM import</h2>' + errLine(e.message)); }
   const rows = systems.map((s, i) => `
     <div class="card"><strong>${s.DisplayName}</strong> <span class="meta">[${s.Id}] ${s.SupportedExtensions.join(' ')}</span>
+      ${s.Experimental ? `<span class="tag fixed">experimental</span><p class="warnote">${s.Notes}</p>` : ''}
       <div class="row"><input type="text" id="src${i}" placeholder="source ROM folder">
         <label class="row"><input type="checkbox" id="rec${i}"> subfolders</label>
         <button data-i="${i}" data-act="plan" class="secondary">Count</button>
