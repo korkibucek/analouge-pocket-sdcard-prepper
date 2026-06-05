@@ -98,8 +98,12 @@ jobs:
           set -euo pipefail
           RPM=$(ls dist/*.rpm | head -1)
           echo "Built: $RPM"
-          rpm -qlp "$RPM" | grep -q '/usr/bin/pocketprep'
-          rpm -qpR "$RPM" | grep -qi powershell   # weak dep present
+          # Capture to files first: `cmd | grep -q` would SIGPIPE the producer (exit 141)
+          # under pipefail once grep matches and closes the pipe.
+          rpm -qlp "$RPM" > /tmp/rpm-files.txt
+          rpm -qpR "$RPM" > /tmp/rpm-reqs.txt
+          grep -q '/usr/bin/pocketprep' /tmp/rpm-files.txt
+          grep -qi powershell /tmp/rpm-reqs.txt   # weak dep present
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
