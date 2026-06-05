@@ -41,7 +41,12 @@ function Start-PocketPrepServer {
         [string] $FirmwareManifest,
         [string] $SystemsManifest,
         [string] $CoresManifest,
-        [scriptblock] $DriveProvider
+        [scriptblock] $DriveProvider,
+        # Auto-shutdown after this many seconds with no requests (0 = never). Closes a
+        # forgotten local server holding a privileged endpoint open.
+        [int] $IdleTimeoutSeconds = 3600,
+        # Log each request (method, path, status) to the console for troubleshooting.
+        [switch] $LogRequests
     )
 
     $moduleRoot = Split-Path -Parent $PSScriptRoot          # .../src/PocketPrep
@@ -82,12 +87,13 @@ function Start-PocketPrepServer {
     Write-Host "  (Press Ctrl+C to stop, or click Finish in the page.)"
 
     if (-not $NoBrowser) {
-        $openUrl = "$url`?token=$token"
+        # Open the bare URL: the served page already carries the session token (injected
+        # into index.html), so we avoid leaking the token via the URL / shell history.
         try {
-            if ($IsWindows)   { Start-Process $openUrl | Out-Null }
-            elseif ($IsMacOS) { & open $openUrl }
-            else              { & xdg-open $openUrl 2>$null }
-        } catch { Write-Host "  Open this URL in your browser: $openUrl" -ForegroundColor Yellow }
+            if ($IsWindows)   { Start-Process $url | Out-Null }
+            elseif ($IsMacOS) { & open $url }
+            else              { & xdg-open $url 2>$null }
+        } catch { Write-Host "  Open this URL in your browser: $url" -ForegroundColor Yellow }
     }
 
     $contentTypes = @{ '.html'='text/html; charset=utf-8'; '.js'='text/javascript'; '.css'='text/css'; '.json'='application/json' }
@@ -95,12 +101,25 @@ function Start-PocketPrepServer {
     try {
         $running = $true
         while ($running -and $listener.IsListening) {
-            $ctx = $listener.GetContext()
+            # Accept with an optional idle timeout so a forgotten server shuts itself down.
+            $ctxTask = $listener.GetContextAsync()
+            if ($IdleTimeoutSeconds -gt 0) {
+                if (-not $ctxTask.Wait([timespan]::FromSeconds($IdleTimeoutSeconds))) {
+                    Write-Host "Idle for ${IdleTimeoutSeconds}s with no requests - shutting down." -ForegroundColor Yellow
+                    break
+                }
+            } else {
+                $ctxTask.Wait()
+            }
+            $ctx = $ctxTask.Result
             $req = $ctx.Request
             $res = $ctx.Response
             try {
                 $path = $req.Url.AbsolutePath
                 if ($path -eq '/') { $path = '/index.html' }
+
+                # Quietly answer favicon requests so browsers don't log 404 noise.
+                if ($path -eq '/favicon.ico') { $res.StatusCode = 204; continue }
 
                 if ($path -like '/api/*') {
                     # Authorise.
@@ -139,6 +158,9 @@ function Start-PocketPrepServer {
             } catch {
                 try { Write-PocketServerJson $res 500 @{ error = "$($_.Exception.Message)" } } catch { $null = $_ }
             } finally {
+                if ($LogRequests) {
+                    Write-Host ("{0} {1} {2} -> {3}" -f (Get-Date -Format 'HH:mm:ss'), $req.HttpMethod, $req.Url.AbsolutePath, $res.StatusCode)
+                }
                 try { $res.OutputStream.Close() } catch { $null = $_ }
             }
         }
