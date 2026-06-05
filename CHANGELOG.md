@@ -9,6 +9,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 - **Refactor** (closes #71): extracted a shared `Copy-PocketTree` private helper used by `Backup-PocketSaves`/`Restore-PocketSaves` (removes duplicated recursive-copy logic); moved the `Write-PocketServerJson` helper into `Private/`. Behaviour unchanged.
 
 ### Added
+- **Performance characterization** (closes #66): documented a large-library benchmark (3,000 files / 375 MB: plan ~2.3 s, copy ~13 s, ~28 MB memory — I/O-bound, no pathological memory use) in docs/PERFORMANCE.md, with a re-run snippet and a note on progress feedback.
 - **Wizard `-CleanFirst` is now testable** (closes #79): the wizard accepts an advanced `-DriveDataPath` (JSON drive records) used as a drive provider for detection and `Clear-PocketCard`; a subprocess test now exercises the destructive CleanFirst dry-run preview + typed-token confirmation against an injected removable volume.
 - **Log retention** (closes #60): `New-PocketLogger` prunes old `pocketprep-*.log` files (keeps newest ~20, `-MaxKeep`); docs note the log location, that logs hold paths but no secrets, and are never uploaded.
 - **Browser baseline** (closes #68): a classic-syntax guard in the web page shows a clear "please use a modern browser" message (Chrome/Edge 80+, Firefox 74+, Safari 13.1+) instead of a blank page if the browser is too old or `app.js` fails to parse/bootstrap; documented in the README. jsdom test asserts the guard stands down on a supported browser.
@@ -134,6 +135,7 @@ Initial MVP.
 - **Refactor** (closes #71): extracted a shared `Copy-PocketTree` private helper used by `Backup-PocketSaves`/`Restore-PocketSaves` (removes duplicated recursive-copy logic); moved the `Write-PocketServerJson` helper into `Private/`. Behaviour unchanged.
 
 ### Added
+- **Performance characterization** (closes #66): documented a large-library benchmark (3,000 files / 375 MB: plan ~2.3 s, copy ~13 s, ~28 MB memory — I/O-bound, no pathological memory use) in docs/PERFORMANCE.md, with a re-run snippet and a note on progress feedback.
 - **Wizard `-CleanFirst` is now testable** (closes #79): the wizard accepts an advanced `-DriveDataPath` (JSON drive records) used as a drive provider for detection and `Clear-PocketCard`; a subprocess test now exercises the destructive CleanFirst dry-run preview + typed-token confirmation against an injected removable volume.
 - **Log retention** (closes #60): `New-PocketLogger` prunes old `pocketprep-*.log` files (keeps newest ~20, `-MaxKeep`); docs note the log location, that logs hold paths but no secrets, and are never uploaded.
 - **Browser baseline** (closes #68): a classic-syntax guard in the web page shows a clear "please use a modern browser" message (Chrome/Edge 80+, Firefox 74+, Safari 13.1+) instead of a blank page if the browser is too old or `app.js` fails to parse/bootstrap; documented in the README. jsdom test asserts the guard stands down on a supported browser.
