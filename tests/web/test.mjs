@@ -70,6 +70,8 @@ assert.ok(/no target/i.test(ctx.textContent), 'expected the context line to say 
 
 // 4. No uncaught error left the panel in the error state.
 assert.ok(!panel.querySelector('.error'), 'panel should not be in an error state');
+assert.ok(!panel.innerHTML.includes('needs a modern browser'), 'unsupported-browser guard should stand down on a supported browser');
+assert.strictEqual(dom.window.__pocketUp, true, 'app should mark itself up');
 
 // 5. Accessibility hooks: a polite live region exists and was populated; the panel is a
 //    focus target; and every radio/checkbox/text input has an associated <label>.

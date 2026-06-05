@@ -53,7 +53,8 @@ from folders you point it at. You are responsible for the legality of your ROMs.
 - **Windows 10/11, Linux (Ubuntu/Debian, Fedora/RHEL/AlmaLinux), or macOS.**
 - **PowerShell 7.2+** (`pwsh`). Install from <https://aka.ms/powershell> (Windows),
   your distro's package/Microsoft apt repo (Linux), or `brew install --cask powershell` (macOS).
-- A modern browser for the web UI (Chrome/Firefox/Edge/Safari).
+- A modern browser for the web UI: **Chrome/Edge 80+, Firefox 74+, or Safari 13.1+**
+  (older browsers get a clear "please update" message instead of a blank page).
 - **No Administrator/root rights needed** for the normal copy workflow. (Reading drive
   metadata and copying files to a removable card do not require elevation.)
 
