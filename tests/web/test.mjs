@@ -71,5 +71,16 @@ assert.ok(/no target/i.test(ctx.textContent), 'expected the context line to say 
 // 4. No uncaught error left the panel in the error state.
 assert.ok(!panel.querySelector('.error'), 'panel should not be in an error state');
 
-console.log(`OK: web UI bootstrapped, called [${[...new Set(calls)].join(', ')}], rendered the target step.`);
+// 5. Accessibility hooks: a polite live region exists and was populated; the panel is a
+//    focus target; and every radio/checkbox/text input has an associated <label>.
+const live = doc.getElementById('sr-status');
+assert.ok(live && live.getAttribute('aria-live') === 'polite', 'expected an aria-live status region');
+assert.ok((live.textContent || '').trim().length > 0, 'expected the live region to be announced on step render');
+assert.strictEqual(panel.getAttribute('tabindex'), '-1', 'panel should be focusable for step focus management');
+for (const input of doc.querySelectorAll('input[type=radio], input[type=checkbox], input[type=text]')) {
+  const hasLabel = (input.id && doc.querySelector(`label[for="${input.id}"]`)) || input.closest('label');
+  assert.ok(hasLabel, `form control #${input.id || input.outerHTML} must have an associated label`);
+}
+
+console.log(`OK: web UI bootstrapped, called [${[...new Set(calls)].join(', ')}], rendered the target step; a11y hooks present.`);
 process.exit(0);

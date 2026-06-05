@@ -10,14 +10,17 @@
   <header>
     <h1>Analogue Pocket SD Card Prepper</h1>
     <p class="warn">Local tool · copies files only · never formats or deletes your data · copies ROMs you already own · not affiliated with Analogue.</p>
-    <p id="ctx" class="ctx"></p>
+    <p id="ctx" class="ctx" role="status" aria-live="polite"></p>
   </header>
 
   <nav id="steps" aria-label="Steps"></nav>
 
   <main id="app">
-    <section id="panel" class="panel"><p>Connecting to the local server…</p></section>
+    <section id="panel" class="panel" tabindex="-1"><p>Connecting to the local server…</p></section>
   </main>
+
+  <!-- Screen-reader live region: concise step/status announcements. -->
+  <div id="sr-status" class="visually-hidden" role="status" aria-live="polite"></div>
 
   <footer>
     <button id="backBtn" class="secondary" hidden>← Back</button>

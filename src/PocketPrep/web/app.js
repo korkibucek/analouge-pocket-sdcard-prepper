@@ -14,7 +14,16 @@ async function api(path, method = 'GET', body) {
 }
 const fmtGB = (b) => (b ? (b / 1073741824).toFixed(1) + ' GB' : '—');
 const busy = (on) => { $('#busy').hidden = !on; };
-function panel(html) { $('#panel').innerHTML = html; }
+function announce(msg) { const el = $('#sr-status'); if (el) el.textContent = msg; }
+function panel(html) {
+  const p = $('#panel');
+  p.innerHTML = html;
+  // Move keyboard/screen-reader focus to the new step, and announce it (heading, or the
+  // panel text for error-only panels).
+  const h = p.querySelector('h2');
+  announce(h ? h.textContent : (p.textContent || '').trim().slice(0, 200));
+  try { p.focus({ preventScroll: false }); } catch { p.focus(); }
+}
 function errLine(msg) { return `<p class="error">${msg}</p>`; }
 // Clear, specific in-progress message so a long single-threaded operation can never
 // look silently hung (downloads also have a server-side timeout).
