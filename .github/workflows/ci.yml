@@ -10,7 +10,7 @@ jobs:
     name: Lint (PSScriptAnalyzer)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install PSScriptAnalyzer
         shell: pwsh
         run: Install-Module PSScriptAnalyzer -Force -Scope CurrentUser
@@ -25,7 +25,7 @@ jobs:
     name: Web UI test (jsdom)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -47,7 +47,7 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Pester 5
         shell: pwsh
