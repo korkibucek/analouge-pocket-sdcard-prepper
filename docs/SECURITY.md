@@ -29,7 +29,9 @@ DNS-rebinding — could call the API and drive file operations. Mitigations:
 | DNS-rebinding / Host spoofing | The `Host` header must be loopback; a foreign `Host` is rejected (**403**), and HttpListener itself only routes loopback Hosts. |
 | Cross-origin POSTs | If an `Origin` header is present it must be the loopback origin, else **403**. |
 | Path traversal on static files | Static paths are stripped of `..` and confined to the bundled `web/` folder. |
-| Information disclosure | Errors return a short message, never stack traces. No secrets are logged. |
+| Token leakage via URL | The browser is opened at the bare URL; the session token is only injected into the served page, not placed in the URL/query (so it can't leak via shell history or `Referer`). |
+| Forgotten server left open | The server **auto-shuts down after an idle timeout** (default 1 hour, `-IdleTimeoutSeconds`, 0 to disable). |
+| Information disclosure | Errors return a short message, never stack traces. No secrets are logged. Optional `-LogRequests` prints method/path/status (paths only, no secrets) for troubleshooting. |
 
 What it deliberately does **not** do:
 - No authentication beyond the local token (it is a single-user, local tool).

@@ -6,6 +6,10 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Added
+- **Web server hardening** (closes #59): the browser opens at the bare URL (token is only
+  injected into the page, never put in the URL); the server auto-shuts down after an idle
+  timeout (default 1h, `-IdleTimeoutSeconds`); optional `-LogRequests` access logging;
+  `/favicon.ico` returns 204 instead of 404.
 - **Packaging CI** (closes #61): CI builds the release zip + `.deb` and runs an install
   smoke (installs the `.deb`, checks `pocketprep` is on PATH and the module imports under
   `pwsh`), and builds the `.rpm` in a Fedora container — catching packaging regressions.
