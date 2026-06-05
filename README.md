@@ -234,6 +234,7 @@ More in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 - [docs/SECURITY.md](docs/SECURITY.md) — web server threat model + engine security
 - [docs/manifests.md](docs/manifests.md) — editing firmware/system manifests
 - [docs/testing.md](docs/testing.md) — test mode and the Pester suite
+- [docs/UAT.md](docs/UAT.md) — real-device acceptance checklist (release gate)
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — contributing / dev setup
 - [docs/ROADMAP.md](docs/ROADMAP.md) — what's next
 
