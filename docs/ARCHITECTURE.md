@@ -15,6 +15,23 @@ localhost-only, token-secured HTTP API). The API dispatcher and auth check are p
 functions (`Invoke-PocketApiRoute`, `Test-PocketApiRequest`), so the whole API is
 unit-tested without sockets. See [SECURITY.md](SECURITY.md).
 
+#### Web server concurrency model
+The web server processes requests on a **single thread** (`HttpListener.GetContext` in a
+loop). This is a deliberate choice for a **single-user, localhost** tool: it keeps the
+state model trivially safe (no locks around the file-writing engine) at the cost of not
+serving requests concurrently. The practical implication is that a long operation
+(firmware/core download, ~5–60 s) blocks other requests while it runs. This is mitigated:
+
+- All downloads have **timeouts and bounded retry** (`Invoke-PocketHttp`), so a request
+  can never hang forever.
+- The web UI shows a **clear, specific in-progress message** for every long operation, so
+  it cannot appear silently hung, and the triggering action is what the user is waiting on.
+
+True concurrency (async accept + a worker pool, or job-id + polling) is intentionally
+**deferred** — it would add shared-state synchronisation risk for marginal benefit on a
+single-user tool. Tracked as a P2 follow-up for if/when multi-client responsiveness
+matters. The CLI wizard (no server) is always available for fully headless use.
+
 ### Cross-platform
 The engine runs on Windows, Linux, and macOS (PowerShell 7). The only OS-specific code
 is drive enumeration, isolated in `Get-PocketRawDriveData`, which delegates to pure
