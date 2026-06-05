@@ -19,7 +19,22 @@ function Get-PocketLatestRelease {
         "https://api.github.com/repos/$Owner/$Repo/releases/latest"
     }
 
-    $rel = Invoke-RestMethod -Uri $relUrl -Headers @{ 'User-Agent' = 'PocketPrep' } -ErrorAction Stop
+    $headers = @{ 'User-Agent' = 'PocketPrep' }
+    # An optional token raises the GitHub API rate limit from 60 to 5000 requests/hour.
+    if ($env:GITHUB_TOKEN) { $headers['Authorization'] = "Bearer $($env:GITHUB_TOKEN)" }
+
+    try {
+        $rel = Invoke-PocketRest -Uri $relUrl -Headers $headers
+    } catch {
+        $msg = "$($_.Exception.Message)"
+        if ($msg -match '\b403\b|rate limit') {
+            throw "GitHub API rate limit reached while resolving $Owner/$Repo. Wait an hour, or set the GITHUB_TOKEN environment variable to raise the limit. ($msg)"
+        }
+        if ($msg -match '\b404\b|Not Found') {
+            throw "GitHub release not found for $Owner/$Repo$(if ($Tag) { " tag '$Tag'" }). ($msg)"
+        }
+        throw "Could not reach GitHub to resolve $Owner/$Repo release (offline or network error?): $msg"
+    }
     $asset = $rel.assets | Where-Object { $_.name -match '\.zip$' } | Select-Object -First 1
     $zipUrl = $null
     if ($asset) {

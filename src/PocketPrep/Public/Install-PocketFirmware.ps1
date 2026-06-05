@@ -125,7 +125,8 @@ function Install-PocketFirmware {
             $sourceFile = Join-Path $DownloadDirectory $fileName
 
             & $log "Downloading firmware v$version from $url" 'INFO'
-            Invoke-WebRequest -Uri $url -OutFile $sourceFile -MaximumRedirection 5 -ErrorAction Stop
+            $null = Invoke-PocketDownload -Uri $url -OutFile $sourceFile -ExpectedBytes $expectedSz `
+                -OnRetry { param($n, $d, $e) & $log "Firmware download attempt $n failed ($($e.Exception.Message)); retrying in ${d}s" 'WARN' }
         } else {
             if (-not (Test-Path -LiteralPath $LocalFile -PathType Leaf)) {
                 throw "Local firmware file not found: $LocalFile"

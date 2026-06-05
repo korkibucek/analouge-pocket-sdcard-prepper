@@ -83,7 +83,7 @@ function Install-PocketCore {
             $assetName = $rel.ZipName
 
             if ($DryRun) {
-                & $log "DRYRUN core: would download $($asset.name) ($resolvedVersion) and install to $Root" 'INFO'
+                & $log "DRYRUN core: would download $assetName ($resolvedVersion) and install to $Root" 'INFO'
                 return [pscustomobject]@{
                     PSTypeName = 'PocketPrep.CoreResult'; Mode = 'Download'
                     CoreId = $Core.Id; Identifier = $Core.Identifier; Version = $resolvedVersion
@@ -95,7 +95,8 @@ function Install-PocketCore {
             $cleanup = $true
             $zipPath = Join-Path $tmpDir $assetName
             & $log "Downloading core $($Core.Identifier) $resolvedVersion" 'INFO'
-            Invoke-WebRequest -Uri $assetUrl -OutFile $zipPath -MaximumRedirection 5 -ErrorAction Stop
+            $null = Invoke-PocketDownload -Uri $assetUrl -OutFile $zipPath -MaxBytes 1GB `
+                -OnRetry { param($n, $d, $e) & $log "Core download attempt $n failed ($($e.Exception.Message)); retrying in ${d}s" 'WARN' }
         } else {
             if (-not (Test-Path -LiteralPath $LocalZip -PathType Leaf)) {
                 throw "Local core zip not found: $LocalZip"
