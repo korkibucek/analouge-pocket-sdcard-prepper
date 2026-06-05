@@ -121,11 +121,13 @@ async function stepCard() {
 /* ---- Step 2: Firmware ---- */
 async function stepFirmware() {
   panel('<h2>3. Firmware</h2><p>Loading…</p>');
-  let rel;
-  try { rel = (await api('/api/firmware')).release; } catch (e) { panel('<h2>3. Firmware</h2>' + errLine(e.message) + '<button id="s">Skip →</button>'); $('#s').onclick = () => go(3); return; }
+  let rel, age;
+  try { const f = await api('/api/firmware'); rel = f.release; age = f.age; } catch (e) { panel('<h2>3. Firmware</h2>' + errLine(e.message) + '<button id="s">Skip →</button>'); $('#s').onclick = () => go(3); return; }
+  const stale = age && age.Stale ? `<p class="warnote">This firmware data is ${age.AgeDays} days old; a newer Pocket firmware may exist. Check <a href="https://www.analogue.co/support/pocket/firmware" target="_blank" rel="noopener">analogue.co</a> and install it via offline mode if newer.</p>` : '';
   panel(`
     <h2>3. Firmware</h2>
     <p>Latest: <strong>v${rel.version}</strong> (${rel.releaseDate}). It will be placed at the card root and verified by MD5.</p>
+    ${stale}
     <button id="dl">Download &amp; install</button>
     <div class="card"><label class="row">Or install a file you already downloaded:
       <input type="text" id="lf" placeholder="path to pocket_firmware_*.bin"></label>

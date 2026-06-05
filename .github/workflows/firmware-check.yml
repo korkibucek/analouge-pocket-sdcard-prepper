@@ -1,0 +1,48 @@
+name: Firmware freshness check
+
+# Monthly (and on-demand) check that the firmware manifest isn't behind the official
+# Analogue firmware page. Opens an issue when a newer version is published, so the
+# manifest can be refreshed (see docs/manifests.md). Never edits the manifest itself.
+
+on:
+  schedule:
+    - cron: '0 6 1 * *'   # 06:00 UTC on the 1st of each month
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare manifest to the official firmware page
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          MANIFEST_LATEST=$(jq -r .latest manifests/firmware.json)
+          PAGE=$(curl -fsSL https://www.analogue.co/support/pocket/firmware || true)
+          if [ -z "$PAGE" ]; then echo "Could not fetch firmware page; skipping."; exit 0; fi
+          SITE_LATEST=$(printf '%s' "$PAGE" \
+            | grep -oiE 'firmware/[0-9]+\.[0-9]+[A-Za-z]?' \
+            | sed -E 's#[Ff]irmware/##' \
+            | sort -V | tail -1 || true)
+          if [ -z "$SITE_LATEST" ]; then echo "Could not parse a version from the page; skipping."; exit 0; fi
+          echo "Manifest latest: $MANIFEST_LATEST | Site newest: $SITE_LATEST"
+          NEWEST=$(printf '%s\n%s\n' "$SITE_LATEST" "$MANIFEST_LATEST" | sort -V | tail -1)
+          if [ "$SITE_LATEST" != "$MANIFEST_LATEST" ] && [ "$NEWEST" = "$SITE_LATEST" ]; then
+            TITLE="Firmware manifest out of date (site: $SITE_LATEST, manifest: $MANIFEST_LATEST)"
+            EXISTING=$(gh issue list --state open --search "in:title Firmware manifest out of date" --json number -q 'length')
+            if [ "$EXISTING" = "0" ]; then
+              gh issue create --title "$TITLE" --label firmware \
+                --body "Automated check: the official firmware page lists **$SITE_LATEST** but \`manifests/firmware.json\` \`latest\` is **$MANIFEST_LATEST**.\n\nUpdate the manifest (version, releaseDate, url, fileName, md5, sizeBytes) per docs/manifests.md, then run \`scripts/Validate-Manifests.ps1\`. Source: https://www.analogue.co/support/pocket/firmware"
+              echo "Opened an issue."
+            else
+              echo "An out-of-date issue is already open; nothing to do."
+            fi
+          else
+            echo "Manifest is current."
+          fi

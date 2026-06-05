@@ -65,7 +65,8 @@ function Invoke-PocketApiRoute {
             '^GET /api/firmware$' {
                 $m = Get-PocketFirmwareManifest -Path $State.FirmwareManifest
                 $r = Resolve-PocketFirmwareRelease -Manifest $m
-                return @{ Status = 200; Body = @{ latest = $m.latest; release = $r } }
+                $age = Test-PocketFirmwareManifestAge -Manifest $m
+                return @{ Status = 200; Body = @{ latest = $m.latest; release = $r; age = $age } }
             }
             '^POST /api/firmware/install$' {
                 $m = Get-PocketFirmwareManifest -Path $State.FirmwareManifest

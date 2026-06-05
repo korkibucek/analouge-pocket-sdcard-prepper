@@ -94,6 +94,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 - **Wizard tests** (closes #55): the `Start-PocketPrep.ps1` CLI wizard is now tested end-to-end as a subprocess with scripted stdin against a fake SD root — happy path, real Game Boy ROM import, and the abort-on-decline branch for a non-empty card.
 
+- **Firmware staleness** (closes #72): `Test-PocketFirmwareManifestAge` flags a manifest whose newest release is older than ~9 months; the CLI and web UI warn the user to check the official page (and use offline mode) when stale. A scheduled CI workflow (`firmware-check.yml`) compares the manifest against the official firmware page monthly and opens an issue when Analogue ships a newer version.
+
 ## [0.1.0] - 2026-06-02
 
 Initial MVP.
