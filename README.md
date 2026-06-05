@@ -79,6 +79,10 @@ wizard** is also available with `--cli` (Linux/macOS) or `PocketPrep.cmd cli` (W
 Double-click **`PocketPrep.cmd`** — it starts the web UI in your browser. For the text
 wizard: `PocketPrep.cmd cli`.
 
+> **First time on Windows?** This build isn't code-signed yet, so Windows adds some
+> friction (PowerShell 7 install, "Unblock", possible SmartScreen prompt). The
+> step-by-step [Windows first-run guide](docs/WINDOWS-FIRST-RUN.md) walks through it.
+
 ### Linux / macOS
 ```bash
 ./scripts/pocketprep.sh                 # web UI (opens your browser)

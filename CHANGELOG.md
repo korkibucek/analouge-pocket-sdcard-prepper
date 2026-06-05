@@ -98,6 +98,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 - **Web UI progress for long operations** (closes #51): firmware/core downloads and the update-all sweep now show a clear, specific in-progress message so the single-threaded server can never appear silently hung; combined with the new download timeouts (#50) a request cannot hang forever. The single-threaded concurrency model and its rationale are documented in docs/ARCHITECTURE.md (true async deferred to #82).
 
+- **Windows first-run guide** (#53): docs/WINDOWS-FIRST-RUN.md walks non-technical users through PowerShell 7 install, unblocking files (Mark-of-the-Web), and the SmartScreen prompt, so the unsigned build is not a dead end. Actual code-signing tracked separately (needs a certificate).
+
 ## [0.1.0] - 2026-06-02
 
 Initial MVP.
