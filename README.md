@@ -95,7 +95,14 @@ Build a native package (output in `dist/`):
 bash scripts/Build-Deb.sh    # .deb for Debian/Ubuntu (needs dpkg-deb)
 bash scripts/Build-Rpm.sh    # .rpm for Fedora/RHEL/AlmaLinux (needs rpmbuild)
 ```
-Both install a `pocketprep` command and a desktop entry, and depend on `powershell`.
+Both install a `pocketprep` command and a desktop entry.
+
+> **PowerShell 7 prerequisite:** `pwsh` is the runtime but it is **not** in the default
+> Debian/Ubuntu/Fedora repositories, so the package declares it as a *weak* dependency
+> (`Recommends`) — the package installs cleanly even if `pwsh` is absent, and the
+> post-install message + the `pocketprep` launcher tell you how to install it. Install
+> PowerShell 7 first (or when prompted): Ubuntu/Debian via Microsoft's apt repo
+> (<https://learn.microsoft.com/powershell>), Fedora/RHEL `sudo dnf install -y powershell`.
 
 ### From source
 ```powershell

@@ -31,7 +31,9 @@ Summary:        Analogue Pocket SD Card Prepper
 License:        MIT
 URL:            https://github.com/korkibucek/analouge-pocket-sdcard-prepper
 BuildArch:      noarch
-Requires:       powershell
+# PowerShell 7 is not in the default Fedora/RHEL repos, so declare it as a weak
+# dependency (installs cleanly) and guide the user via %posttrans if it is missing.
+Recommends:     powershell
 Source0:        $NAME.tar.gz
 
 %description
@@ -48,6 +50,12 @@ cp -r src manifests scripts %{buildroot}/usr/lib/pocketprep/
 install -m 0644 pocketprep.desktop %{buildroot}/usr/share/applications/pocketprep.desktop
 printf '#!/usr/bin/env bash\nexec /usr/lib/pocketprep/scripts/pocketprep.sh "\$@"\n' > %{buildroot}/usr/bin/pocketprep
 chmod 0755 %{buildroot}/usr/bin/pocketprep %{buildroot}/usr/lib/pocketprep/scripts/pocketprep.sh
+
+%posttrans
+if ! command -v pwsh >/dev/null 2>&1; then
+    echo "pocketprep installed, but PowerShell 7 (pwsh) was not found."
+    echo "Install it: sudo dnf install -y powershell  (see https://learn.microsoft.com/powershell)"
+fi
 
 %files
 /usr/lib/pocketprep
