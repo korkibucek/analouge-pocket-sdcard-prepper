@@ -29,18 +29,29 @@ function Get-PocketRemovableDrive {
 
     $raw = if ($DataProvider) { & $DataProvider } else { Get-PocketRawDriveData }
 
+    $acceptableFs = $script:PocketDefaults.AcceptableFilesystems   # FAT32 / exFAT
     $drives = foreach ($r in $raw) {
+        $size = [int64]$r.SizeBytes
+        $fs   = [string]$r.FileSystem
+        $removable = [bool]$r.IsRemovable
+        # Many built-in/USB card readers present the card as a FIXED disk, so it's hidden
+        # by default. Flag a fixed volume that nonetheless looks like an SD card (a Pocket-
+        # compatible filesystem and a card-sized capacity) so the UI can guide the user to
+        # the advanced override instead of saying "no drives found".
+        $likelyCard = (-not $removable) -and ($size -gt 0 -and $size -le 2TB) -and
+                      ($acceptableFs -contains $fs.Trim().ToUpperInvariant())
         [pscustomobject]@{
             PSTypeName  = 'PocketPrep.Drive'
             DriveLetter = [string]$r.DriveLetter
             RootPath    = if ($r.PSObject.Properties['RootPath'] -and $r.RootPath) { [string]$r.RootPath } else { [string]$r.DriveLetter }
             Label       = [string]$r.Label
-            FileSystem  = [string]$r.FileSystem
-            SizeBytes   = [int64]$r.SizeBytes
+            FileSystem  = $fs
+            SizeBytes   = $size
             FreeBytes   = [int64]$r.FreeBytes
-            IsRemovable = [bool]$r.IsRemovable
+            IsRemovable = $removable
             BusType     = [string]$r.BusType
             MediaType   = [string]$r.MediaType
+            LikelyRemovableCard = [bool]$likelyCard
         }
     }
 

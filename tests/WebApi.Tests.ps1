@@ -30,6 +30,20 @@ Describe 'Invoke-PocketApiRoute' {
             Invoke-PocketApiRoute -Method GET -Path '/api/drives' -State $s }
         @($r.Body.drives).Count | Should -Be 1
     }
+    It 'GET /api/drives surfaces fixed likely-card candidates separately' {
+        $state = $script:state.Clone()
+        $state.DriveProvider = {
+            @(
+                [pscustomobject]@{ DriveLetter='C:'; RootPath='C:\'; Label='OS'; FileSystem='NTFS'; SizeBytes=1TB; FreeBytes=1GB; IsRemovable=$false; BusType='NVMe'; MediaType='' },
+                [pscustomobject]@{ DriveLetter='G:'; RootPath='G:\'; Label='CARD'; FileSystem='exFAT'; SizeBytes=64GB; FreeBytes=64GB; IsRemovable=$false; BusType='SATA'; MediaType='' }
+            )
+        }
+        $r = InModuleScope PocketPrep -Parameters @{ s = $state } { param($s)
+            Invoke-PocketApiRoute -Method GET -Path '/api/drives' -State $s }
+        @($r.Body.drives).Count | Should -Be 0           # neither is removable, IncludeFixed off
+        @($r.Body.candidates).Count | Should -Be 1       # the exFAT 64GB fixed disk
+        $r.Body.candidates[0].RootPath | Should -Be 'G:\'
+    }
     It 'GET /api/empty reports a fresh root empty' {
         $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
             Invoke-PocketApiRoute -Method GET -Path '/api/empty' -State $s }

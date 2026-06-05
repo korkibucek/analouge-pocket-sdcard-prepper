@@ -43,12 +43,16 @@ function Invoke-PocketApiRoute {
                 return @{ Status = 200; Body = @{ root = $State.Root; isTestMode = $false; ready = $true; verdict = $v } }
             }
             '^GET /api/drives$' {
-                $drives = if ($State.DriveProvider) {
-                    Get-PocketRemovableDrive -DataProvider $State.DriveProvider -IncludeFixed:([bool]$State.IncludeFixed)
+                $all = if ($State.DriveProvider) {
+                    Get-PocketRemovableDrive -DataProvider $State.DriveProvider -IncludeFixed
                 } else {
-                    Get-PocketRemovableDrive -IncludeFixed:([bool]$State.IncludeFixed)
+                    Get-PocketRemovableDrive -IncludeFixed
                 }
-                return @{ Status = 200; Body = @{ drives = @($drives) } }
+                $drives = if ($State.IncludeFixed) { @($all) } else { @($all | Where-Object IsRemovable) }
+                # Fixed volumes that look like an SD card (some readers report cards as
+                # fixed), so the UI can guide the user even when no removable drive is found.
+                $candidates = @($all | Where-Object { (-not $_.IsRemovable) -and $_.LikelyRemovableCard })
+                return @{ Status = 200; Body = @{ drives = @($drives); candidates = $candidates } }
             }
             '^POST /api/safety$' {
                 if (-not $Body.drive) { return @{ Status = 400; Body = @{ error = 'Missing drive.' } } }

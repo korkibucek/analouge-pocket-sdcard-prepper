@@ -1,11 +1,13 @@
 # Troubleshooting
 
 ## "No removable drives detected"
-Some USB card readers expose the card as a **fixed** disk. Options:
-- Try a different reader, or re-seat the card.
-- Re-run with `-AllowAdvancedOverride` and select carefully (the system drive is still
-  blocked). Verify the size/label match your card before proceeding.
-- Use `-TestMode` to work against a folder instead.
+Some USB / built-in card readers expose the card as a **fixed** disk. The tool now
+**detects this** and, when no removable drive is found, lists fixed drives that look like
+an SD card (a FAT32/exFAT, card-sized volume) and tells you to enable advanced mode:
+- CLI: re-run with `-AllowAdvancedOverride` and pick the highlighted drive (the system
+  drive is still blocked; verify the size/label match your card first).
+- Web UI: tick the **Advanced** checkbox and select the highlighted candidate.
+- Or try a different reader / re-seat the card, or use `-TestMode` to work against a folder.
 
 ## Filesystem reported "not acceptable"
 The Pocket needs **FAT32 or exFAT**. Format the card in Windows (File Explorer →
