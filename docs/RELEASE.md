@@ -21,9 +21,12 @@ are versioned, CI-verified, and (eventually) signed.
       `docs/WINDOWS-FIRST-RUN.md` in the release notes.
 
 ## Publish
-- [ ] Tag `vX.Y.Z` and push the tag.
-- [ ] Create a GitHub Release with the changelog section + the zip/.deb/.rpm + `SHA256SUMS`.
-- [ ] Smoke-install at least the `.deb` and the zip "run from source" path on a clean machine.
+- [ ] Tag `vX.Y.Z` and push the tag. **The `release` workflow then builds the zip/.deb/.rpm,
+      generates `SHA256SUMS`, and creates the GitHub Release automatically** (it first checks
+      the tag matches `ModuleVersion` and that manifests validate). You can also run it via
+      `workflow_dispatch` against an existing tag.
+- [ ] After it runs, smoke-install at least the `.deb` and the zip "run from source" path on a clean machine.
+- [ ] (When a signing cert exists, #84) sign the Windows artifacts and re-upload.
 
 ## Rollback
 - Previous releases remain on the Releases page; users reinstall the prior version's

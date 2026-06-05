@@ -1,0 +1,67 @@
+name: Release
+
+# Builds and publishes release artifacts when a version tag is pushed (vX.Y.Z).
+# Produces the run-from-source zip, the .deb, the .rpm, and SHA256SUMS, and attaches
+# them to a GitHub Release. See docs/RELEASE.md for the full checklist (incl. the
+# real-device UAT gate, which is a human step before tagging).
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to (re)build a release for, e.g. v0.1.0'
+        required: true
+
+permissions:
+  contents: write   # create the GitHub Release + upload assets
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Verify tag matches the module version
+        shell: pwsh
+        run: |
+          $ref = "${{ github.event.inputs.tag || github.ref_name }}"
+          $tagVer = $ref -replace '^v',''
+          $modVer = (Import-PowerShellDataFile ./src/PocketPrep/PocketPrep.psd1).ModuleVersion.ToString()
+          Write-Host "Tag version: $tagVer | Module version: $modVer"
+          if ($tagVer -ne $modVer) { throw "Tag ($tagVer) does not match ModuleVersion ($modVer). Bump the manifest before tagging (docs/RELEASE.md)." }
+
+      - name: Validate manifests
+        shell: pwsh
+        run: ./scripts/Validate-Manifests.ps1
+
+      - name: Build zip
+        shell: pwsh
+        run: ./scripts/Build-Release.ps1
+
+      - name: Build .deb
+        run: bash scripts/Build-Deb.sh
+
+      - name: Build .rpm (Fedora container)
+        run: |
+          docker run --rm -v "$PWD":/work -w /work fedora:latest bash -c "dnf install -y rpm-build >/dev/null && bash scripts/Build-Rpm.sh"
+
+      - name: Checksums
+        run: |
+          cd dist
+          sha256sum * > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          NOTES="Automated release for $TAG. See CHANGELOG.md."
+          NOTES="$NOTES"$'\n\n'"NOTE: Windows builds are not yet code-signed (see docs/WINDOWS-FIRST-RUN.md)."
+          gh release create "$TAG" dist/* --title "$TAG" --notes "$NOTES" --verify-tag || \
+          gh release upload "$TAG" dist/* --clobber
