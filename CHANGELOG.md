@@ -6,6 +6,9 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Added
+- **Packaging CI** (closes #61): CI builds the release zip + `.deb` and runs an install
+  smoke (installs the `.deb`, checks `pocketprep` is on PATH and the module imports under
+  `pwsh`), and builds the `.rpm` in a Fedora container — catching packaging regressions.
 - **Core download integrity** (closes #58): optional `tag` + `sha256` per core in
   `cores.json`; `Install-PocketCore` verifies the downloaded zip's SHA-256 when known and
   refuses on mismatch, and uses a pinned tag when set. (GitHub rate-limit/offline errors
