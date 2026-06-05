@@ -240,7 +240,8 @@ async function stepRoms() {
       if (act === 'plan') { const p = await api('/api/rom/plan', 'POST', body);
         const warn = p.PlatformProvided === false ? `<p class="warnote">No installed core provides platform "${systems[i].PlatformId}" yet — install the core (step 5) or these ROMs won't load.</p>` : '';
         const space = p.FitsInDestination === false ? `<p class="error">Not enough free space on the card (${(p.DestinationFreeBytes / 1048576).toFixed(1)} MB free) for ${(p.TotalBytes / 1048576).toFixed(1)} MB of ROMs.</p>` : '';
-        out.innerHTML = `<p>${p.FileCount} match (${(p.TotalBytes / 1048576).toFixed(1)} MB); ${p.SkippedNonMatching} other files ignored.</p>${space}${warn}`;
+        const probs = (p.ProblemCount > 0) ? `<p class="warnote">${p.ProblemCount} file(s) will be skipped (can't go on the card): ${p.Problems.slice(0, 5).map(x => `${x.RelativePath} (${x.Reason})`).join('; ')}${p.ProblemCount > 5 ? '…' : ''}</p>` : '';
+        out.innerHTML = `<p>${p.FileCount} match (${(p.TotalBytes / 1048576).toFixed(1)} MB); ${p.SkippedNonMatching} other files ignored.</p>${space}${probs}${warn}`;
       } else { const r = await api('/api/rom/copy', 'POST', body); S.roms = S.roms.filter(x => x.SystemId !== r.SystemId); S.roms.push(r);
         out.innerHTML = `<p class="ok">Copied ${r.CopiedCount}, skipped ${r.SkippedCount}, failed ${r.FailedCount}${r.DryRun ? ' [dry-run]' : ''}.</p>`;
       }

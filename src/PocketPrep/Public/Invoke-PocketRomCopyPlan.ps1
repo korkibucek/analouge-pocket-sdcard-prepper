@@ -45,13 +45,22 @@ function Invoke-PocketRomCopyPlan {
 
         $copied  = [System.Collections.Generic.List[string]]::new()
         $skipped = [System.Collections.Generic.List[string]]::new()
+        $skippedProblems = [System.Collections.Generic.List[object]]::new()
         $failed  = [System.Collections.Generic.List[object]]::new()
 
-        if (-not $DryRun -and $Plan.FileCount -gt 0) {
+        if (-not $DryRun -and ($Plan.CopyableCount ?? $Plan.FileCount) -gt 0) {
             New-Item -ItemType Directory -Path $Plan.Destination -Force | Out-Null
         }
 
         foreach ($item in $Plan.Items) {
+            # Skip problematic items (invalid FAT name, too-long path, duplicate
+            # destination) rather than fail mid-copy or silently overwrite.
+            if ($item.PSObject.Properties['Problem'] -and $item.Problem) {
+                $skippedProblems.Add([pscustomobject]@{ RelativePath = $item.RelativePath; Reason = $item.Problem })
+                & $log "SKIP (problem: $($item.Problem)) $($item.RelativePath)" 'WARN'
+                continue
+            }
+
             $exists = Test-Path -LiteralPath $item.Destination -PathType Leaf
             if ($exists -and -not $Overwrite) {
                 $skipped.Add($item.Destination)
@@ -93,9 +102,11 @@ function Invoke-PocketRomCopyPlan {
             DryRun        = [bool]$DryRun
             CopiedCount   = $copied.Count
             SkippedCount  = $skipped.Count
+            SkippedProblemCount = $skippedProblems.Count
             FailedCount   = $failed.Count
             Copied        = $copied.ToArray()
             Skipped       = $skipped.ToArray()
+            SkippedProblems = $skippedProblems.ToArray()
             Failed        = $failed.ToArray()
         }
     }

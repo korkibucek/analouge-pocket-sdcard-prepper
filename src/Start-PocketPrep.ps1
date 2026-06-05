@@ -254,6 +254,10 @@ foreach ($sys in $systems) {
     $recurse = Confirm-YesNo "  Search subfolders too?" $false
     $plan = New-PocketRomCopyPlan -System $sys -SourceFolder $src -Root $target.Root -Recurse:$recurse
     Write-Host "  Found $($plan.FileCount) matching file(s) ($([math]::Round($plan.TotalBytes/1MB,1)) MB). Skipping $($plan.SkippedNonMatching) non-matching."
+    if ($plan.ProblemCount -gt 0) {
+        Write-Host "  $($plan.ProblemCount) file(s) will be SKIPPED (cannot go on the card):" -ForegroundColor Yellow
+        $plan.Problems | Select-Object -First 8 | ForEach-Object { Write-Host "    - $($_.RelativePath): $($_.Reason)" -ForegroundColor Yellow }
+    }
     if (-not $plan.FitsInDestination) {
         Write-Host "  Not enough free space on the card for these ROMs ($([math]::Round($plan.DestinationFreeBytes/1MB,1)) MB free). They will not be copied." -ForegroundColor Red
         continue
