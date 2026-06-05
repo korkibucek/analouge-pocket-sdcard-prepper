@@ -71,9 +71,10 @@ Describe 'Install-PocketFirmware (offline placement)' {
         Remove-Item -LiteralPath $script:local -Force -ErrorAction SilentlyContinue
     }
 
-    It 'places a verified local firmware file at the root' {
+    It 'places a verified local firmware file at the root and verifies it on-card' {
         $r = Install-PocketFirmware -Root $script:root -LocalFile $script:local -ExpectedMd5 $script:md5
         $r.Md5Verified | Should -BeTrue
+        $r.OnCardVerified | Should -BeTrue
         (Test-Path $r.Destination) | Should -BeTrue
     }
 

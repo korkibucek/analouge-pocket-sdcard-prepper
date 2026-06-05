@@ -86,6 +86,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   The ROM plan exposes `DestinationFreeBytes`/`FitsInDestination`; CLI and web UI warn
   before copying. `Invoke-PocketRomCopyPlan -SkipSpaceCheck` overrides.
 
+- **Write verification + safe-eject** (closes #52): firmware is re-hashed ON THE CARD after writing (a corrupt/truncated copy now fails loudly with `OnCardVerified`); ROM copies are size-verified post-copy (truncation counts as failed); the summary tells the user to safely eject/unmount before removing the card.
+
 ## [0.1.0] - 2026-06-02
 
 Initial MVP.

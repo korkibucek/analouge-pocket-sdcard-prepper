@@ -103,6 +103,7 @@ function Install-PocketFirmware {
             FileName    = $fileName
             Destination = $destination
             Md5Verified = $false
+            OnCardVerified = $false
             DryRun      = $true
             Warnings    = $warnings.ToArray()
         }
@@ -154,15 +155,29 @@ function Install-PocketFirmware {
         Copy-Item -LiteralPath $sourceFile -Destination $destination -Force
         & $log "Firmware placed at $destination" 'INFO'
 
+        # Post-write verification: re-hash the file as it now sits ON THE CARD, so a
+        # truncated/corrupted copy (or a card pulled mid-write) is caught, not reported
+        # as success.
+        $onCardVerified = $false
+        if ($expectedMd5) {
+            $after = Test-PocketFirmwareFile -Path $destination -ExpectedMd5 $expectedMd5 -ExpectedSizeBytes $expectedSz
+            if (-not $after.Valid) {
+                throw "Firmware on the card failed verification after writing ($($after.Reasons -join ' ')). The card copy is corrupt - do not use it; re-run the install."
+            }
+            $onCardVerified = $true
+            & $log "Firmware verified on card: $($after.ActualMd5)" 'INFO'
+        }
+
         [pscustomobject]@{
-            PSTypeName  = 'PocketPrep.FirmwareResult'
-            Mode        = $PSCmdlet.ParameterSetName
-            Version     = $version
-            FileName    = $fileName
-            Destination = $destination
-            Md5Verified = $md5Verified
-            DryRun      = $false
-            Warnings    = $warnings.ToArray()
+            PSTypeName     = 'PocketPrep.FirmwareResult'
+            Mode           = $PSCmdlet.ParameterSetName
+            Version        = $version
+            FileName       = $fileName
+            Destination    = $destination
+            Md5Verified    = $md5Verified
+            OnCardVerified = $onCardVerified
+            DryRun         = $false
+            Warnings       = $warnings.ToArray()
         }
     } finally {
         if ($cleanupTemp -and $sourceFile -and (Test-Path -LiteralPath $sourceFile)) {
