@@ -74,6 +74,9 @@ function New-PocketInstallSummary {
         $lines.Add('ROMs: none imported')
     }
     $lines.Add('===================================================')
+    if (-not $Target.IsTestMode) {
+        $lines.Add('Safely eject / unmount the card before removing it, so all writes are flushed.')
+    }
 
     $summary = [pscustomobject]@{
         PSTypeName     = 'PocketPrep.InstallSummary'

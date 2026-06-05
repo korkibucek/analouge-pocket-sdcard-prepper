@@ -77,6 +77,18 @@ Describe 'Invoke-PocketRomCopyPlan' {
         $r2.CopiedCount | Should -Be 0
     }
 
+    It 'flags a truncated copy as failed (post-copy size verification)' {
+        $plan = $script:plan
+        $res = InModuleScope PocketPrep -Parameters @{ plan = $plan } {
+            param($plan)
+            # Simulate a copy that writes a wrong-sized (truncated) file on the card.
+            Mock Copy-Item { 'x' | Set-Content -LiteralPath $Destination -NoNewline }
+            Invoke-PocketRomCopyPlan -Plan $plan
+        }
+        $res.FailedCount | Should -Be 2
+        $res.CopiedCount | Should -Be 0
+    }
+
     It 'returns exactly one result object even with a -Logger (no log-line pollution)' {
         $logPath = Join-Path ([System.IO.Path]::GetTempPath()) ("pp_rl_" + [System.IO.Path]::GetRandomFileName() + '.log')
         $logger = New-PocketLogger -Path $logPath

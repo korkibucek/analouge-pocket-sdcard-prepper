@@ -71,6 +71,13 @@ function Invoke-PocketRomCopyPlan {
                     New-Item -ItemType Directory -Path $destDir -Force | Out-Null
                 }
                 Copy-Item -LiteralPath $item.Source -Destination $item.Destination -Force:$Overwrite
+                # Verify the copy landed at the right size (catches truncation / a card
+                # pulled mid-write) before reporting success.
+                $srcLen = (Get-Item -LiteralPath $item.Source).Length
+                $dstLen = (Get-Item -LiteralPath $item.Destination -ErrorAction SilentlyContinue).Length
+                if ($dstLen -ne $srcLen) {
+                    throw "size mismatch after copy (expected $srcLen bytes, got $dstLen)"
+                }
                 $copied.Add($item.Destination)
                 & $log "COPIED $($item.RelativePath)" 'INFO'
             } catch {
