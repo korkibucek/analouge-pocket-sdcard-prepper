@@ -38,16 +38,23 @@ function go(step) { S.step = step; renderNav(); RENDER[step](); }
 /* ---- Step 0: Target ---- */
 async function stepTarget() {
   panel('<h2>1. Choose the SD card</h2><p>Loading drives…</p>');
-  let drives = [];
-  try { drives = (await api('/api/drives')).drives || []; } catch (e) { /* ignore */ }
-  const rows = drives.map((d, i) => `
+  let drives = [], candidates = [];
+  try { const d = await api('/api/drives'); drives = d.drives || []; candidates = d.candidates || []; } catch (e) { /* ignore */ }
+  const hint = (drives.length === 0 && candidates.length > 0)
+    ? `<p class="warnote">No removable drives found, but these fixed drives look like they could be your SD card (some readers report cards as fixed): ${candidates.map(c => `${c.RootPath} (${c.FileSystem}, ${(c.SizeBytes / 1073741824).toFixed(0)} GB)`).join('; ')}. Tick "advanced" below to select one.</p>`
+    : '';
+  // Selectable list = removable drives + likely-card fixed candidates (the latter need
+  // the advanced override to actually be used).
+  const listDrives = drives.concat(candidates.filter(c => !drives.some(d => d.RootPath === c.RootPath)));
+  const rows = listDrives.map((d, i) => `
     <li><input type="radio" name="drv" id="drv${i}" value="${i}">
       <label for="drv${i}"><strong>${d.RootPath || d.DriveLetter}</strong>
       <span class="meta">${d.Label || '(no label)'} · ${d.FileSystem || '?'} · ${fmtGB(d.SizeBytes)} (${fmtGB(d.FreeBytes)} free)</span>
       <span class="tag ${d.IsRemovable ? 'rm' : 'fixed'}">${d.IsRemovable ? 'removable' : 'FIXED'}</span></label></li>`).join('');
   panel(`
     <h2>1. Choose the SD card</h2>
-    ${drives.length ? `<ul class="list">${rows}</ul>` : '<p class="warnote">No removable drives detected.</p>'}
+    ${hint}
+    ${listDrives.length ? `<ul class="list">${rows}</ul>` : '<p class="warnote">No removable drives detected.</p>'}
     <label class="row"><input type="checkbox" id="adv"> Advanced: allow a non-removable drive (the system disk is never allowed)</label>
     <div class="card">
       <label class="row"><input type="checkbox" id="tm"> Use a test folder instead of a real card</label>
@@ -55,7 +62,7 @@ async function stepTarget() {
     </div>
     <div id="terr"></div>
     <button id="useBtn">Use this target →</button>`);
-  window.__drives = drives;
+  window.__drives = listDrives;
   $('#useBtn').onclick = onUseTarget;
 }
 async function onUseTarget() {

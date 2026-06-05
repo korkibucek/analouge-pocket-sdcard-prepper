@@ -6,6 +6,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Added
+- **Detection edge cases** (closes #63): drives now carry a `LikelyRemovableCard` flag — a fixed, card-sized FAT32/exFAT volume (common with built-in readers that report cards as fixed). When no removable drive is found, the CLI and web UI surface these candidates and guide the user to advanced mode; RAW/unformatted volumes are listed gracefully (not assumed to be cards, no throw).
 - **Web server hardening** (closes #59): the browser opens at the bare URL (token is only
   injected into the page, never put in the URL); the server auto-shuts down after an idle
   timeout (default 1h, `-IdleTimeoutSeconds`); optional `-LogRequests` access logging;
@@ -118,6 +119,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Initial MVP.
 
 ### Added
+- **Detection edge cases** (closes #63): drives now carry a `LikelyRemovableCard` flag — a fixed, card-sized FAT32/exFAT volume (common with built-in readers that report cards as fixed). When no removable drive is found, the CLI and web UI surface these candidates and guide the user to advanced mode; RAW/unformatted volumes are listed gracefully (not assumed to be cards, no throw).
 - `PocketPrep` PowerShell 7 engine module with layered, unit-testable functions:
   - Safe removable-drive detection (`Get-PocketRemovableDrive`) behind a provider
     abstraction so tests inject fake drive data.

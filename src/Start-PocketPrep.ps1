@@ -82,6 +82,15 @@ if ($TestMode) {
     $drives = Get-PocketRemovableDrive -IncludeFixed:$AllowAdvancedOverride
     if (-not $drives -or $drives.Count -eq 0) {
         Write-Host "No removable drives detected. Insert an SD card, or run with -TestMode." -ForegroundColor Red
+        # Many built-in card readers present the card as a fixed disk. Point the user at it.
+        if (-not $AllowAdvancedOverride) {
+            $candidates = @(Get-PocketRemovableDrive -IncludeFixed | Where-Object LikelyRemovableCard)
+            if ($candidates.Count -gt 0) {
+                Write-Host "These fixed drives look like they could be your SD card (some readers report cards as fixed):" -ForegroundColor Yellow
+                $candidates | ForEach-Object { Write-Host ("  {0}  '{1}'  {2}  {3} GB" -f $_.RootPath, $_.Label, $_.FileSystem, [math]::Round($_.SizeBytes/1GB,1)) -ForegroundColor Yellow }
+                Write-Host "If one of these is your card, re-run with -AllowAdvancedOverride to select it." -ForegroundColor Yellow
+            }
+        }
         return
     }
     Write-Host "Detected drives:"
