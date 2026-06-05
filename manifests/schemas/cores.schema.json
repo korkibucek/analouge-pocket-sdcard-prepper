@@ -17,6 +17,8 @@
           "platformIds": { "type": "array", "minItems": 1, "items": { "type": "string" } },
           "owner": { "type": "string", "description": "GitHub owner used to resolve the release zip." },
           "repo": { "type": "string", "description": "GitHub repository name." },
+          "tag": { "type": "string", "description": "Optional: pin a specific release tag instead of latest." },
+          "sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$", "description": "Optional: expected SHA-256 of the release zip (pin a tag too)." },
           "homepage": { "type": "string" },
           "biosRequired": { "type": "boolean" },
           "biosFiles": { "type": "array", "items": { "type": "string" } },

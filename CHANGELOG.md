@@ -6,6 +6,10 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Added
+- **Core download integrity** (closes #58): optional `tag` + `sha256` per core in
+  `cores.json`; `Install-PocketCore` verifies the downloaded zip's SHA-256 when known and
+  refuses on mismatch, and uses a pinned tag when set. (GitHub rate-limit/offline errors
+  were already made clear in #50.)
 - **Supply-chain scanning** (closes #56): CI runs `npm audit --audit-level=high` on the
   web test deps, and a Dependabot config keeps GitHub Actions and the npm dev deps patched.
 - MIT `LICENSE` (closes #16).

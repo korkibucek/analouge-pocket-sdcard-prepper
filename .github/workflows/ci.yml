@@ -32,6 +32,9 @@ jobs:
       - name: Install web test deps
         working-directory: tests/web
         run: npm ci || npm install
+      - name: Audit web dev dependencies
+        working-directory: tests/web
+        run: npm audit --audit-level=high
       - name: Run web UI test
         working-directory: tests/web
         run: npm test

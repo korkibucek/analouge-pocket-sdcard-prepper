@@ -127,7 +127,13 @@ Sources:
 | `identifier` | `Author.CoreName`; the installer expects `Cores/<identifier>/` inside the zip. |
 | `owner`/`repo` | GitHub coordinates. Download mode resolves the **latest release** (or a given `-Tag`) and picks its `.zip` asset via the GitHub API. We deliberately do **not** hardcode per-release asset URLs. |
 | `homepage` | Where a user can download the zip themselves for offline install. |
+| `tag` | *Optional.* Pin a specific release tag instead of resolving the latest. |
+| `sha256` | *Optional.* Expected SHA-256 of the release zip; verified after download and refused on mismatch. Only meaningful with a pinned `tag` (otherwise the hash changes when a new release ships). GitHub does not publish core checksums, so this is opt-in. |
 | `biosRequired`/`biosFiles` | Informational; BIOS is never installed automatically. |
+
+> Network errors are handled clearly: GitHub API **rate limits** (HTTP 403) suggest
+> setting `GITHUB_TOKEN`, 404s and offline errors are reported plainly, and downloads
+> retry transient failures with a timeout (see `Invoke-PocketHttp`).
 
 Adding a core: find its `identifier` and GitHub `owner`/`repo` in the
 [openFPGA Cores Inventory](https://github.com/joshcampbell191/openfpga-cores-inventory),

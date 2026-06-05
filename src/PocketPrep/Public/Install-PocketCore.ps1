@@ -58,6 +58,8 @@ function Install-PocketCore {
         [Parameter(ParameterSetName = 'Download')]
         [string] $Tag,
 
+        [string] $ExpectedSha256,
+
         [switch] $Overwrite,
         [switch] $DryRun,
         [psobject] $Logger
@@ -75,8 +77,9 @@ function Install-PocketCore {
     $resolvedVersion = $null
     try {
         if ($PSCmdlet.ParameterSetName -eq 'Download') {
-            & $log "Resolving core release for $($Core.Owner)/$($Core.Repo)" 'INFO'
-            $rel = Get-PocketLatestRelease -Owner $Core.Owner -Repo $Core.Repo -Tag $Tag
+            $effectiveTag = if ($Tag) { $Tag } elseif ($Core.PSObject.Properties['Tag'] -and $Core.Tag) { [string]$Core.Tag } else { $null }
+            & $log "Resolving core release for $($Core.Owner)/$($Core.Repo)$(if ($effectiveTag) { " tag $effectiveTag" })" 'INFO'
+            $rel = Get-PocketLatestRelease -Owner $Core.Owner -Repo $Core.Repo -Tag $effectiveTag
             $resolvedVersion = $rel.Version
             if (-not $rel.ZipUrl) { throw "No .zip asset found in release '$resolvedVersion' for $($Core.Owner)/$($Core.Repo)." }
             $assetUrl  = $rel.ZipUrl
@@ -102,6 +105,18 @@ function Install-PocketCore {
                 throw "Local core zip not found: $LocalZip"
             }
             $zipPath = (Resolve-Path -LiteralPath $LocalZip).Path
+        }
+
+        # Optional integrity check: GitHub releases publish no checksums, so this only
+        # runs when a SHA-256 is supplied (via -ExpectedSha256 or a pinned core manifest
+        # entry's Sha256). Verifies BEFORE touching the card.
+        $expectedSha = if ($ExpectedSha256) { $ExpectedSha256 } elseif ($Core -and $Core.PSObject.Properties['Sha256'] -and $Core.Sha256) { [string]$Core.Sha256 } else { $null }
+        if ($expectedSha) {
+            $actualSha = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash
+            if ($actualSha -ine $expectedSha.Trim()) {
+                throw "Core zip SHA-256 mismatch (expected $($expectedSha.ToLowerInvariant()), got $($actualSha.ToLowerInvariant())); refusing to install."
+            }
+            & $log "Core zip SHA-256 verified: $($actualSha.ToLowerInvariant())" 'INFO'
         }
 
         # Validate the zip structure (and traversal safety) before touching the card.
