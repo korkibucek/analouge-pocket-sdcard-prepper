@@ -92,6 +92,17 @@ Describe 'Install-PocketCore (offline)' {
         Remove-Item $script:zip -Force -ErrorAction SilentlyContinue
     }
 
+    It 'verifies a matching SHA-256 and refuses a mismatching one' {
+        $sha = (Get-FileHash -LiteralPath $script:zip -Algorithm SHA256).Hash
+        $ok = Install-PocketCore -Root $script:root -LocalZip $script:zip -Core $script:core -ExpectedSha256 $sha
+        $ok.PlacedCount | Should -BeGreaterThan 0
+        $root2 = Join-Path ([System.IO.Path]::GetTempPath()) ("pp_core2_" + [System.IO.Path]::GetRandomFileName())
+        New-Item -ItemType Directory -Path $root2 -Force | Out-Null
+        { Install-PocketCore -Root $root2 -LocalZip $script:zip -Core $script:core -ExpectedSha256 ('0' * 64) } | Should -Throw -ExpectedMessage '*SHA-256 mismatch*'
+        (Test-Path (Join-Path $root2 'Cores')) | Should -BeFalse
+        Remove-Item $root2 -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
     It 'extracts only openFPGA folders onto the root' {
         $r = Install-PocketCore -Root $script:root -LocalZip $script:zip -Core $script:core
         $r.PlacedCount | Should -BeGreaterThan 0

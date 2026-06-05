@@ -1,0 +1,18 @@
+version: 2
+updates:
+  # Keep GitHub Actions pinned-version references current (and patched).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - infra
+
+  # Dev-only web UI test dependencies (jsdom).
+  - package-ecosystem: npm
+    directory: /tests/web
+    schedule:
+      interval: weekly
+    labels:
+      - infra
+      - web

@@ -26,6 +26,8 @@ function Resolve-PocketCore {
             PlatformIds  = @($c.platformIds)
             Owner        = $c.owner
             Repo         = $c.repo
+            Tag          = [string]$c.tag
+            Sha256       = [string]$c.sha256
             Homepage     = [string]$c.homepage
             BiosRequired = [bool]$c.biosRequired
             BiosFiles    = @($c.biosFiles)
