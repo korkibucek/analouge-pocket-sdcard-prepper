@@ -1,15 +1,25 @@
 // Headless test for the web UI (app.js) using jsdom + a stubbed fetch.
 // Verifies the wizard bootstraps, talks to the API, and renders without errors.
 // Dev-only: run `npm install` then `npm test` in this folder. Not a runtime dep.
+//
+// Note: we evaluate app.js directly in the jsdom window rather than relying on jsdom's
+// ResourceLoader to fetch /app.js — that keeps the test working across jsdom versions
+// (ResourceLoader was removed in jsdom 27+).
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import assert from 'node:assert';
-import { JSDOM, ResourceLoader } from 'jsdom';
+import jsdomPkg from 'jsdom';
+const { JSDOM } = jsdomPkg;
 
 const here = dirname(fileURLToPath(import.meta.url));
 const webDir = join(here, '..', '..', 'src', 'PocketPrep', 'web');
-const html = readFileSync(join(webDir, 'index.html'), 'utf8').replace('__POCKETPREP_TOKEN__', 'TESTTOKEN');
+
+// Load index.html, inject the test token, and strip the external asset references
+// (we run app.js manually below; style.css is irrelevant to the logic test).
+let html = readFileSync(join(webDir, 'index.html'), 'utf8').replace('__POCKETPREP_TOKEN__', 'TESTTOKEN');
+html = html.replace('<script src="/app.js"></script>', '')
+           .replace('<link rel="stylesheet" href="/style.css" />', '');
 
 // Canned API responses for whatever app.js requests.
 const API = {
@@ -19,37 +29,26 @@ const API = {
   ] },
 };
 
-let calls = [];
-function makeFetch(win) {
-  return (url, opts = {}) => {
-    calls.push(url);
-    const path = url.split('?')[0];
-    const body = API[path] ?? {};
-    return Promise.resolve({
-      ok: true, status: 200,
-      json: () => Promise.resolve(body),
-    });
-  };
-}
-
-// Serve /app.js and /style.css from disk; ignore other resource requests.
-class LocalLoader extends ResourceLoader {
-  fetch(url, options) {
-    const m = url.match(/\/(app\.js|style\.css)$/);
-    if (m) return Promise.resolve(Buffer.from(readFileSync(join(webDir, m[1]))));
-    return null;
-  }
+const calls = [];
+function stubFetch(url) {
+  calls.push(url);
+  const path = String(url).split('?')[0];
+  const body = API[path] ?? {};
+  return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(body) });
 }
 
 const dom = new JSDOM(html, {
   runScripts: 'dangerously',
-  resources: new LocalLoader(),
   url: 'http://127.0.0.1:8770/',
   beforeParse(win) {
-    win.fetch = makeFetch(win);
+    win.fetch = stubFetch;
     win.POCKETPREP_TOKEN = 'TESTTOKEN';
   },
 });
+
+// Run the real app.js in the window's global scope (no resource loader needed).
+const appJs = readFileSync(join(webDir, 'app.js'), 'utf8');
+dom.window.eval(appJs);
 
 // Wait for async bootstrap + first step render.
 await new Promise((r) => setTimeout(r, 400));
@@ -57,8 +56,6 @@ await new Promise((r) => setTimeout(r, 400));
 const doc = dom.window.document;
 const panel = doc.getElementById('panel');
 const ctx = doc.getElementById('ctx');
-
-function fail(msg) { console.error('FAIL: ' + msg); process.exit(1); }
 
 // 1. The token-authenticated API was actually called.
 assert.ok(calls.includes('/api/health'), 'expected /api/health to be called');
