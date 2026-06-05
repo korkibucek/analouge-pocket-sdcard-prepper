@@ -38,6 +38,10 @@ pwsh ./scripts/Build-Release.ps1      # produce dist/ zip
 `feat: …`, `fix: …`, `docs: …`, `test: …`. Link issues in PRs and close them only
 when acceptance criteria are met.
 
+`main` is **branch-protected**: a PR cannot merge until all CI checks pass — lint,
+manifest validation (in the lint job), the web UI (jsdom) test, Pester on
+Windows/Linux/macOS, and the `.deb`/`.rpm` packaging jobs. Don't merge red.
+
 ## Backlog
 
 GitHub Issues is the canonical backlog. Don't bury discovered work in comments —
