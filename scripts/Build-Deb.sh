@@ -26,21 +26,42 @@ exec /usr/lib/pocketprep/scripts/pocketprep.sh "$@"
 EOF
 chmod 0755 "$PKG/usr/bin/pocketprep" "$APP/scripts/pocketprep.sh"
 
+# NOTE: PowerShell 7 (pwsh) is the runtime, but it is NOT in the default Debian/Ubuntu
+# repositories, so a hard `Depends: powershell` would make this package un-installable on
+# a stock system. We therefore declare it as a weak `Recommends`, install cleanly, and let
+# the launcher + the postinst message guide the user to install pwsh if it is missing.
 cat > "$PKG/DEBIAN/control" <<EOF
 Package: pocketprep
 Version: $VERSION
 Section: utils
 Priority: optional
 Architecture: all
-Depends: powershell
+Recommends: powershell
 Maintainer: korkibucek <robert@morgan.vg>
 Homepage: https://github.com/korkibucek/analouge-pocket-sdcard-prepper
 Description: Analogue Pocket SD Card Prepper
  Prepare an SD card for an Analogue Pocket before it arrives: install firmware,
  create the openFPGA folder structure, optionally install cores, and copy your
  own ROMs. Copies files only; never formats or deletes. Provides a local web UI
- and a CLI wizard. Not affiliated with Analogue.
+ and a CLI wizard. Requires PowerShell 7 (pwsh); see /usr/share/doc/pocketprep.
+ Not affiliated with Analogue.
 EOF
+
+# postinst: warn (do not fail) if PowerShell 7 is not present.
+cat > "$PKG/DEBIAN/postinst" <<'EOF'
+#!/bin/sh
+set -e
+if ! command -v pwsh >/dev/null 2>&1; then
+    echo "----------------------------------------------------------------------"
+    echo "pocketprep installed, but PowerShell 7 (pwsh) was not found."
+    echo "Install it, then run 'pocketprep':"
+    echo "  Ubuntu/Debian: see https://learn.microsoft.com/powershell (Microsoft apt repo)"
+    echo "  Fedora/RHEL:   sudo dnf install -y powershell"
+    echo "----------------------------------------------------------------------"
+fi
+exit 0
+EOF
+chmod 0755 "$PKG/DEBIAN/postinst"
 
 mkdir -p "$OUT"
 DEB="$OUT/pocketprep_${VERSION}_all.deb"

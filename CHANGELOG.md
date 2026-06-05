@@ -90,6 +90,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 - **Windows detection coverage** (closes #48): extracted the removable-classification into a pure, unit-tested `ConvertTo-PocketWindowsDriveRecord`; added a Windows-runner integration test that executes the real CIM detection path and asserts shape/no-throw. Locked/RAW volumes fall back gracefully.
 
+- **Installable packages** (closes #54): `.deb`/`.rpm` now declare PowerShell as a weak dependency (`Recommends`) instead of a hard one, so they install on stock distros where `pwsh` is not in the default repos; a postinst/posttrans message guides the user to install PowerShell 7 if missing.
+
 ## [0.1.0] - 2026-06-02
 
 Initial MVP.
