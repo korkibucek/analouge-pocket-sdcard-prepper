@@ -22,11 +22,39 @@ function Get-PocketRawDriveData {
     }
 }
 
+# Pure classifier: turns Windows volume/disk facts into a normalised drive record.
+# Kept separate from the CIM calls so the removable logic is unit-testable on any OS.
+function ConvertTo-PocketWindowsDriveRecord {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] [string] $DriveLetter,
+        [string] $Label,
+        [string] $FileSystem,
+        [int64]  $Size,
+        [int64]  $SizeRemaining,
+        [string] $BusType,
+        [string] $MediaType,
+        [string] $DriveType
+    )
+    $isRemovable = ($BusType -in @('USB', 'SD', 'MMC')) -or ($DriveType -eq 'Removable')
+    [pscustomobject]@{
+        DriveLetter = "${DriveLetter}:"
+        RootPath    = "${DriveLetter}:\"
+        Label       = $Label
+        FileSystem  = $FileSystem
+        SizeBytes   = $Size
+        FreeBytes   = $SizeRemaining
+        IsRemovable = [bool]$isRemovable
+        BusType     = $BusType
+        MediaType   = $MediaType
+    }
+}
+
 function Get-PocketRawDriveDataWindows {
     $results = [System.Collections.Generic.List[object]]::new()
     $volumes = Get-Volume | Where-Object { $_.DriveLetter }
     foreach ($vol in $volumes) {
-        $busType = $null; $mediaType = $null; $isRemovable = $false
+        $busType = $null; $mediaType = $null
         try {
             $partition = Get-Partition -DriveLetter $vol.DriveLetter -ErrorAction Stop | Select-Object -First 1
             $disk      = $partition | Get-Disk -ErrorAction Stop
@@ -34,21 +62,15 @@ function Get-PocketRawDriveDataWindows {
             $physical  = Get-PhysicalDisk -ErrorAction SilentlyContinue |
                 Where-Object { $_.DeviceId -eq $disk.Number } | Select-Object -First 1
             if ($physical) { $mediaType = $physical.MediaType }
-            $isRemovable = ($busType -in @('USB', 'SD', 'MMC')) -or ($vol.DriveType -eq 'Removable')
         } catch {
-            $isRemovable = ($vol.DriveType -eq 'Removable')
+            # Locked/RAW/unusual volumes can throw on the disk lookup; fall back to the
+            # volume's own DriveType for the removable decision.
+            $busType = $null
         }
-        $results.Add([pscustomobject]@{
-            DriveLetter = "$($vol.DriveLetter):"
-            RootPath    = "$($vol.DriveLetter):\"
-            Label       = $vol.FileSystemLabel
-            FileSystem  = $vol.FileSystem
-            SizeBytes   = [int64]$vol.Size
-            FreeBytes   = [int64]$vol.SizeRemaining
-            IsRemovable = [bool]$isRemovable
-            BusType     = "$busType"
-            MediaType   = "$mediaType"
-        })
+        $results.Add((ConvertTo-PocketWindowsDriveRecord -DriveLetter ([string]$vol.DriveLetter) `
+            -Label ([string]$vol.FileSystemLabel) -FileSystem ([string]$vol.FileSystem) `
+            -Size ([int64]$vol.Size) -SizeRemaining ([int64]$vol.SizeRemaining) `
+            -BusType ([string]$busType) -MediaType ([string]$mediaType) -DriveType ([string]$vol.DriveType)))
     }
     return $results
 }
