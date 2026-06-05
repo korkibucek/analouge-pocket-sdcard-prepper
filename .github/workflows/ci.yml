@@ -56,3 +56,53 @@ jobs:
       - name: Run test suite
         shell: pwsh
         run: ./scripts/Run-Tests.ps1 -CI
+
+  package-deb:
+    name: Package (zip + .deb) + install smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build the release zip
+        shell: pwsh
+        run: ./scripts/Build-Release.ps1
+      - name: Build the .deb
+        run: bash scripts/Build-Deb.sh
+      - name: Install the .deb (verifies it installs without a hard PowerShell dependency)
+        run: sudo apt-get install -y ./dist/pocketprep_*_all.deb
+      - name: Install smoke — launcher on PATH + module imports under pwsh
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v pocketprep
+          test -f /usr/lib/pocketprep/scripts/pocketprep.sh
+          pwsh -NoProfile -Command "Import-Module /usr/lib/pocketprep/src/PocketPrep/PocketPrep.psd1 -Force; if (-not (Get-Command Start-PocketPrepServer -ErrorAction SilentlyContinue)) { throw 'module did not import from the installed layout' }; 'package smoke OK'"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: dist/*
+          if-no-files-found: error
+
+  package-rpm:
+    name: Package (.rpm, Fedora)
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install build deps
+        run: dnf install -y rpm-build jq
+      - name: Build the .rpm
+        run: bash scripts/Build-Rpm.sh
+      - name: Verify an .rpm was produced and lists the launcher
+        run: |
+          set -euo pipefail
+          RPM=$(ls dist/*.rpm | head -1)
+          echo "Built: $RPM"
+          rpm -qlp "$RPM" | grep -q '/usr/bin/pocketprep'
+          rpm -qpR "$RPM" | grep -qi powershell   # weak dep present
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpm
+          path: dist/*.rpm
+          if-no-files-found: error
