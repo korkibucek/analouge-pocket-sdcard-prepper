@@ -241,6 +241,7 @@ Highlights (full list in [docs/KNOWN-LIMITATIONS.md](docs/KNOWN-LIMITATIONS.md))
 - [docs/UAT.md](docs/UAT.md) — real-device acceptance checklist (release gate)
 - [docs/RELEASE.md](docs/RELEASE.md) — release checklist + rollback
 - [docs/KNOWN-LIMITATIONS.md](docs/KNOWN-LIMITATIONS.md) — what it does not do / caveats
+- [docs/PERFORMANCE.md](docs/PERFORMANCE.md) — large-library copy benchmark
 - [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) — common problems
 - [docs/WINDOWS-FIRST-RUN.md](docs/WINDOWS-FIRST-RUN.md) — unblock/SmartScreen on Windows
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — contributing / dev setup
