@@ -28,7 +28,22 @@
     <span id="busy" class="busy" hidden>working…</span>
   </footer>
 
-  <script>window.POCKETPREP_TOKEN = "__POCKETPREP_TOKEN__";</script>
+  <script>
+    /* Classic-syntax guard (must parse on old browsers): if the browser lacks the
+       required APIs, or app.js fails to parse/bootstrap, show guidance instead of a
+       blank page. Supported baseline: Chrome/Edge 80+, Firefox 74+, Safari 13.1+. */
+    window.POCKETPREP_TOKEN = "__POCKETPREP_TOKEN__";
+    (function () {
+      var msg = 'This tool needs a modern browser (Chrome/Edge 80+, Firefox 74+, Safari 13.1+). '
+              + 'Please update your browser, or use the command-line wizard.';
+      function showUnsupported() {
+        var p = document.getElementById('panel');
+        if (p && !window.__pocketUp) { p.innerHTML = '<p class="error">' + msg + '</p>'; }
+      }
+      window.addEventListener('error', showUnsupported);
+      if (!window.fetch || !window.Promise || !document.querySelector) { showUnsupported(); }
+    })();
+  </script>
   <script src="/app.js"></script>
 </body>
 </html>

@@ -284,6 +284,9 @@ async function stepSummary() {
 const RENDER = [stepTarget, stepCard, stepFirmware, stepFolders, stepCores, stepRoms, stepSummary];
 
 (async () => {
+  // Mark the app as up so the index.html "unsupported browser" guard stands down — any
+  // failure from here is a real error shown in the panel, not an old-browser parse error.
+  window.__pocketUp = true;
   try {
     S.health = await api('/api/health'); setCtx();
     go(S.health.targetReady ? 1 : 0);
