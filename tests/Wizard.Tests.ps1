@@ -45,6 +45,25 @@ Describe 'Start-PocketPrep wizard (subprocess, fake SD root)' {
         (Test-Path (Join-Path $script:root 'Assets/gb/common/another-demo.gb')) | Should -BeTrue
     }
 
+    It '-CleanFirst shows a dry-run preview then wipes after the typed-token confirmation' {
+        # Non-test-mode run against an injected "removable" drive whose RootPath is our temp
+        # folder, so the CleanFirst branch (gated off test mode) actually runs.
+        'old game' | Set-Content (Join-Path $script:root 'oldgame.gb')
+        New-Item -ItemType Directory -Path (Join-Path $script:root 'Assets') -Force | Out-Null
+        $drivesJson = Join-Path ([System.IO.Path]::GetTempPath()) ("drv_" + [System.IO.Path]::GetRandomFileName() + '.json')
+        @(@{ DriveLetter='X'; RootPath=$script:root; Label='POCKET'; FileSystem='exFAT'; SizeBytes=64424509440; FreeBytes=64000000000; IsRemovable=$true; BusType='usb'; MediaType='' }) |
+            ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $drivesJson
+        # answers: select drive 0, wipe? y, token=POCKET, continue y, firmware n, cores n, 10 systems n, save-log n
+        $answers = @('0', 'y', 'POCKET', 'y', 'n', 'n') + (1..10 | ForEach-Object { 'n' }) + @('n')
+        $r = Invoke-Wizard -Answers $answers -WizardArgs @('-Root', $script:root, '-CleanFirst', '-DriveDataPath', $drivesJson)
+        $r.Output | Should -Match 'Dry-run preview'
+        $r.Output | Should -Match 'Removed'
+        # The clean actually deleted the card contents (but not the root).
+        (Test-Path (Join-Path $script:root 'oldgame.gb')) | Should -BeFalse
+        (Test-Path $script:root) | Should -BeTrue
+        Remove-Item $drivesJson -Force -ErrorAction SilentlyContinue
+    }
+
     It 'aborts (no summary) when the user declines to continue on a non-empty card' {
         'user data' | Set-Content (Join-Path $script:root 'mygame.gb')
         # first prompt is the non-empty "Continue?" -> n  (declines -> early return)

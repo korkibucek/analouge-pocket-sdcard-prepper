@@ -41,6 +41,10 @@ param(
     [switch] $DryRun,
     [switch] $AllowAdvancedOverride,
     [switch] $CleanFirst,
+    # Advanced/testing: a JSON file of drive records to use instead of live detection
+    # (same shape as Get-PocketRemovableDrive output). Used for offline testing and to
+    # work around unusual readers.
+    [string] $DriveDataPath,
     [string] $FirmwareManifest,
     [string] $SystemsManifest,
     [string] $CoresManifest,
@@ -50,6 +54,13 @@ param(
 $ErrorActionPreference = 'Stop'
 $here = Split-Path -Parent $PSCommandPath
 Import-Module (Join-Path $here 'PocketPrep/PocketPrep.psd1') -Force
+
+# Optional injected drive data (advanced/testing): build a provider from a JSON file.
+$driveProvider = $null
+if ($DriveDataPath) {
+    if (-not (Test-Path -LiteralPath $DriveDataPath -PathType Leaf)) { throw "DriveDataPath not found: $DriveDataPath" }
+    $driveProvider = [scriptblock]::Create("Get-Content -LiteralPath '$DriveDataPath' -Raw | ConvertFrom-Json")
+}
 
 $repoRoot = Split-Path -Parent $here
 if (-not $FirmwareManifest) { $FirmwareManifest = Join-Path $repoRoot 'manifests/firmware.json' }
@@ -79,7 +90,7 @@ if ($TestMode) {
     Write-Host "Test mode: using fake SD root '$Root'."
     $target = New-PocketTarget -Root $Root -TestMode
 } else {
-    $drives = Get-PocketRemovableDrive -IncludeFixed:$AllowAdvancedOverride
+    $drives = if ($driveProvider) { Get-PocketRemovableDrive -DataProvider $driveProvider -IncludeFixed:$AllowAdvancedOverride } else { Get-PocketRemovableDrive -IncludeFixed:$AllowAdvancedOverride }
     if (-not $drives -or $drives.Count -eq 0) {
         Write-Host "No removable drives detected. Insert an SD card, or run with -TestMode." -ForegroundColor Red
         # Many built-in card readers present the card as a fixed disk. Point the user at it.
@@ -160,10 +171,10 @@ if ($empty.IsEmpty) {
         if (Confirm-YesNo "Do you want to wipe the card before preparing it?" $false) {
             Write-Host "   Dry-run preview of what would be removed:" -ForegroundColor Yellow
             try {
-                $dry = Clear-PocketCard -Root $target.Root -ConfirmToken $target.Root -AllowAdvancedOverride:$AllowAdvancedOverride -DryRun -Logger $logger
+                $dry = Clear-PocketCard -Root $target.Root -ConfirmToken $target.Root -AllowAdvancedOverride:$AllowAdvancedOverride -DataProvider $driveProvider -DryRun -Logger $logger
                 $dry.Removed | ForEach-Object { Write-Host "     - $_" }
                 $typed = Read-Host "   To confirm deletion, type the volume label or the exact root path"
-                $cl = Clear-PocketCard -Root $target.Root -ConfirmToken $typed -AllowAdvancedOverride:$AllowAdvancedOverride -Logger $logger
+                $cl = Clear-PocketCard -Root $target.Root -ConfirmToken $typed -AllowAdvancedOverride:$AllowAdvancedOverride -DataProvider $driveProvider -Logger $logger
                 Write-Host "   Removed $($cl.RemovedCount) item(s)." -ForegroundColor Green
                 Write-PocketLog -Logger $logger -Message "Card cleaned: removed $($cl.RemovedCount) item(s)" -Level WARN | Out-Null
             } catch { Write-Host "   Clean aborted: $_" -ForegroundColor Red }
