@@ -34,6 +34,12 @@ pwsh -ExecutionPolicy Bypass -File ./src/Start-PocketPrep.ps1
 Install PowerShell 7 from <https://aka.ms/powershell>. (Windows PowerShell 5.1 — the
 blue one — is not supported; this tool targets `pwsh` 7.2+.)
 
+## "Not enough free space on the card"
+The tool now checks free space before writing firmware, ROMs, or cores, and refuses
+rather than failing half-way and leaving a partly-written card. Free up space on the
+card (or use a larger one) and retry. The ROM step also shows a pre-copy warning when a
+selection won't fit.
+
 ## Where are the logs?
 By default in `%TEMP%\PocketPrepLogs\pocketprep-<timestamp>.log`, and optionally copied
 to the SD card root at the end of a real run.

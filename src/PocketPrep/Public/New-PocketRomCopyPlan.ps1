@@ -71,9 +71,16 @@ function New-PocketRomCopyPlan {
         }
     }
     $items = @($items)
+    $totalBytes = [int64]((($items | Measure-Object -Property SizeBytes -Sum).Sum) ?? 0)
+
+    # Best-effort free-space info so callers can warn before executing the copy.
+    $freeBytes = $null
+    try { $freeBytes = Get-PocketFreeSpace -Path (Resolve-Path -LiteralPath $Root).Path } catch { $freeBytes = $null }
+    $fits = if ($null -ne $freeBytes) { $totalBytes -le $freeBytes } else { $true }
 
     [pscustomobject]@{
         PSTypeName         = 'PocketPrep.RomCopyPlan'
+        Root               = (Resolve-Path -LiteralPath $Root).Path
         SystemId           = $System.Id
         SystemDisplayName  = $System.DisplayName
         PlatformId         = $System.PlatformId
@@ -81,7 +88,9 @@ function New-PocketRomCopyPlan {
         Destination        = $destRoot
         Flatten            = (-not $PreserveStructure)
         FileCount          = $items.Count
-        TotalBytes         = (($items | Measure-Object -Property SizeBytes -Sum).Sum) ?? 0
+        TotalBytes         = $totalBytes
+        DestinationFreeBytes = $freeBytes
+        FitsInDestination  = $fits
         SkippedNonMatching = (@($allFiles).Count - $items.Count)
         Items              = $items
     }

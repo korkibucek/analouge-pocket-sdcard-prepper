@@ -250,6 +250,10 @@ foreach ($sys in $systems) {
     $recurse = Confirm-YesNo "  Search subfolders too?" $false
     $plan = New-PocketRomCopyPlan -System $sys -SourceFolder $src -Root $target.Root -Recurse:$recurse
     Write-Host "  Found $($plan.FileCount) matching file(s) ($([math]::Round($plan.TotalBytes/1MB,1)) MB). Skipping $($plan.SkippedNonMatching) non-matching."
+    if (-not $plan.FitsInDestination) {
+        Write-Host "  Not enough free space on the card for these ROMs ($([math]::Round($plan.DestinationFreeBytes/1MB,1)) MB free). They will not be copied." -ForegroundColor Red
+        continue
+    }
     if (-not (Test-PocketPlatformIdInstalled -Root $target.Root -PlatformId $sys.PlatformId).Installed) {
         Write-Host "  Note: no installed core provides platform '$($sys.PlatformId)' yet - install the core so these ROMs will load." -ForegroundColor Yellow
     }
