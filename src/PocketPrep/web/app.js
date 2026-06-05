@@ -16,6 +16,9 @@ const fmtGB = (b) => (b ? (b / 1073741824).toFixed(1) + ' GB' : '—');
 const busy = (on) => { $('#busy').hidden = !on; };
 function panel(html) { $('#panel').innerHTML = html; }
 function errLine(msg) { return `<p class="error">${msg}</p>`; }
+// Clear, specific in-progress message so a long single-threaded operation can never
+// look silently hung (downloads also have a server-side timeout).
+function inProgress(label) { return `<p class="busy">${label}… please keep this tab open. This can take up to a minute and the page may be unresponsive while it runs.</p>`; }
 
 const STEP_LABELS = ['Target', 'Card', 'Firmware', 'Folders', 'Cores', 'ROMs', 'Done'];
 const S = { health: null, step: 0, drive: null, firmware: null, folder: null, roms: [], cores: [] };
@@ -135,8 +138,8 @@ async function stepFirmware() {
     <button id="skip" class="secondary">Skip firmware →</button>
     <div id="fout"></div>`);
   const done = (r) => { S.firmware = r; $('#fout').innerHTML = `<p class="ok">Firmware v${r.Version} → ${r.FileName}${r.Md5Verified ? ' (MD5 verified)' : ''}${r.DryRun ? ' [dry-run]' : ''}</p><button id="c">Continue →</button>`; $('#c').onclick = () => go(3); };
-  $('#dl').onclick = async () => { busy(true); try { done(await api('/api/firmware/install', 'POST', { mode: 'download' })); } catch (e) { $('#fout').innerHTML = errLine(e.message); } finally { busy(false); } };
-  $('#off').onclick = async () => { const p = $('#lf').value.trim(); if (!p) return; busy(true); try { done(await api('/api/firmware/install', 'POST', { mode: 'offline', localFile: p })); } catch (e) { $('#fout').innerHTML = errLine(e.message); } finally { busy(false); } };
+  $('#dl').onclick = async () => { busy(true); $('#fout').innerHTML = inProgress('Downloading &amp; installing firmware (~52 MB)'); try { done(await api('/api/firmware/install', 'POST', { mode: 'download' })); } catch (e) { $('#fout').innerHTML = errLine(e.message); } finally { busy(false); } };
+  $('#off').onclick = async () => { const p = $('#lf').value.trim(); if (!p) return; busy(true); $('#fout').innerHTML = inProgress('Installing firmware'); try { done(await api('/api/firmware/install', 'POST', { mode: 'offline', localFile: p })); } catch (e) { $('#fout').innerHTML = errLine(e.message); } finally { busy(false); } };
   $('#skip').onclick = () => go(3);
 }
 
@@ -192,7 +195,7 @@ async function stepCores() {
     } catch (e) { $('#updout').innerHTML = errLine(e.message); } finally { busy(false); }
   };
   $('#updall').onclick = async () => {
-    $('#updout').textContent = 'updating…'; busy(true);
+    $('#updout').innerHTML = inProgress('Downloading & installing core updates'); busy(true);
     try {
       const r = (await api('/api/cores/update-all', 'POST', {})).results || [];
       $('#updout').innerHTML = r.length
@@ -205,7 +208,7 @@ async function stepCores() {
     const body = { coreId: cores[i].Id, mode };
     if (btn.dataset.ow === '1') body.overwrite = true;
     if (mode === 'offline') { const p = $('#cz' + i).value.trim(); if (!p) { out.innerHTML = errLine('Enter a zip path.'); return; } body.localZip = p; }
-    busy(true);
+    busy(true); out.innerHTML = inProgress(`${mode === 'offline' ? 'Installing' : 'Downloading & installing'} ${cores[i].Identifier}`);
     try { const r = await api('/api/cores/install', 'POST', body); S.cores.push(r);
       out.innerHTML = `<p class="ok">${r.Identifier}: ${r.PlacedCount} placed, ${r.SkippedCount} skipped${r.Version ? ' (v' + r.Version + ')' : ''}${r.DryRun ? ' [dry-run]' : ''}</p>`;
     } catch (e) { out.innerHTML = errLine(e.message); } finally { busy(false); }

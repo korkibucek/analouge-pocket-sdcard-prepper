@@ -96,6 +96,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 - **Firmware staleness** (closes #72): `Test-PocketFirmwareManifestAge` flags a manifest whose newest release is older than ~9 months; the CLI and web UI warn the user to check the official page (and use offline mode) when stale. A scheduled CI workflow (`firmware-check.yml`) compares the manifest against the official firmware page monthly and opens an issue when Analogue ships a newer version.
 
+- **Web UI progress for long operations** (closes #51): firmware/core downloads and the update-all sweep now show a clear, specific in-progress message so the single-threaded server can never appear silently hung; combined with the new download timeouts (#50) a request cannot hang forever. The single-threaded concurrency model and its rationale are documented in docs/ARCHITECTURE.md (true async deferred to #82).
+
 ## [0.1.0] - 2026-06-02
 
 Initial MVP.
