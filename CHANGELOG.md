@@ -6,6 +6,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Added
+- **Filesystem name normalization** (closes #64): the filesystem check now canonicalises OS-specific spellings (Linux `vfat`/`msdos`, macOS `MS-DOS (FAT32)`/`ExFAT`) so a perfectly good FAT32/exFAT card is no longer wrongly reported "not acceptable" on Linux/macOS; FAT16/FAT12 are rejected with specific remediation.
 - **Community health files** (closes #70): `.github/SECURITY.md` (private vuln reporting), `CONTRIBUTING.md`, issue templates (bug/feature + config), and a PR template.
 - **Web UI accessibility** (closes #67): added an `aria-live` status region announced on each step, focus management to the step panel, a visible `:focus-visible` outline, and a `.visually-hidden` helper; verified labels + AA contrast. The jsdom test now asserts the a11y hooks; a manual screen-reader/keyboard/axe checklist is in docs/testing.md.
 - **Release workflow** (closes #57): `.github/workflows/release.yml` builds the zip/.deb/.rpm + `SHA256SUMS` and publishes a GitHub Release on a `vX.Y.Z` tag (verifying the tag matches `ModuleVersion` and manifests validate first); documented in docs/RELEASE.md.
@@ -124,6 +125,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Initial MVP.
 
 ### Added
+- **Filesystem name normalization** (closes #64): the filesystem check now canonicalises OS-specific spellings (Linux `vfat`/`msdos`, macOS `MS-DOS (FAT32)`/`ExFAT`) so a perfectly good FAT32/exFAT card is no longer wrongly reported "not acceptable" on Linux/macOS; FAT16/FAT12 are rejected with specific remediation.
 - **Community health files** (closes #70): `.github/SECURITY.md` (private vuln reporting), `CONTRIBUTING.md`, issue templates (bug/feature + config), and a PR template.
 - **Web UI accessibility** (closes #67): added an `aria-live` status region announced on each step, focus management to the step panel, a visible `:focus-visible` outline, and a `.visually-hidden` helper; verified labels + AA contrast. The jsdom test now asserts the a11y hooks; a manual screen-reader/keyboard/axe checklist is in docs/testing.md.
 - **Release workflow** (closes #57): `.github/workflows/release.yml` builds the zip/.deb/.rpm + `SHA256SUMS` and publishes a GitHub Release on a `vX.Y.Z` tag (verifying the tag matches `ModuleVersion` and manifests validate first); documented in docs/RELEASE.md.
