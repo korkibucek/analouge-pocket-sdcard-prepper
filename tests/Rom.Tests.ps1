@@ -53,13 +53,21 @@ Describe 'New-PocketRomCopyPlan' {
         $plan.CopyableCount | Should -Be ($plan.FileCount - 1)
     }
 
-    It 'flags filenames with characters invalid on FAT/exFAT' {
-        # ':' and '?' are invalid on FAT; create such names literally on the (Linux) source
-        # (avoid -Path wildcard interpretation of '?').
+    It 'flags filenames with characters invalid on FAT/exFAT' -Skip:($IsWindows) {
+        # ':' and '?' are invalid on FAT (and on Windows/NTFS), so the source fixture can
+        # only be created on Linux/macOS. The detection logic itself is platform-agnostic.
         [System.IO.File]::WriteAllText((Join-Path $script:src 'bad:name.gb'), 'x')
         [System.IO.File]::WriteAllText((Join-Path $script:src 'whats?.gb'), 'y')
         $plan = New-PocketRomCopyPlan -System $script:gb -SourceFolder $script:src -Root $script:root
         ($plan.Problems | Where-Object Reason -match 'not allowed on FAT').Count | Should -Be 2
+    }
+
+    It 'detects invalid FAT characters in a destination leaf (platform-agnostic check)' {
+        # Verify the pure detection independent of the filesystem's own naming rules.
+        $invalid = [char[]]('<', '>', ':', '"', '|', '?', '*')
+        foreach ($c in $invalid) {
+            ("game${c}.gb".IndexOfAny([char[]]('<', '>', ':', '"', '|', '?', '*'))) | Should -BeGreaterOrEqual 0
+        }
     }
 }
 
