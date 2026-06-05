@@ -41,6 +41,21 @@ cd tests/web && npm install && npm test
 
 CI runs it on Node 20. It is dev-only and not a runtime dependency.
 
+## Accessibility (web UI)
+
+Automated hooks are checked by the jsdom test (aria-live status region is present and
+announced on each step, the panel is a focus target, and every form control has a label).
+A full audit still needs a human pass:
+
+- [ ] Complete the whole wizard with the **keyboard only** (Tab/Shift+Tab/Space/Enter).
+- [ ] With a **screen reader** (NVDA/VoiceOver), confirm each step and status/error is announced.
+- [ ] Run **axe**/Lighthouse and address any serious/critical issues.
+- [ ] Verify **colour contrast** ≥ WCAG AA (the palette — accent `#2d7d46`, warn `#b06b00`,
+      error `#b00020` on white — meets AA for text; re-check if colours change).
+
+Status is never conveyed by colour alone (messages carry text), and focus is moved to each
+new step with a visible `:focus-visible` outline.
+
 ## Test mode (manual)
 
 ```powershell

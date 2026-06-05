@@ -29,3 +29,7 @@ pre { background: #00000010; padding: 1rem; border-radius: 8px; overflow:auto; w
 .tag.rm { background:#2d7d4622; color:var(--accent); }
 .tag.fixed { background:#b0002022; color:var(--err); }
 .card { border:1px solid var(--line); border-radius:8px; padding:.8rem; margin:.5rem 0; }
+.visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+/* Always-visible keyboard focus indicator (don't rely on colour alone). */
+:focus-visible { outline:3px solid #1a5fb4; outline-offset:2px; }
+#panel:focus { outline:none; }  /* programmatic focus target shouldn't show a ring */
