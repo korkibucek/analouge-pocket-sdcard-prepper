@@ -170,6 +170,10 @@ if (Confirm-YesNo "Install Pocket firmware now?" $true) {
     $manifest = Get-PocketFirmwareManifest -Path $FirmwareManifest
     $release  = Resolve-PocketFirmwareRelease -Manifest $manifest
     Write-Host "Latest firmware in manifest: v$($release.version) ($($release.releaseDate))."
+    $fwAge = Test-PocketFirmwareManifestAge -Manifest $manifest
+    if ($fwAge.Stale) {
+        Write-Host "  Note: this firmware data is $($fwAge.AgeDays) days old; a newer Pocket firmware may exist. Check https://www.analogue.co/support/pocket/firmware and, if newer, install it manually (offline mode) or update the manifest." -ForegroundColor Yellow
+    }
     $offline = Confirm-YesNo "Use a firmware file you already downloaded (offline mode)?" $false
     try {
         if ($offline) {

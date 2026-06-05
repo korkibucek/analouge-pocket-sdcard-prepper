@@ -16,6 +16,7 @@
         'Get-PocketFirmwareManifest',
         'Resolve-PocketFirmwareRelease',
         'Test-PocketFirmwareFile',
+        'Test-PocketFirmwareManifestAge',
         'Install-PocketFirmware',
         'Get-PocketSystem',
         'Get-PocketCoreManifest',

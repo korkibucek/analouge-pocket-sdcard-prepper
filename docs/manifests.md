@@ -42,6 +42,15 @@ update these **without changing code**.
 > URLs live here, not in code, **on purpose** — Analogue's download links and
 > checksums change with each release, and hardcoding them would be brittle.
 
+### Staleness detection (automated + at install time)
+
+- A scheduled GitHub Actions workflow (`.github/workflows/firmware-check.yml`) runs
+  monthly, compares `latest` against the official firmware page, and **opens an issue**
+  when Analogue publishes a newer version — so the manifest gets refreshed promptly.
+- At install time, `Test-PocketFirmwareManifestAge` flags a manifest whose newest
+  release is older than ~9 months; the CLI and web UI then warn the user to check the
+  official page and use offline mode if a newer firmware exists.
+
 ## systems.json
 
 ```jsonc
