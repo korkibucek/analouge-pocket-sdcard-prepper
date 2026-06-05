@@ -31,4 +31,23 @@ Describe 'Test-PocketFilesystem' {
         (Test-PocketFilesystem -FileSystem 'exfat').Acceptable | Should -BeTrue
         (Test-PocketFilesystem -FileSystem 'FAT32').Acceptable | Should -BeTrue
     }
+
+    It 'accepts Linux lsblk spellings (vfat -> FAT32, exfat)' {
+        $v = Test-PocketFilesystem -FileSystem 'vfat'
+        $v.Acceptable | Should -BeTrue
+        $v.CanonicalFileSystem | Should -Be 'FAT32'
+        (Test-PocketFilesystem -FileSystem 'exfat').CanonicalFileSystem | Should -Be 'EXFAT'
+    }
+
+    It 'accepts macOS spellings (MS-DOS (FAT32), ExFAT)' {
+        (Test-PocketFilesystem -FileSystem 'MS-DOS (FAT32)').Acceptable | Should -BeTrue
+        (Test-PocketFilesystem -FileSystem 'ExFAT').Acceptable | Should -BeTrue
+    }
+
+    It 'rejects FAT16 with specific remediation' {
+        $v = Test-PocketFilesystem -FileSystem 'FAT16'
+        $v.Acceptable | Should -BeFalse
+        $v.CanonicalFileSystem | Should -Be 'FAT16'
+        $v.Remediation | Should -Match 'FAT16'
+    }
 }

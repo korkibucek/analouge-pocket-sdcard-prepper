@@ -29,24 +29,30 @@ function Test-PocketFilesystem {
             $FileSystem = [string]$Drive.FileSystem
         }
 
-        $normalized = ($FileSystem ?? '').Trim().ToUpperInvariant()
-        $acceptable = $script:PocketDefaults.AcceptableFilesystems -contains $normalized
+        # Canonicalise OS-specific spellings (e.g. Linux 'vfat', macOS 'MS-DOS (FAT32)').
+        $canonical = ConvertTo-PocketCanonicalFilesystem -FileSystem $FileSystem
+        $acceptable = $script:PocketDefaults.AcceptableFilesystems -contains $canonical
         $recommended = $script:PocketDefaults.RecommendedFilesystem
 
         $remediation = $null
         if (-not $acceptable) {
             $shown = if ([string]::IsNullOrWhiteSpace($FileSystem)) { '(unknown)' } else { $FileSystem }
-            $remediation = "Filesystem '$shown' is not supported. Format the card as $recommended (recommended) or FAT32 using Windows Disk Management or 'Format' in File Explorer, then re-run. This tool does not format cards for you."
-        } elseif ($normalized -eq 'FAT32') {
+            if ($canonical -eq 'FAT16') {
+                $remediation = "Filesystem '$shown' (FAT16) is not supported by the Pocket and only fits tiny cards. Reformat as exFAT (recommended) or FAT32, then re-run."
+            } else {
+                $remediation = "Filesystem '$shown' is not supported. Format the card as $recommended (recommended) or FAT32, then re-run. This tool does not format cards for you."
+            }
+        } elseif ($canonical -eq 'FAT32') {
             $remediation = "FAT32 is supported, but it cannot hold files larger than 4 GB. If you plan to use cores with large assets, reformat as exFAT."
         }
 
         [pscustomobject]@{
-            PSTypeName  = 'PocketPrep.FilesystemVerdict'
-            FileSystem  = $FileSystem
-            Acceptable  = $acceptable
-            Recommended = $recommended
-            Remediation = $remediation
+            PSTypeName          = 'PocketPrep.FilesystemVerdict'
+            FileSystem          = $FileSystem
+            CanonicalFileSystem = $canonical
+            Acceptable          = $acceptable
+            Recommended         = $recommended
+            Remediation         = $remediation
         }
     }
 }
