@@ -47,17 +47,9 @@ function Backup-PocketSaves {
     foreach ($f in $folders) {
         $src = Join-Path $Root $f
         if (-not (Test-Path -LiteralPath $src -PathType Container)) { continue }
-        $files = Get-ChildItem -LiteralPath $src -Recurse -File -ErrorAction SilentlyContinue
-        foreach ($file in $files) {
-            $rel = $file.FullName.Substring((Resolve-Path -LiteralPath $Root).Path.Length).TrimStart([char]'\', [char]'/')
-            $dest = Join-Path $backupRoot $rel
-            $copied.Add($rel)
-            if (-not $DryRun) {
-                $dir = Split-Path -Parent $dest
-                if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
-                Copy-Item -LiteralPath $file.FullName -Destination $dest -Force
-            }
-        }
+        # Mirror Root/<folder>/... into backupRoot/<folder>/... (preserve the folder name).
+        $res = Copy-PocketTree -Source $src -Destination (Join-Path $backupRoot $f) -DryRun:$DryRun
+        foreach ($rel in $res.Copied) { $copied.Add((Join-Path $f $rel)) }
     }
 
     [pscustomobject]@{
