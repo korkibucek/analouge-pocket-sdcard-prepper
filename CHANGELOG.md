@@ -6,6 +6,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Added
+- **Community health files** (closes #70): `.github/SECURITY.md` (private vuln reporting), `CONTRIBUTING.md`, issue templates (bug/feature + config), and a PR template.
 - **Web UI accessibility** (closes #67): added an `aria-live` status region announced on each step, focus management to the step panel, a visible `:focus-visible` outline, and a `.visually-hidden` helper; verified labels + AA contrast. The jsdom test now asserts the a11y hooks; a manual screen-reader/keyboard/axe checklist is in docs/testing.md.
 - **Release workflow** (closes #57): `.github/workflows/release.yml` builds the zip/.deb/.rpm + `SHA256SUMS` and publishes a GitHub Release on a `vX.Y.Z` tag (verifying the tag matches `ModuleVersion` and manifests validate first); documented in docs/RELEASE.md.
 - **Experimental-system labelling** (closes #73): systems can be flagged `experimental` in the manifest; Neo Geo is now marked experimental (needs BIOS/romsets the tool does not fully manage). The CLI and web UI show the caveat and require explicit confirmation before configuring such a system.
@@ -123,6 +124,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Initial MVP.
 
 ### Added
+- **Community health files** (closes #70): `.github/SECURITY.md` (private vuln reporting), `CONTRIBUTING.md`, issue templates (bug/feature + config), and a PR template.
 - **Web UI accessibility** (closes #67): added an `aria-live` status region announced on each step, focus management to the step panel, a visible `:focus-visible` outline, and a `.visually-hidden` helper; verified labels + AA contrast. The jsdom test now asserts the a11y hooks; a manual screen-reader/keyboard/axe checklist is in docs/testing.md.
 - **Release workflow** (closes #57): `.github/workflows/release.yml` builds the zip/.deb/.rpm + `SHA256SUMS` and publishes a GitHub Release on a `vX.Y.Z` tag (verifying the tag matches `ModuleVersion` and manifests validate first); documented in docs/RELEASE.md.
 - **Experimental-system labelling** (closes #73): systems can be flagged `experimental` in the manifest; Neo Geo is now marked experimental (needs BIOS/romsets the tool does not fully manage). The CLI and web UI show the caveat and require explicit confirmation before configuring such a system.
