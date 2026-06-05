@@ -9,6 +9,33 @@ Describe 'Logging' {
     }
     AfterEach { Remove-Item $script:logPath -Force -ErrorAction SilentlyContinue }
 
+    It 'prunes old logs beyond the retention limit' {
+        $dir = Join-Path ([System.IO.Path]::GetTempPath()) ("pp_logret_" + [System.IO.Path]::GetRandomFileName())
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+        # Create 6 existing logs with increasing timestamps.
+        1..6 | ForEach-Object {
+            $f = Join-Path $dir ("pocketprep-2026010{0}-000000.log" -f $_)
+            "old$_" | Set-Content -LiteralPath $f
+            (Get-Item $f).LastWriteTime = (Get-Date).AddMinutes(-100 + $_)
+        }
+        # New logger with MaxKeep=3 should leave 3 total (2 newest existing + the new one's slot).
+        $null = New-PocketLogger -Path (Join-Path $dir 'pocketprep-20260108-000000.log') -MaxKeep 3
+        (Get-ChildItem $dir -Filter 'pocketprep-*.log').Count | Should -BeLessOrEqual 3
+        # The two newest existing logs (5,6) should survive.
+        (Test-Path (Join-Path $dir 'pocketprep-20260106-000000.log')) | Should -BeTrue
+        (Test-Path (Join-Path $dir 'pocketprep-20260101-000000.log')) | Should -BeFalse
+        Remove-Item $dir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    It 'does not prune when MaxKeep is 0' {
+        $dir = Join-Path ([System.IO.Path]::GetTempPath()) ("pp_logret0_" + [System.IO.Path]::GetRandomFileName())
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+        1..4 | ForEach-Object { "x" | Set-Content (Join-Path $dir ("pocketprep-2026020{0}-000000.log" -f $_)) }
+        $null = New-PocketLogger -Path (Join-Path $dir 'pocketprep-new.log') -MaxKeep 0
+        (Get-ChildItem $dir -Filter 'pocketprep-*.log').Count | Should -Be 4
+        Remove-Item $dir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
     It 'writes timestamped entries to memory and file' {
         $logger = New-PocketLogger -Path $script:logPath
         Write-PocketLog -Logger $logger -Message 'hello' | Out-Null

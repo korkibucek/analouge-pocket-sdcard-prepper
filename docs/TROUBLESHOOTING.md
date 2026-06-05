@@ -69,8 +69,11 @@ the session token automatically. If you left it idle for an hour it auto-shut-do
 the launcher.
 
 ## Where are the logs?
-By default in `%TEMP%\PocketPrepLogs\pocketprep-<timestamp>.log`, and optionally copied
-to the SD card root at the end of a real run.
+By default in `%TEMP%\PocketPrepLogs\pocketprep-<timestamp>.log` (Windows) or
+`$TMPDIR/PocketPrepLogs` (Linux/macOS), and optionally copied to the SD card root at the
+end of a real run. Logs record actions (firmware/folder/ROM/core operations) with
+timestamps; they contain **local file paths but no secrets**, and are never uploaded.
+The tool keeps the most recent ~20 logs and prunes older ones automatically.
 
 ## ROMs went to a folder my core doesn't read
 The core's **platform-id** likely differs from the manifest. Open the core, check its

@@ -9,6 +9,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 - **Refactor** (closes #71): extracted a shared `Copy-PocketTree` private helper used by `Backup-PocketSaves`/`Restore-PocketSaves` (removes duplicated recursive-copy logic); moved the `Write-PocketServerJson` helper into `Private/`. Behaviour unchanged.
 
 ### Added
+- **Log retention** (closes #60): `New-PocketLogger` prunes old `pocketprep-*.log` files (keeps newest ~20, `-MaxKeep`); docs note the log location, that logs hold paths but no secrets, and are never uploaded.
 - **Browser baseline** (closes #68): a classic-syntax guard in the web page shows a clear "please use a modern browser" message (Chrome/Edge 80+, Firefox 74+, Safari 13.1+) instead of a blank page if the browser is too old or `app.js` fails to parse/bootstrap; documented in the README. jsdom test asserts the guard stands down on a supported browser.
 - **Filesystem name normalization** (closes #64): the filesystem check now canonicalises OS-specific spellings (Linux `vfat`/`msdos`, macOS `MS-DOS (FAT32)`/`ExFAT`) so a perfectly good FAT32/exFAT card is no longer wrongly reported "not acceptable" on Linux/macOS; FAT16/FAT12 are rejected with specific remediation.
 - **Community health files** (closes #70): `.github/SECURITY.md` (private vuln reporting), `CONTRIBUTING.md`, issue templates (bug/feature + config), and a PR template.
@@ -132,6 +133,7 @@ Initial MVP.
 - **Refactor** (closes #71): extracted a shared `Copy-PocketTree` private helper used by `Backup-PocketSaves`/`Restore-PocketSaves` (removes duplicated recursive-copy logic); moved the `Write-PocketServerJson` helper into `Private/`. Behaviour unchanged.
 
 ### Added
+- **Log retention** (closes #60): `New-PocketLogger` prunes old `pocketprep-*.log` files (keeps newest ~20, `-MaxKeep`); docs note the log location, that logs hold paths but no secrets, and are never uploaded.
 - **Browser baseline** (closes #68): a classic-syntax guard in the web page shows a clear "please use a modern browser" message (Chrome/Edge 80+, Firefox 74+, Safari 13.1+) instead of a blank page if the browser is too old or `app.js` fails to parse/bootstrap; documented in the README. jsdom test asserts the guard stands down on a supported browser.
 - **Filesystem name normalization** (closes #64): the filesystem check now canonicalises OS-specific spellings (Linux `vfat`/`msdos`, macOS `MS-DOS (FAT32)`/`ExFAT`) so a perfectly good FAT32/exFAT card is no longer wrongly reported "not acceptable" on Linux/macOS; FAT16/FAT12 are rejected with specific remediation.
 - **Community health files** (closes #70): `.github/SECURITY.md` (private vuln reporting), `CONTRIBUTING.md`, issue templates (bug/feature + config), and a PR template.
