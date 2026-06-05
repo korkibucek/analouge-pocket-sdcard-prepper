@@ -101,9 +101,11 @@ jobs:
           # Capture to files first: `cmd | grep -q` would SIGPIPE the producer (exit 141)
           # under pipefail once grep matches and closes the pipe.
           rpm -qlp "$RPM" > /tmp/rpm-files.txt
-          rpm -qpR "$RPM" > /tmp/rpm-reqs.txt
+          # powershell is a weak dep (Recommends), which is NOT listed by -R (Requires);
+          # query --recommends explicitly.
+          rpm -qp --recommends "$RPM" > /tmp/rpm-recs.txt
           grep -q '/usr/bin/pocketprep' /tmp/rpm-files.txt
-          grep -qi powershell /tmp/rpm-reqs.txt   # weak dep present
+          grep -qi powershell /tmp/rpm-recs.txt
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
