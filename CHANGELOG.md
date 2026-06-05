@@ -6,6 +6,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Added
+- **Experimental-system labelling** (closes #73): systems can be flagged `experimental` in the manifest; Neo Geo is now marked experimental (needs BIOS/romsets the tool does not fully manage). The CLI and web UI show the caveat and require explicit confirmation before configuring such a system.
 - **Operational docs** (closes #69): added docs/RELEASE.md (release checklist + rollback) and docs/KNOWN-LIMITATIONS.md; expanded TROUBLESHOOTING for cores/updates/backup/web-UI; refreshed the README known-limitations + docs index (corrected stale "Windows-only"/"no GUI" notes).
 - **Detection edge cases** (closes #63): drives now carry a `LikelyRemovableCard` flag — a fixed, card-sized FAT32/exFAT volume (common with built-in readers that report cards as fixed). When no removable drive is found, the CLI and web UI surface these candidates and guide the user to advanced mode; RAW/unformatted volumes are listed gracefully (not assumed to be cards, no throw).
 - **Web server hardening** (closes #59): the browser opens at the bare URL (token is only
@@ -120,6 +121,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 Initial MVP.
 
 ### Added
+- **Experimental-system labelling** (closes #73): systems can be flagged `experimental` in the manifest; Neo Geo is now marked experimental (needs BIOS/romsets the tool does not fully manage). The CLI and web UI show the caveat and require explicit confirmation before configuring such a system.
 - **Operational docs** (closes #69): added docs/RELEASE.md (release checklist + rollback) and docs/KNOWN-LIMITATIONS.md; expanded TROUBLESHOOTING for cores/updates/backup/web-UI; refreshed the README known-limitations + docs index (corrected stale "Windows-only"/"no GUI" notes).
 - **Detection edge cases** (closes #63): drives now carry a `LikelyRemovableCard` flag — a fixed, card-sized FAT32/exFAT volume (common with built-in readers that report cards as fixed). When no removable drive is found, the CLI and web UI surface these candidates and guide the user to advanced mode; RAW/unformatted volumes are listed gracefully (not assumed to be cards, no throw).
 - `PocketPrep` PowerShell 7 engine module with layered, unit-testable functions:

@@ -24,6 +24,7 @@
           "suggestedCore": { "type": "string" },
           "biosRequired": { "type": "boolean" },
           "biosFiles": { "type": "array", "items": { "type": "string" } },
+          "experimental": { "type": "boolean", "description": "Advanced/incomplete support (e.g. needs BIOS/romsets); the UI warns before use." },
           "notes": { "type": "string" }
         }
       }

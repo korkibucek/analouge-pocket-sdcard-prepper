@@ -120,7 +120,8 @@
       "suggestedCore": "agg23.NeoGeo",
       "biosRequired": true,
       "biosFiles": ["neogeo.zip"],
-      "notes": "Neo Geo requires a system BIOS and uses specific romset formats. The MVP can place files into Assets/ng but BIOS is only copied if you explicitly request it. Confirm your core's exact requirements."
+      "experimental": true,
+      "notes": "EXPERIMENTAL: Neo Geo requires a system BIOS and specific romset formats that this tool does not fully manage. It can place files into Assets/ng, but BIOS is only copied if you explicitly request it. Verify your core's exact requirements manually."
     }
   ]
 }

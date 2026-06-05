@@ -67,6 +67,7 @@ function Get-PocketSystem {
             SuggestedCore          = [string]$s.suggestedCore
             BiosRequired           = [bool]$s.biosRequired
             BiosFiles              = @($s.biosFiles)
+            Experimental           = [bool]$s.experimental
             Notes                  = [string]$s.notes
             RomDestinationRelative = (Join-Path (Join-Path 'Assets' $s.platformId) 'common')
         }

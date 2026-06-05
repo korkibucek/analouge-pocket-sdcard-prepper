@@ -252,8 +252,13 @@ Write-Banner '7. ROM import'
 $systems = Get-PocketSystem -Path $SystemsManifest
 $romResults = [System.Collections.Generic.List[object]]::new()
 foreach ($sys in $systems) {
-    if (-not (Confirm-YesNo "Configure $($sys.DisplayName) [$($sys.Id)]? (exts: $($sys.SupportedExtensions -join ' '))" $false)) {
+    $expTag = if ($sys.Experimental) { ' [EXPERIMENTAL]' } else { '' }
+    if (-not (Confirm-YesNo "Configure $($sys.DisplayName) [$($sys.Id)]${expTag}? (exts: $($sys.SupportedExtensions -join ' '))" $false)) {
         continue
+    }
+    if ($sys.Experimental) {
+        Write-Host "  Note: $($sys.DisplayName) is experimental - $($sys.Notes)" -ForegroundColor Yellow
+        if (-not (Confirm-YesNo "  Continue anyway?" $false)) { continue }
     }
     $src = Read-Host "  Source ROM folder for $($sys.DisplayName) (blank to skip)"
     if ([string]::IsNullOrWhiteSpace($src)) { continue }
