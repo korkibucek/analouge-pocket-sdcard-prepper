@@ -111,6 +111,13 @@ Describe 'Invoke-PocketApiRoute' {
         $r.Status | Should -Be 200
         (Test-Path (Join-Path $script:state.Root 'Assets/wonderswan/common/g.ws')) | Should -BeTrue
     }
+    It 'GET /api/bios-status flags missing Neo Geo BIOS (never downloads it)' {
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method GET -Path '/api/bios-status' -State $s }
+        $r.Status | Should -Be 200
+        $ng = $r.Body.bios | Where-Object SystemId -eq 'neogeo'
+        $ng.Satisfied | Should -BeFalse
+    }
     It 'POST /api/card/onboard generates a config from existing card ROMs' {
         $common = Join-Path $script:root 'Assets/gb/common'; New-Item -ItemType Directory $common -Force | Out-Null
         'a' | Set-Content (Join-Path $common 'one.gb')

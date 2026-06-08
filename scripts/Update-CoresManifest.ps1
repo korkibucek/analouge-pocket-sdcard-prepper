@@ -23,6 +23,12 @@ if (-not $OutFile) { $OutFile = Join-Path $repo 'manifests/cores.json' }
 Write-Host "Fetching inventory: $InventoryUrl"
 $inv = Invoke-RestMethod -Uri $InventoryUrl -Headers @{ 'User-Agent' = 'PocketPrep' } -TimeoutSec 60
 
+# Platforms whose core needs a copyrighted system BIOS the user must supply (NEVER
+# downloaded by this tool). Keyed by platformId -> required BIOS file name(s).
+$biosByPlatform = @{
+    'ng' = @('neogeo.zip')
+}
+
 $seen = @{}
 $cores = foreach ($e in ($inv.data | Where-Object { $_.repository.platform -eq 'github' } | Sort-Object identifier)) {
     # Stable slug id from the identifier (schema: ^[a-z0-9_-]+$); dedupe defensively.
@@ -40,6 +46,9 @@ $cores = foreach ($e in ($inv.data | Where-Object { $_.repository.platform -eq '
         if ($plat.year)         { "($($plat.year))" }
     ) -join ' '
 
+    # Flag a BIOS requirement when any of the core's platforms needs one.
+    $biosFiles = @($platformIds | ForEach-Object { $biosByPlatform[$_] } | Where-Object { $_ } | Select-Object -Unique)
+
     [ordered]@{
         id           = $id
         identifier   = $e.identifier
@@ -48,8 +57,8 @@ $cores = foreach ($e in ($inv.data | Where-Object { $_.repository.platform -eq '
         owner        = $e.repository.owner
         repo         = $e.repository.name
         homepage     = "https://github.com/$($e.repository.owner)/$($e.repository.name)"
-        biosRequired = $false
-        biosFiles    = @()
+        biosRequired = ($biosFiles.Count -gt 0)
+        biosFiles    = $biosFiles
         notes        = "From the openFPGA Cores Inventory. $meta".Trim()
     }
 }

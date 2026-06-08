@@ -13,6 +13,8 @@ See [safety-model.md](safety-model.md) for the full picture. In short:
   confirmation.
 - Firmware downloads are restricted to `analogue.co` hosts and verified by MD5+size
   before placement. Core downloads are restricted to GitHub hosts.
+- Copyrighted system BIOS (e.g. the Neo Geo BIOS) is **never downloaded or supplied**. The
+  tool only *detects* whether a BIOS you provided is present and guides you to add your own.
 - Core zips are checked for path-traversal (zip-slip) entries and rejected; extraction
   is constrained to the SD root.
 

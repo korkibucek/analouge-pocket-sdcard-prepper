@@ -145,6 +145,10 @@ if ($cardSummary.Firmware.Present -or $cardSummary.Cores.Count -gt 0 -or $cardSu
     $romBreak = if (@($cardSummary.Roms.Systems).Count) { ($cardSummary.Roms.Systems | ForEach-Object { "$($_.DisplayName) $($_.FileCount)" }) -join ', ' } else { 'none' }
     Write-Host "  ROMs     : $($cardSummary.Roms.TotalFiles) total - $romBreak"
     Write-Host "  ROM config: $(if ($cardSummary.Config.Exists) { "$($cardSummary.Config.SourceCount) saved folder(s) - you'll be offered a rescan" } else { 'none saved yet' })"
+    $biosMissing = @($cardSummary.Bios | Where-Object { -not $_.Satisfied })
+    foreach ($b in $biosMissing) {
+        Write-Host "  BIOS needed: $($b.DisplayName) is missing $($b.Missing -join ', ') - place your own BIOS in $($b.Location). This tool never downloads BIOS." -ForegroundColor Yellow
+    }
 }
 
 # --- Step 3/4: filesystem + emptiness ---------------------------------------
