@@ -201,6 +201,13 @@ editable without code). For each system the wizard:
 > different core, confirm its platform-id and edit the manifest. See
 > [docs/manifests.md](docs/manifests.md).
 
+**Beyond the built-in systems:** if you install a core whose system isn't in
+`systems.json`, the ROM step also lists that core's **declared platform** (read straight
+from the installed core, so the destination is always correct) and lets you copy ROMs to
+it. Because the exact ROM extensions aren't known there, *any* file you point at it is
+copied to `Assets/<platformId>/common` — so point it at a folder containing only that
+system's ROMs.
+
 ### Card breakdown after you pick a drive
 
 As soon as you select the card, the tool scans it and shows what's already there —

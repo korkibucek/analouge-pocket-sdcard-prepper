@@ -334,6 +334,12 @@ async function stepRoms() {
   panel('<h2>6. ROM import</h2><p>Loading systems…</p>');
   let systems = [];
   try { systems = (await api('/api/systems')).systems || []; } catch (e) { panel('<h2>6. ROM import</h2>' + errLine(e.message)); }
+  // Platforms declared by installed cores that the manifest doesn't know — so ROM import
+  // works for any core you installed, not just the built-in systems (#128).
+  let extra = [];
+  try { extra = (await api('/api/rom/extra-platforms')).platforms || []; } catch { /* none */ }
+  const extraIds = new Set(extra.map(x => x.Id));
+  systems = systems.concat(extra);
   // A saved source mapping (if any) lets us prefill folders and offer a one-click rescan.
   let cfg = { Exists: false, Sources: [] };
   try { cfg = await api('/api/rom/config'); } catch { /* no config yet */ }
@@ -344,6 +350,7 @@ async function stepRoms() {
     const sv = saved[s.Id];
     return `
     <div class="card"><strong>${s.DisplayName}</strong> <span class="meta">[${s.Id}] ${s.SupportedExtensions.join(' ')}</span>
+      ${extraIds.has(s.Id) ? '<span class="tag rm">installed core</span>' : ''}
       ${s.Experimental ? `<span class="tag fixed">experimental</span><p class="warnote">${s.Notes}</p>` : ''}
       <div class="row"><input type="text" id="src${i}" placeholder="source ROM folder" value="${sv ? esc(sv.Path) : ''}">
         <button data-browse="${i}" class="secondary">Browse…</button>

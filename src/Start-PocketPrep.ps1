@@ -283,6 +283,13 @@ if ((Test-Path -LiteralPath $CoresManifest) -and (Confirm-YesNo "Install any ope
 # --- Step 8/9: ROM import ----------------------------------------------------
 Write-Banner '7. ROM import'
 $systems = Get-PocketSystem -Path $SystemsManifest
+# Also offer ROM import for platforms declared by any cores installed on the card that the
+# manifest doesn't cover (#128), so every installed core can receive ROMs.
+$extraPlatforms = @(Get-PocketImportablePlatform -Root $target.Root -SystemsManifest $SystemsManifest)
+if ($extraPlatforms.Count -gt 0) {
+    Write-Host "Detected $($extraPlatforms.Count) extra platform(s) from installed cores (not in the systems list): $(($extraPlatforms.PlatformId) -join ', ')." -ForegroundColor Cyan
+    $systems = @($systems) + $extraPlatforms
+}
 $romResults = [System.Collections.Generic.List[object]]::new()
 $romSources = [System.Collections.Generic.List[object]]::new()
 
