@@ -322,9 +322,25 @@ async function stepRoms() {
         const probs = (p.ProblemCount > 0) ? `<p class="warnote">${p.ProblemCount} file(s) will be skipped (can't go on the card): ${p.Problems.slice(0, 5).map(x => `${x.RelativePath} (${x.Reason})`).join('; ')}${p.ProblemCount > 5 ? '…' : ''}</p>` : '';
         const dups = (p.DuplicateCount > 0) ? `<p class="warnote">${p.DuplicateCount} duplicate(s) will be copied once: ${p.Duplicates.slice(0, 5).map(x => `${x.RelativePath} (${x.Reason})`).join('; ')}${p.DuplicateCount > 5 ? '…' : ''}</p>` : '';
         out.innerHTML = `<p>${p.FileCount} match (${(p.TotalBytes / 1048576).toFixed(1)} MB); ${p.SkippedNonMatching} other files ignored.</p>${space}${dups}${probs}${warn}`;
-      } else { const r = await api('/api/rom/copy', 'POST', body); S.roms = S.roms.filter(x => x.SystemId !== r.SystemId); S.roms.push(r);
-        const dupNote = r.SkippedDuplicateCount > 0 ? `, ${r.SkippedDuplicateCount} duplicate(s) skipped` : '';
-        out.innerHTML = `<p class="ok">Copied ${r.CopiedCount}, skipped ${r.SkippedCount}${dupNote}, failed ${r.FailedCount}${r.DryRun ? ' [dry-run]' : ''}.</p>`;
+      } else {
+        // Batched copy: transfer the library a slice at a time so the request stays short
+        // and a determinate progress bar can advance between batches.
+        const BATCH = 25;
+        const total = (await api('/api/rom/plan', 'POST', body)).FileCount;
+        if (total === 0) { out.innerHTML = `<p class="warnote">Nothing to copy.</p>`; busy(false); return; }
+        out.innerHTML = `<p>Copying… <progress id="pg${i}" max="${total}" value="0"></progress> <span id="pgt${i}">0 / ${total}</span></p>`;
+        const agg = { CopiedCount: 0, SkippedCount: 0, SkippedDuplicateCount: 0, SkippedProblemCount: 0, FailedCount: 0, DryRun: false, SystemId: systems[i].Id };
+        for (let skip = 0; skip < total; skip += BATCH) {
+          const r = await api('/api/rom/copy', 'POST', { ...body, skip, first: BATCH });
+          agg.CopiedCount += r.CopiedCount; agg.SkippedCount += r.SkippedCount;
+          agg.SkippedDuplicateCount += r.SkippedDuplicateCount; agg.SkippedProblemCount += r.SkippedProblemCount;
+          agg.FailedCount += r.FailedCount; agg.DryRun = r.DryRun;
+          const done = Math.min(skip + BATCH, total);
+          $('#pg' + i).value = done; $('#pgt' + i).textContent = `${done} / ${total}`;
+        }
+        S.roms = S.roms.filter(x => x.SystemId !== agg.SystemId); S.roms.push(agg);
+        const dupNote = agg.SkippedDuplicateCount > 0 ? `, ${agg.SkippedDuplicateCount} duplicate(s) skipped` : '';
+        out.innerHTML = `<p class="ok">Copied ${agg.CopiedCount}, skipped ${agg.SkippedCount}${dupNote}, failed ${agg.FailedCount}${agg.DryRun ? ' [dry-run]' : ''}.</p>`;
       }
     } catch (e) { out.innerHTML = errLine(e.message); } finally { busy(false); }
   });

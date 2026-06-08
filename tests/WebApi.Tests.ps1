@@ -67,6 +67,22 @@ Describe 'Invoke-PocketApiRoute' {
             Invoke-PocketApiRoute -Method POST -Path '/api/rom/plan' -Body $b -State $s }
         $r.Body.FileCount | Should -Be 1
     }
+    It 'POST /api/rom/copy honours skip/first for batched transfer' {
+        $src = Join-Path $script:root '_srcbatch'; New-Item -ItemType Directory $src -Force | Out-Null
+        1..4 | ForEach-Object { "rom$_" | Set-Content (Join-Path $src "g$_.gb") }
+        $copied = 0
+        for ($skip = 0; $skip -lt 4; $skip += 2) {
+            $body = [pscustomobject]@{ systemId='gb'; sourceFolder=$src; skip=$skip; first=2 }
+            $r = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = $body } { param($s,$b)
+                Invoke-PocketApiRoute -Method POST -Path '/api/rom/copy' -Body $b -State $s }
+            $r.Status | Should -Be 200
+            $r.Body.ItemTotal | Should -Be 4
+            $r.Body.BatchSkip | Should -Be $skip
+            $copied += $r.Body.CopiedCount
+        }
+        $copied | Should -Be 4
+        (Get-ChildItem (Join-Path $script:state.Root 'Assets/gb/common') -File).Count | Should -Be 4
+    }
     It 'POST /api/target sets a test-mode root' {
         $newRoot = Join-Path $script:root 'chosen'
         $body = [pscustomobject]@{ testMode = $true; rootPath = $newRoot }

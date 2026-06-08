@@ -134,6 +134,32 @@ Describe 'Invoke-PocketRomCopyPlan' {
         $res.FailedCount | Should -Be 0
     }
 
+    It 'copies in batches (-Skip/-First) with counts that add up' {
+        # Five distinct ROMs, copied two-at-a-time, must total five copied with no overlap.
+        1..5 | ForEach-Object { "rom$_" | Set-Content (Join-Path $script:src "g$_.gb") }
+        $plan = New-PocketRomCopyPlan -System $script:gb -SourceFolder $script:src -Root $script:root
+        $total = $plan.FileCount
+        $copied = 0; $seenSkips = @()
+        for ($skip = 0; $skip -lt $total; $skip += 2) {
+            $r = Invoke-PocketRomCopyPlan -Plan $plan -Skip $skip -First 2
+            $r.BatchSkip | Should -Be $skip
+            $r.ItemTotal | Should -Be $total
+            $copied += $r.CopiedCount
+            $seenSkips += $skip
+        }
+        $copied | Should -Be $total
+        # Every planned file actually landed on the card exactly once.
+        (Get-ChildItem (Join-Path $script:root 'Assets/gb/common') -File).Count | Should -Be $total
+    }
+
+    It 'invokes -OnProgress once per item in the batch' {
+        $calls = [System.Collections.Generic.List[object]]::new()
+        $cb = { param($done, $tot, $name) $calls.Add(@{ done = $done; tot = $tot }) }
+        Invoke-PocketRomCopyPlan -Plan $script:plan -OnProgress $cb | Out-Null
+        $calls.Count | Should -Be $script:plan.FileCount
+        $calls[-1].done | Should -Be $script:plan.FileCount
+    }
+
     It 'flags a truncated copy as failed (post-copy size verification)' {
         $plan = $script:plan
         $res = InModuleScope PocketPrep -Parameters @{ plan = $plan } {
