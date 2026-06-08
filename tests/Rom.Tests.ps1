@@ -43,14 +43,33 @@ Describe 'New-PocketRomCopyPlan' {
         { New-PocketRomCopyPlan -System $script:gb -SourceFolder (Join-Path $script:src 'nope') -Root $script:root } | Should -Throw
     }
 
-    It 'flags flatten collisions (same basename in different subfolders)' {
+    It 'de-duplicates flatten collisions (same basename in different subfolders)' {
         $a = Join-Path $script:src 'a'; $b = Join-Path $script:src 'b'
         New-Item -ItemType Directory -Path $a, $b -Force | Out-Null
         'x' | Set-Content (Join-Path $a 'dup.gb')
         'y' | Set-Content (Join-Path $b 'dup.gb')
         $plan = New-PocketRomCopyPlan -System $script:gb -SourceFolder $script:src -Root $script:root -Recurse
-        ($plan.Problems | Where-Object Reason -match 'duplicate').Count | Should -Be 1
+        ($plan.Duplicates | Where-Object Reason -match 'same name').Count | Should -Be 1
+        $plan.DuplicateCount | Should -Be 1
+        $plan.ProblemCount | Should -Be 0
         $plan.CopyableCount | Should -Be ($plan.FileCount - 1)
+    }
+
+    It 'de-duplicates byte-identical ROMs with different names (content dedupe)' {
+        'SAMEBYTES' | Set-Content (Join-Path $script:src 'one.gb')
+        'SAMEBYTES' | Set-Content (Join-Path $script:src 'two.gb')
+        $plan = New-PocketRomCopyPlan -System $script:gb -SourceFolder $script:src -Root $script:root
+        ($plan.Duplicates | Where-Object Reason -match 'identical').Count | Should -Be 1
+        $plan.DuplicateCount | Should -Be 1
+        $plan.CopyableCount | Should -Be ($plan.FileCount - 1)
+    }
+
+    It 'keeps byte-identical ROMs when -NoContentDedupe is given' {
+        'SAMEBYTES' | Set-Content (Join-Path $script:src 'one.gb')
+        'SAMEBYTES' | Set-Content (Join-Path $script:src 'two.gb')
+        $plan = New-PocketRomCopyPlan -System $script:gb -SourceFolder $script:src -Root $script:root -NoContentDedupe
+        $plan.DuplicateCount | Should -Be 0
+        $plan.CopyableCount | Should -Be $plan.FileCount
     }
 
     It 'flags filenames with characters invalid on FAT/exFAT' -Skip:($IsWindows) {
@@ -104,14 +123,14 @@ Describe 'Invoke-PocketRomCopyPlan' {
         $r2.CopiedCount | Should -Be 0
     }
 
-    It 'skips problem items (collision) instead of clobbering or failing' {
+    It 'skips duplicate items (collision) instead of clobbering or failing' {
         $a = Join-Path $script:src 'a'; $b = Join-Path $script:src 'b'
         New-Item -ItemType Directory -Path $a, $b -Force | Out-Null
         'x' | Set-Content (Join-Path $a 'dup.gb')
         'y' | Set-Content (Join-Path $b 'dup.gb')
         $plan = New-PocketRomCopyPlan -System $script:gb -SourceFolder $script:src -Root $script:root -Recurse
         $res = Invoke-PocketRomCopyPlan -Plan $plan
-        $res.SkippedProblemCount | Should -Be 1
+        $res.SkippedDuplicateCount | Should -Be 1
         $res.FailedCount | Should -Be 0
     }
 

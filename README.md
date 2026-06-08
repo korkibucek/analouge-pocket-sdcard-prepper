@@ -188,6 +188,9 @@ editable without code). For each system the wizard:
 - asks for a source folder and validates it,
 - matches only the system's ROM extensions and reports the count,
 - copies into `Assets/<platform-id>/common/` on the card (the openFPGA convention),
+- **de-duplicates automatically** — the same ROM found in two source folders (same
+  name, or byte-for-byte identical content under a different name) is copied only
+  once; pass `-NoContentDedupe` to keep content-identical files,
 - skips files that already exist unless you choose to overwrite, and
 - never copies BIOS files unless you explicitly opt in.
 

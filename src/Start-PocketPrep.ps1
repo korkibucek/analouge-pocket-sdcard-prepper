@@ -294,6 +294,10 @@ foreach ($sys in $systems) {
         Write-Host "  $($plan.ProblemCount) file(s) will be SKIPPED (cannot go on the card):" -ForegroundColor Yellow
         $plan.Problems | Select-Object -First 8 | ForEach-Object { Write-Host "    - $($_.RelativePath): $($_.Reason)" -ForegroundColor Yellow }
     }
+    if ($plan.DuplicateCount -gt 0) {
+        Write-Host "  $($plan.DuplicateCount) duplicate(s) detected - each ROM will be copied only once:" -ForegroundColor Yellow
+        $plan.Duplicates | Select-Object -First 8 | ForEach-Object { Write-Host "    - $($_.RelativePath): $($_.Reason)" -ForegroundColor Yellow }
+    }
     if (-not $plan.FitsInDestination) {
         Write-Host "  Not enough free space on the card for these ROMs ($([math]::Round($plan.DestinationFreeBytes/1MB,1)) MB free). They will not be copied." -ForegroundColor Red
         continue
@@ -304,7 +308,8 @@ foreach ($sys in $systems) {
     if ($plan.FileCount -eq 0) { continue }
     if (Confirm-YesNo "  Copy $($plan.FileCount) file(s) to $($plan.Destination)?" $true) {
         $res = Invoke-PocketRomCopyPlan -Plan $plan -DryRun:$DryRun -Logger $logger
-        Write-Host "  Copied $($res.CopiedCount), skipped $($res.SkippedCount), failed $($res.FailedCount)." -ForegroundColor Green
+        $dupNote = if ($res.SkippedDuplicateCount -gt 0) { ", $($res.SkippedDuplicateCount) duplicate(s) skipped" } else { '' }
+        Write-Host "  Copied $($res.CopiedCount), skipped $($res.SkippedCount)$dupNote, failed $($res.FailedCount)." -ForegroundColor Green
         $romResults.Add($res)
     }
 }

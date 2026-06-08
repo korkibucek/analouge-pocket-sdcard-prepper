@@ -46,6 +46,7 @@ function Invoke-PocketRomCopyPlan {
         $copied  = [System.Collections.Generic.List[string]]::new()
         $skipped = [System.Collections.Generic.List[string]]::new()
         $skippedProblems = [System.Collections.Generic.List[object]]::new()
+        $skippedDuplicates = [System.Collections.Generic.List[object]]::new()
         $failed  = [System.Collections.Generic.List[object]]::new()
 
         if (-not $DryRun -and ($Plan.CopyableCount ?? $Plan.FileCount) -gt 0) {
@@ -58,6 +59,14 @@ function Invoke-PocketRomCopyPlan {
             if ($item.PSObject.Properties['Problem'] -and $item.Problem) {
                 $skippedProblems.Add([pscustomobject]@{ RelativePath = $item.RelativePath; Reason = $item.Problem })
                 & $log "SKIP (problem: $($item.Problem)) $($item.RelativePath)" 'WARN'
+                continue
+            }
+
+            # Skip de-duplicated items (same name or byte-identical to a file already
+            # planned) so the same ROM lands on the card only once.
+            if ($item.PSObject.Properties['Duplicate'] -and $item.Duplicate) {
+                $skippedDuplicates.Add([pscustomobject]@{ RelativePath = $item.RelativePath; Reason = $item.Duplicate })
+                & $log "SKIP (duplicate: $($item.Duplicate)) $($item.RelativePath)" 'INFO'
                 continue
             }
 
@@ -103,10 +112,12 @@ function Invoke-PocketRomCopyPlan {
             CopiedCount   = $copied.Count
             SkippedCount  = $skipped.Count
             SkippedProblemCount = $skippedProblems.Count
+            SkippedDuplicateCount = $skippedDuplicates.Count
             FailedCount   = $failed.Count
             Copied        = $copied.ToArray()
             Skipped       = $skipped.ToArray()
             SkippedProblems = $skippedProblems.ToArray()
+            SkippedDuplicates = $skippedDuplicates.ToArray()
             Failed        = $failed.ToArray()
         }
     }
