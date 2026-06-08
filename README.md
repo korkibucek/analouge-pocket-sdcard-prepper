@@ -209,6 +209,16 @@ folder list exists** — so returning users can see the state at a glance. From 
 breakdown you can jump straight to **rescan / modify ROM folders**; the CLI prints the same
 summary and then offers the rescan.
 
+### Onboard an already-used card
+
+Inserted a card that was set up elsewhere and already has ROMs on it? The tool can
+**onboard** it: it scans the existing content and generates a starter
+`pocketprep/rom-sources.json` listing the systems it found, so the rescan/add-folder
+workflow and breakdown work immediately. The generated sources point at the card itself
+(so a first rescan is a safe no-op) — edit each one (or use **Browse**) to point at your
+computer's ROM folders to sync new games later. Web UI: **Onboard this card** on the
+breakdown panel; CLI: offered automatically when a used card has ROMs but no saved list.
+
 ### Rescan: add a few games later without redoing setup
 
 When you import ROMs the tool saves your **source-folder → system** mapping to the card at

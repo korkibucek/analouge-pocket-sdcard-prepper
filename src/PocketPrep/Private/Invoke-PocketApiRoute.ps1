@@ -132,6 +132,12 @@ function Invoke-PocketApiRoute {
                 return @{ Status = 200; Body = (Get-PocketCardSummary -Root $State.Root `
                     -SystemsManifest $State.SystemsManifest -FirmwareManifest $State.FirmwareManifest) }
             }
+            '^POST /api/card/onboard$' {
+                # Onboard a used card: scan existing content and generate a starter config.
+                return @{ Status = 200; Body = (Import-PocketUsedCard -Root $State.Root `
+                    -SystemsManifest $State.SystemsManifest -FirmwareManifest $State.FirmwareManifest `
+                    -DryRun:([bool]$State.DryRun)) }
+            }
             '^GET /api/rom/config$' {
                 # The saved source-folder -> system mapping on the card (empty if none).
                 return @{ Status = 200; Body = (Get-PocketRomConfig -Root $State.Root) }

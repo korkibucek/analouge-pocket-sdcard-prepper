@@ -93,6 +93,15 @@ Describe 'Invoke-PocketApiRoute' {
         $r.Body.Firmware.Version | Should -Be '2.5'
         $r.Body.Roms.TotalFiles | Should -Be 1
     }
+    It 'POST /api/card/onboard generates a config from existing card ROMs' {
+        $common = Join-Path $script:root 'Assets/gb/common'; New-Item -ItemType Directory $common -Force | Out-Null
+        'a' | Set-Content (Join-Path $common 'one.gb')
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method POST -Path '/api/card/onboard' -Body ([pscustomobject]@{}) -State $s }
+        $r.Status | Should -Be 200
+        $r.Body.DetectedCount | Should -Be 1
+        (Test-Path (Join-Path $script:state.Root 'pocketprep/rom-sources.json')) | Should -BeTrue
+    }
     It 'GET/POST /api/rom/config round-trips and POST /api/rom/rescan copies' {
         $src = Join-Path $script:root '_rcfg'; New-Item -ItemType Directory $src -Force | Out-Null
         'a' | Set-Content (Join-Path $src 'one.gb'); 'b' | Set-Content (Join-Path $src 'two.gb')

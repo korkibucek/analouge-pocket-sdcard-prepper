@@ -148,6 +148,9 @@ function cardBreakdownHtml(sum) {
   const cfg = sum.Config.Exists ? `${sum.Config.SourceCount} saved folder(s)` : 'no saved folder list';
   const anything = sum.Firmware.Present || sum.Cores.Count > 0 || sum.Roms.TotalFiles > 0;
   if (!anything && !sum.Config.Exists) return '';
+  // Used card with ROMs but no saved config -> offer to onboard (generate the config).
+  const canOnboard = sum.Roms.TotalFiles > 0 && !sum.Config.Exists;
+  const onboardBtn = canOnboard ? `<button id="onboard">Onboard this card (generate config)</button>` : '';
   return `<div class="card"><strong>Already on this card</strong>
     <ul class="list" style="margin-top:.4rem">
       <li>Firmware: ${fw}</li>
@@ -156,8 +159,9 @@ function cardBreakdownHtml(sum) {
       <li>ROM config: ${cfg}</li>
     </ul>
     <div class="row" style="margin-top:.5rem">
+      ${onboardBtn}
       <button id="manageroms" class="secondary">${sum.Config.Exists ? 'Rescan / modify ROM folders →' : 'Manage ROM folders →'}</button>
-    </div></div>`;
+    </div><div id="onboardout"></div></div>`;
 }
 
 async function stepCard() {
@@ -167,7 +171,18 @@ async function stepCard() {
   let breakdown = '';
   try { breakdown = cardBreakdownHtml(await api('/api/card-summary')); } catch { /* non-fatal */ }
   html += breakdown;
-  const wireManage = () => { if ($('#manageroms')) $('#manageroms').onclick = () => go(5); };
+  const wireManage = () => {
+    if ($('#manageroms')) $('#manageroms').onclick = () => go(5);
+    if ($('#onboard')) $('#onboard').onclick = async () => {
+      busy(true);
+      $('#onboardout').innerHTML = `<p>Scanning the card and generating a config…</p>`;
+      try { const r = await api('/api/card/onboard', 'POST', {});
+        const extra = r.UnmappedCount ? ` (${r.UnmappedCount} platform(s) had no matching system and were skipped)` : '';
+        $('#onboardout').innerHTML = `<p class="ok">Onboarded: registered ${r.DetectedCount} system(s) from the card${extra}. Open ROM folders to point them at your library or rescan.</p>`;
+        if ($('#onboard')) $('#onboard').disabled = true;
+      } catch (e) { $('#onboardout').innerHTML = errLine(e.message); } finally { busy(false); }
+    };
+  };
   try {
     if (S.drive && S.drive.FileSystem) {
       const fs = await api('/api/filesystem', 'POST', { fileSystem: S.drive.FileSystem });
