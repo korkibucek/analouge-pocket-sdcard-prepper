@@ -80,9 +80,10 @@ wizard** is also available with `--cli` (Linux/macOS) or `PocketPrep.cmd cli` (W
 Double-click **`PocketPrep.cmd`** — it starts the web UI in your browser. For the text
 wizard: `PocketPrep.cmd cli`.
 
-> **First time on Windows?** This build isn't code-signed yet, so Windows adds some
-> friction (PowerShell 7 install, "Unblock", possible SmartScreen prompt). The
-> step-by-step [Windows first-run guide](docs/WINDOWS-FIRST-RUN.md) walks through it.
+> **First time on Windows?** Releases are unsigned (free hobby project), so Windows adds
+> some friction (PowerShell 7 install, "Unblock", possible SmartScreen prompt). The
+> [Windows first-run guide](docs/WINDOWS-FIRST-RUN.md) covers download → verify checksum →
+> unblock → run.
 
 ### Linux / macOS
 ```bash
@@ -229,7 +230,7 @@ Highlights (full list in [docs/KNOWN-LIMITATIONS.md](docs/KNOWN-LIMITATIONS.md))
 - Live drive detection works on Windows/Linux/macOS but is hardware-verified via manual UAT, not CI.
 - Platform-ids may need per-core adjustment (see above).
 - Neo Geo / arcade / CD systems are experimental (BIOS/romset handling not fully managed).
-- Windows builds aren't code-signed yet (expect SmartScreen/Unblock; see the first-run guide).
+- Windows builds are unsigned by design (verify with SHA256SUMS; expect SmartScreen/Unblock — see the first-run guide).
 
 ## Documentation
 

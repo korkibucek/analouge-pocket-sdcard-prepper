@@ -39,8 +39,9 @@ Honest list of what the tool does **not** do or where it needs care, as of the c
 - The web UI has **not** had a full accessibility/browser-matrix audit (tracked separately).
 
 ## Distribution
-- Windows builds are **not yet code-signed** (#84): expect SmartScreen / "Unblock" prompts.
-  See `docs/WINDOWS-FIRST-RUN.md`.
+- Windows builds are **unsigned by design** (free hobby project — no code-signing cert):
+  expect a SmartScreen / "Unblock" prompt on first run. Verify the download with the
+  published `SHA256SUMS` and follow `docs/WINDOWS-FIRST-RUN.md`.
 - The `.deb`/`.rpm` declare PowerShell as a **weak** dependency (it isn't in default repos);
   install PowerShell 7 separately if prompted.
 

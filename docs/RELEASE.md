@@ -1,7 +1,9 @@
 # Release checklist
 
 Follow this before tagging a public release. The repo is the source of truth; releases
-are versioned, CI-verified, and (eventually) signed.
+are versioned, CI-verified, and published with SHA256 checksums. Windows builds are
+unsigned by design (free hobby project) — trust is via the official Releases page +
+checksums + first-run docs; see `docs/WINDOWS-FIRST-RUN.md`.
 
 ## Pre-flight
 - [ ] All CI checks green on `main` (lint, manifest-validate, jsdom, Pester ×3 OS, package-deb, package-rpm).
@@ -16,9 +18,10 @@ are versioned, CI-verified, and (eventually) signed.
 ## Build & verify
 - [ ] `pwsh ./scripts/Build-Release.ps1` → `dist/AnaloguePocketSDCardPrepper-<ver>.zip`.
 - [ ] `bash scripts/Build-Deb.sh` and (on Fedora) `bash scripts/Build-Rpm.sh`.
-- [ ] Generate checksums: `sha256sum dist/* > dist/SHA256SUMS`.
-- [ ] Windows: sign artifacts once a code-signing cert exists (#84). Until then, link
-      `docs/WINDOWS-FIRST-RUN.md` in the release notes.
+- [ ] Generate checksums: `sha256sum dist/* > dist/SHA256SUMS` (the `release` workflow does
+      this automatically).
+- [ ] Link `docs/WINDOWS-FIRST-RUN.md` in the release notes (download → verify checksum →
+      unblock → run). Windows artifacts are unsigned by design — no signing step.
 
 ## Publish
 - [ ] Tag `vX.Y.Z` and push the tag. **The `release` workflow then builds the zip/.deb/.rpm,
@@ -26,7 +29,7 @@ are versioned, CI-verified, and (eventually) signed.
       the tag matches `ModuleVersion` and that manifests validate). You can also run it via
       `workflow_dispatch` against an existing tag.
 - [ ] After it runs, smoke-install at least the `.deb` and the zip "run from source" path on a clean machine.
-- [ ] (When a signing cert exists, #84) sign the Windows artifacts and re-upload.
+- [ ] Confirm `SHA256SUMS` is attached to the Release.
 
 ## Rollback
 - Previous releases remain on the Releases page; users reinstall the prior version's
