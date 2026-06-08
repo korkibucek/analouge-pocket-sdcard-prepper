@@ -36,6 +36,7 @@
         'Invoke-PocketRomRescan',
         'Get-PocketCardSummary',
         'Import-PocketUsedCard',
+        'Get-PocketImportablePlatform',
         'New-PocketTarget',
         'Get-PocketDirectoryListing',
         'New-PocketLogger',

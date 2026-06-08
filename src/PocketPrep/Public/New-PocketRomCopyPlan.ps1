@@ -53,9 +53,12 @@ function New-PocketRomCopyPlan {
 
     $destRoot = Join-Path (Join-Path (Join-Path $Root 'Assets') $System.PlatformId) 'common'
     $exts = $System.SupportedExtensions
+    # A system may declare '*' to mean "match any file" - used for platforms imported from an
+    # installed core whose ROM extensions aren't known to the manifest (see #128).
+    $matchAll = @($exts) -contains '*'
 
     $allFiles = Get-ChildItem -LiteralPath $SourceFolder -File -Recurse:$Recurse -ErrorAction SilentlyContinue
-    $matched  = $allFiles | Where-Object { $exts -contains $_.Extension.ToLowerInvariant() }
+    $matched  = if ($matchAll) { $allFiles } else { $allFiles | Where-Object { $exts -contains $_.Extension.ToLowerInvariant() } }
 
     $sourceFull = (Resolve-Path -LiteralPath $SourceFolder).Path
 

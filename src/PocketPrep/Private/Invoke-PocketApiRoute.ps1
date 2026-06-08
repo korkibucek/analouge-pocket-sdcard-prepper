@@ -14,6 +14,18 @@ function Invoke-PocketApiRoute {
     $target = [pscustomobject]@{ Root = $State.Root; IsTestMode = [bool]$State.IsTestMode }
     $key = "$($Method.ToUpperInvariant()) $Path"
 
+    # Resolve a ROM target by id: a manifest system first, else a platform declared by an
+    # installed core (#128) so ROM import works for any installed core, not just the built-ins.
+    $resolveRomTarget = {
+        param($id)
+        # Get-PocketSystem throws on an unknown id; an installed-core platform is a valid
+        # target too, so fall through to those rather than failing.
+        $s = try { Get-PocketSystem -Path $State.SystemsManifest -Id ([string]$id) } catch { $null }
+        if ($s) { return $s }
+        @(Get-PocketImportablePlatform -Root $State.Root -SystemsManifest $State.SystemsManifest) |
+            Where-Object { $_.Id -eq [string]$id } | Select-Object -First 1
+    }
+
     try {
         switch -Regex ($key) {
             '^GET /api/health$' {
@@ -95,8 +107,13 @@ function Invoke-PocketApiRoute {
             '^GET /api/systems$' {
                 return @{ Status = 200; Body = @{ systems = @(Get-PocketSystem -Path $State.SystemsManifest) } }
             }
+            '^GET /api/rom/extra-platforms$' {
+                # Platforms declared by installed cores that aren't in the systems manifest.
+                return @{ Status = 200; Body = @{ platforms = @(Get-PocketImportablePlatform -Root $State.Root -SystemsManifest $State.SystemsManifest) } }
+            }
             '^POST /api/rom/plan$' {
-                $sys = Get-PocketSystem -Path $State.SystemsManifest -Id ([string]$Body.systemId)
+                $sys = & $resolveRomTarget $Body.systemId
+                if (-not $sys) { return @{ Status = 400; Body = @{ error = "Unknown system or platform: $($Body.systemId)" } } }
                 $plan = New-PocketRomCopyPlan -System $sys -SourceFolder ([string]$Body.sourceFolder) -Root $State.Root `
                     -Recurse:([bool]$Body.recurse) -PreserveStructure:([bool]$Body.preserveStructure)
                 $pidCheck = Test-PocketPlatformIdInstalled -Root $State.Root -PlatformId $sys.PlatformId
@@ -109,7 +126,8 @@ function Invoke-PocketApiRoute {
                 # slice at a time and advance a progress bar between calls. The plan (which
                 # may hash files for dedupe) is cached per system+source so batches after
                 # the first are cheap and the de-dup view stays consistent across batches.
-                $sys = Get-PocketSystem -Path $State.SystemsManifest -Id ([string]$Body.systemId)
+                $sys = & $resolveRomTarget $Body.systemId
+                if (-not $sys) { return @{ Status = 400; Body = @{ error = "Unknown system or platform: $($Body.systemId)" } } }
                 $skip  = [int]($Body.skip ?? 0)
                 $first = [int]($Body.first ?? 0)
                 if (-not $State.RomPlans) { $State.RomPlans = @{} }

@@ -93,6 +93,24 @@ Describe 'Invoke-PocketApiRoute' {
         $r.Body.Firmware.Version | Should -Be '2.5'
         $r.Body.Roms.TotalFiles | Should -Be 1
     }
+    It 'GET /api/rom/extra-platforms + plan/copy work for an installed-core platform' {
+        # Install a fake core that declares a platform the manifest does not know.
+        $coreDir = Join-Path $script:root 'Cores/Some.WonderSwan'; New-Item -ItemType Directory $coreDir -Force | Out-Null
+        @{ core = @{ metadata = @{ shortname='WS'; author='x'; version='1.0'; platform_ids=@('wonderswan') } } } |
+            ConvertTo-Json -Depth 6 | Set-Content (Join-Path $coreDir 'core.json')
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method GET -Path '/api/rom/extra-platforms' -State $s }
+        @($r.Body.platforms.PlatformId) | Should -Contain 'wonderswan'
+
+        # Plan + copy ROMs to that platform via its id.
+        $src = Join-Path $script:root '_ws'; New-Item -ItemType Directory $src -Force | Out-Null
+        'a' | Set-Content (Join-Path $src 'g.ws')
+        $body = [pscustomobject]@{ systemId='wonderswan'; sourceFolder=$src }
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = $body } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/rom/copy' -Body $b -State $s }
+        $r.Status | Should -Be 200
+        (Test-Path (Join-Path $script:state.Root 'Assets/wonderswan/common/g.ws')) | Should -BeTrue
+    }
     It 'POST /api/card/onboard generates a config from existing card ROMs' {
         $common = Join-Path $script:root 'Assets/gb/common'; New-Item -ItemType Directory $common -Force | Out-Null
         'a' | Set-Content (Join-Path $common 'one.gb')
