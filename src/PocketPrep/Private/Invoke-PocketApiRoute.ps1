@@ -112,6 +112,12 @@ function Invoke-PocketApiRoute {
                 if (-not (Test-Path -LiteralPath $State.CoresManifest)) { return @{ Status = 200; Body = @{ updates = @() } } }
                 return @{ Status = 200; Body = @{ updates = @(Get-PocketCoreUpdateStatus -Root $State.Root -CoresManifest $State.CoresManifest) } }
             }
+            '^POST /api/cores/install-all$' {
+                if (-not (Test-Path -LiteralPath $State.CoresManifest)) { return @{ Status = 200; Body = @{ result = $null } } }
+                $ids = if ($Body -and $Body.ids) { @($Body.ids) } else { $null }
+                $res = Install-PocketCoreSet -Root $State.Root -CoresManifest $State.CoresManifest -Id $ids -DryRun:([bool]$State.DryRun)
+                return @{ Status = 200; Body = $res }
+            }
             '^POST /api/cores/update-all$' {
                 if (-not (Test-Path -LiteralPath $State.CoresManifest)) { return @{ Status = 200; Body = @{ results = @() } } }
                 $res = Update-PocketCore -Root $State.Root -CoresManifest $State.CoresManifest -DryRun:([bool]$State.DryRun)

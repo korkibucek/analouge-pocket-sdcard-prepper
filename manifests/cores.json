@@ -1,78 +1,704 @@
 {
   "$schema": "./schemas/cores.schema.json",
-  "_comment": "A small, curated set of openFPGA cores. Cores are made by independent authors under their own licences - this tool does not bundle or relicense them. Download mode resolves the core's GitHub release zip at install time (we do NOT hardcode brittle asset URLs; repository coordinates are stored instead and the latest/pinned release is resolved via the GitHub API). You can always download a core zip yourself from its homepage and install it offline. Core identifiers and repositories were taken from the community openFPGA Cores Inventory (https://github.com/joshcampbell191/openfpga-cores-inventory). 'identifier' is also the folder name created under Cores/ on the card.",
+  "_comment": "Generated from the community openFPGA Cores Inventory (https://joshcampbell191.github.io/openfpga-cores-inventory/api/v1/analogue-pocket/cores.json) by scripts/Update-CoresManifest.ps1. Cores are made by independent authors under their own licences; this tool downloads each core's GitHub release at install time and bundles nothing. Re-run the script to refresh. platformIds come from the inventory's asset platforms and may be empty for cores with no ROM platform.",
   "cores": [
     {
-      "id": "gb-gbc",
-      "identifier": "Spiritualized.GB",
-      "displayName": "Game Boy / Game Boy Color (Spiritualized)",
-      "platformIds": ["gb", "gbc"],
-      "owner": "spiritualized1997",
-      "repo": "openFPGA-GB-GBC",
-      "homepage": "https://github.com/spiritualized1997/openFPGA-GB-GBC",
+      "id": "agg23-arduboy",
+      "identifier": "agg23.Arduboy",
+      "displayName": "Arduboy [agg23]",
+      "platformIds": [
+        "arduboy"
+      ],
+      "owner": "agg23",
+      "repo": "openfpga-arduboy",
+      "homepage": "https://github.com/agg23/openfpga-arduboy",
       "biosRequired": false,
       "biosFiles": [],
-      "notes": "Provides both Game Boy and Game Boy Color. The Cores/ folder uses 'Spiritualized.GB' and 'Spiritualized.GBC'."
+      "notes": "From the openFPGA Cores Inventory. Handheld Arduboy by Arduboy (2016)"
     },
     {
-      "id": "gba",
-      "identifier": "Spiritualized.GBA",
-      "displayName": "Game Boy Advance (Spiritualized)",
-      "platformIds": ["gba"],
-      "owner": "spiritualized1997",
-      "repo": "openFPGA-GBA",
-      "homepage": "https://github.com/spiritualized1997/openFPGA-GBA",
-      "biosRequired": false,
-      "biosFiles": [],
-      "notes": "Optional GBA BIOS is supported by the core but is not required and is never copied automatically."
-    },
-    {
-      "id": "nes",
+      "id": "agg23-nes",
       "identifier": "agg23.NES",
-      "displayName": "NES (agg23)",
-      "platformIds": ["nes"],
+      "displayName": "NES [agg23]",
+      "platformIds": [
+        "nes"
+      ],
       "owner": "agg23",
       "repo": "openfpga-NES",
       "homepage": "https://github.com/agg23/openfpga-NES",
       "biosRequired": false,
       "biosFiles": [],
-      "notes": "Actively maintained NES core."
+      "notes": "From the openFPGA Cores Inventory. Console NES by Nintendo (1983)"
     },
     {
-      "id": "snes",
-      "identifier": "agg23.SNES",
-      "displayName": "SNES (agg23)",
-      "platformIds": ["snes"],
-      "owner": "agg23",
-      "repo": "openfpga-SNES",
-      "homepage": "https://github.com/agg23/openfpga-SNES",
-      "biosRequired": false,
-      "biosFiles": [],
-      "notes": "Actively maintained SNES core."
-    },
-    {
-      "id": "sms",
-      "identifier": "Spiritualized.SMS",
-      "displayName": "Master System (Spiritualized)",
-      "platformIds": ["sms"],
-      "owner": "spiritualized1997",
-      "repo": "openFPGA-SMS",
-      "homepage": "https://github.com/spiritualized1997/openFPGA-SMS",
-      "biosRequired": false,
-      "biosFiles": [],
-      "notes": "Sega Master System."
-    },
-    {
-      "id": "pce",
+      "id": "agg23-pc-engine",
       "identifier": "agg23.PC Engine",
-      "displayName": "PC Engine / TurboGrafx-16 (agg23)",
-      "platformIds": ["pce"],
+      "displayName": "PC Engine [agg23]",
+      "platformIds": [
+        "pce"
+      ],
       "owner": "agg23",
       "repo": "openfpga-pcengine",
       "homepage": "https://github.com/agg23/openfpga-pcengine",
       "biosRequired": false,
       "biosFiles": [],
-      "notes": "HuCard support. CD support requires extra setup not handled here."
+      "notes": "From the openFPGA Cores Inventory. Console PC Engine by NEC Home Electronics (1987)"
+    },
+    {
+      "id": "agg23-pokemonmini",
+      "identifier": "agg23.PokemonMini",
+      "displayName": "Pokemon Mini [agg23]",
+      "platformIds": [
+        "poke_mini"
+      ],
+      "owner": "agg23",
+      "repo": "openfpga-pokemonmini",
+      "homepage": "https://github.com/agg23/openfpga-pokemonmini",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Handheld Pokemon Mini by Nintendo (2001)"
+    },
+    {
+      "id": "agg23-pong",
+      "identifier": "agg23.Pong",
+      "displayName": "Pong [agg23]",
+      "platformIds": [],
+      "owner": "agg23",
+      "repo": "openfpga-pong",
+      "homepage": "https://github.com/agg23/openfpga-pong",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Arcade Pong by Atari (1972)"
+    },
+    {
+      "id": "agg23-snes",
+      "identifier": "agg23.SNES",
+      "displayName": "SNES [agg23]",
+      "platformIds": [
+        "snes"
+      ],
+      "owner": "agg23",
+      "repo": "openfpga-SNES",
+      "homepage": "https://github.com/agg23/openfpga-SNES",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Console SNES by Nintendo (1990)"
+    },
+    {
+      "id": "boogermann-bankpanic",
+      "identifier": "boogermann.bankpanic",
+      "displayName": "Bank Panic [opengateware]",
+      "platformIds": [
+        "bankpanic"
+      ],
+      "owner": "opengateware",
+      "repo": "arcade-bankp",
+      "homepage": "https://github.com/opengateware/arcade-bankp",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Arcade Bank Panic by Sanritsu / Sega (1984)"
+    },
+    {
+      "id": "boogermann-congo",
+      "identifier": "boogermann.congo",
+      "displayName": "Congo Bongo [opengateware]",
+      "platformIds": [
+        "congo"
+      ],
+      "owner": "opengateware",
+      "repo": "arcade-congo",
+      "homepage": "https://github.com/opengateware/arcade-congo",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Arcade Congo Bongo by Sega/Gremlin (1983)"
+    },
+    {
+      "id": "boogermann-digdug",
+      "identifier": "boogermann.digdug",
+      "displayName": "Dig Dug [opengateware]",
+      "platformIds": [
+        "digdug"
+      ],
+      "owner": "opengateware",
+      "repo": "arcade-digdug",
+      "homepage": "https://github.com/opengateware/arcade-digdug",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Arcade Dig Dug by Namco (1982)"
+    },
+    {
+      "id": "boogermann-galaga",
+      "identifier": "boogermann.galaga",
+      "displayName": "Galaga [opengateware]",
+      "platformIds": [
+        "galaga"
+      ],
+      "owner": "opengateware",
+      "repo": "arcade-galaga",
+      "homepage": "https://github.com/opengateware/arcade-galaga",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Arcade Galaga by Namco (1981)"
+    },
+    {
+      "id": "boogermann-gberet",
+      "identifier": "boogermann.gberet",
+      "displayName": "Green Beret [opengateware]",
+      "platformIds": [
+        "gberet"
+      ],
+      "owner": "opengateware",
+      "repo": "arcade-gberet",
+      "homepage": "https://github.com/opengateware/arcade-gberet",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Arcade Green Beret by Konami (1985)"
+    },
+    {
+      "id": "boogermann-pooyan",
+      "identifier": "boogermann.pooyan",
+      "displayName": "Pooyan [opengateware]",
+      "platformIds": [
+        "pooyan"
+      ],
+      "owner": "opengateware",
+      "repo": "arcade-pooyan",
+      "homepage": "https://github.com/opengateware/arcade-pooyan",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Arcade Pooyan by Konami (1982)"
+    },
+    {
+      "id": "boogermann-supervision",
+      "identifier": "boogermann.supervision",
+      "displayName": "Supervision [opengateware]",
+      "platformIds": [
+        "supervision"
+      ],
+      "owner": "opengateware",
+      "repo": "console-supervision",
+      "homepage": "https://github.com/opengateware/console-supervision",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Handheld Supervision by Watara (1992)"
+    },
+    {
+      "id": "boogermann-xevious",
+      "identifier": "boogermann.xevious",
+      "displayName": "Xevious [opengateware]",
+      "platformIds": [
+        "xevious"
+      ],
+      "owner": "opengateware",
+      "repo": "arcade-xevious",
+      "homepage": "https://github.com/opengateware/arcade-xevious",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Arcade Xevious by Namco (1983)"
+    },
+    {
+      "id": "ericlewis-asteroids",
+      "identifier": "ericlewis.Asteroids",
+      "displayName": "Asteroids [ericlewis]",
+      "platformIds": [
+        "asteroids"
+      ],
+      "owner": "ericlewis",
+      "repo": "openfpga-asteroids",
+      "homepage": "https://github.com/ericlewis/openfpga-asteroids",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Arcade Asteroids by Atari Corporation (1979)"
+    },
+    {
+      "id": "ericlewis-dominos",
+      "identifier": "ericlewis.Dominos",
+      "displayName": " [ericlewis]",
+      "platformIds": [],
+      "owner": "ericlewis",
+      "repo": "openfpga-dominos",
+      "homepage": "https://github.com/ericlewis/openfpga-dominos",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory."
+    },
+    {
+      "id": "ericlewis-donkeykong",
+      "identifier": "ericlewis.DonkeyKong",
+      "displayName": " [ericlewis]",
+      "platformIds": [],
+      "owner": "ericlewis",
+      "repo": "openFPGA-DonkeyKong",
+      "homepage": "https://github.com/ericlewis/openFPGA-DonkeyKong",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory."
+    },
+    {
+      "id": "ericlewis-genesis",
+      "identifier": "ericlewis.Genesis",
+      "displayName": " [opengateware]",
+      "platformIds": [],
+      "owner": "opengateware",
+      "repo": "openfpga-genesis",
+      "homepage": "https://github.com/opengateware/openfpga-genesis",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory."
+    },
+    {
+      "id": "ericlewis-lunarlander",
+      "identifier": "ericlewis.LunarLander",
+      "displayName": " [ericlewis]",
+      "platformIds": [],
+      "owner": "ericlewis",
+      "repo": "openfpga-lunarlander",
+      "homepage": "https://github.com/ericlewis/openfpga-lunarlander",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory."
+    },
+    {
+      "id": "ericlewis-qbert",
+      "identifier": "ericlewis.QBert",
+      "displayName": "Q*Bert [ericlewis]",
+      "platformIds": [
+        "qbert"
+      ],
+      "owner": "ericlewis",
+      "repo": "openfpga-qbert",
+      "homepage": "https://github.com/ericlewis/openfpga-qbert",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Arcade Q*Bert by Gottlieb (1982)"
+    },
+    {
+      "id": "ericlewis-radarscope",
+      "identifier": "ericlewis.RadarScope",
+      "displayName": " [ericlewis]",
+      "platformIds": [],
+      "owner": "ericlewis",
+      "repo": "openFPGA-RadarScope",
+      "homepage": "https://github.com/ericlewis/openFPGA-RadarScope",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory."
+    },
+    {
+      "id": "ericlewis-spacerace",
+      "identifier": "ericlewis.SpaceRace",
+      "displayName": "Space Race [ericlewis]",
+      "platformIds": [],
+      "owner": "ericlewis",
+      "repo": "openfpga-spacerace",
+      "homepage": "https://github.com/ericlewis/openfpga-spacerace",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Arcade Space Race by Atari (1973)"
+    },
+    {
+      "id": "ericlewis-superbreakout",
+      "identifier": "ericlewis.SuperBreakout",
+      "displayName": " [ericlewis]",
+      "platformIds": [],
+      "owner": "ericlewis",
+      "repo": "openfpga-superbreakout",
+      "homepage": "https://github.com/ericlewis/openfpga-superbreakout",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory."
+    },
+    {
+      "id": "mazamars312-amiga",
+      "identifier": "Mazamars312.Amiga",
+      "displayName": "Amiga 500 [Mazamars312]",
+      "platformIds": [
+        "amiga"
+      ],
+      "owner": "Mazamars312",
+      "repo": "Analogue-Amiga",
+      "homepage": "https://github.com/Mazamars312/Analogue-Amiga",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Computer Amiga 500 by Commodore International (1986)"
+    },
+    {
+      "id": "mazamars312-neogeo",
+      "identifier": "Mazamars312.NeoGeo",
+      "displayName": "Neo Geo [Mazamars312]",
+      "platformIds": [
+        "ng"
+      ],
+      "owner": "Mazamars312",
+      "repo": "Analogue_Pocket_Neogeo",
+      "homepage": "https://github.com/Mazamars312/Analogue_Pocket_Neogeo",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Console Neo Geo by SNK (1990)"
+    },
+    {
+      "id": "nullobject-tecmo",
+      "identifier": "nullobject.tecmo",
+      "displayName": "Tecmo [nullobject]",
+      "platformIds": [
+        "tecmo"
+      ],
+      "owner": "nullobject",
+      "repo": "openfpga-tecmo",
+      "homepage": "https://github.com/nullobject/openfpga-tecmo",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Arcade Tecmo by Tecmo (1986)"
+    },
+    {
+      "id": "spacemen3-pdp1",
+      "identifier": "Spacemen3.PDP1",
+      "displayName": "PDP-1: Spacewar! [spacemen3]",
+      "platformIds": [
+        "pdp1"
+      ],
+      "owner": "spacemen3",
+      "repo": "PDP-1",
+      "homepage": "https://github.com/spacemen3/PDP-1",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Computer PDP-1: Spacewar! by Digital Equipment Corporation (1959)"
+    },
+    {
+      "id": "spiritualized-2600",
+      "identifier": "Spiritualized.2600",
+      "displayName": "Atari VCS (2600) [spiritualized1997]",
+      "platformIds": [
+        "2600"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-2600",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-2600",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Console Atari VCS (2600) by Atari, Inc. (1977)"
+    },
+    {
+      "id": "spiritualized-7800",
+      "identifier": "Spiritualized.7800",
+      "displayName": "Atari 7800 ProSystem [spiritualized1997]",
+      "platformIds": [
+        "7800"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-7800",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-7800",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Console Atari 7800 ProSystem by Atari, Inc. (1986)"
+    },
+    {
+      "id": "spiritualized-adventurevision",
+      "identifier": "Spiritualized.Adventurevision",
+      "displayName": "Adventure Vision [spiritualized1997]",
+      "platformIds": [
+        "avision"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-Adventure-Vision",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-Adventure-Vision",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Handheld Adventure Vision by Entex Industries (1982)"
+    },
+    {
+      "id": "spiritualized-arcadia",
+      "identifier": "Spiritualized.Arcadia",
+      "displayName": "Arcadia 2001 [spiritualized1997]",
+      "platformIds": [
+        "arcadia"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-Arcadia",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-Arcadia",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Console Arcadia 2001 by Emerson Radio (1982)"
+    },
+    {
+      "id": "spiritualized-channelf",
+      "identifier": "Spiritualized.ChannelF",
+      "displayName": "Channel F [spiritualized1997]",
+      "platformIds": [
+        "channel_f"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-Channel-F",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-Channel-F",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Console Channel F by Fairchild Camera and Instrument (1976)"
+    },
+    {
+      "id": "spiritualized-coleco",
+      "identifier": "Spiritualized.Coleco",
+      "displayName": "ColecoVision [spiritualized1997]",
+      "platformIds": [
+        "coleco"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-Coleco",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-Coleco",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Console ColecoVision by Coleco (1982)"
+    },
+    {
+      "id": "spiritualized-creativision",
+      "identifier": "Spiritualized.Creativision",
+      "displayName": "CreatiVision [spiritualized1997]",
+      "platformIds": [
+        "creativision"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-Creativision",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-Creativision",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Console CreatiVision by VTech (1982)"
+    },
+    {
+      "id": "spiritualized-gamate",
+      "identifier": "Spiritualized.Gamate",
+      "displayName": "Gamate [spiritualized1997]",
+      "platformIds": [
+        "gamate"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-Gamate",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-Gamate",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Handheld Gamate by Bit Corporation, UMC (1990)"
+    },
+    {
+      "id": "spiritualized-gameking",
+      "identifier": "Spiritualized.Gameking",
+      "displayName": "GameKing [spiritualized1997]",
+      "platformIds": [
+        "game_king"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-Game-King",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-Game-King",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Handheld GameKing by Timetop (2003)"
+    },
+    {
+      "id": "spiritualized-gb",
+      "identifier": "Spiritualized.GB",
+      "displayName": "Game Boy [spiritualized1997]",
+      "platformIds": [
+        "gb"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-GB-GBC",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-GB-GBC",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Handheld Game Boy by Nintendo (1989)"
+    },
+    {
+      "id": "spiritualized-gba",
+      "identifier": "Spiritualized.GBA",
+      "displayName": "Game Boy Advance [spiritualized1997]",
+      "platformIds": [
+        "gba"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-GBA",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-GBA",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Handheld Game Boy Advance by Nintendo (2001)"
+    },
+    {
+      "id": "spiritualized-gbc",
+      "identifier": "Spiritualized.GBC",
+      "displayName": "Game Boy Color [spiritualized1997]",
+      "platformIds": [
+        "gbc"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-GB-GBC",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-GB-GBC",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Handheld Game Boy Color by Nintendo (1998)"
+    },
+    {
+      "id": "spiritualized-genesis",
+      "identifier": "Spiritualized.Genesis",
+      "displayName": "Genesis [spiritualized1997]",
+      "platformIds": [
+        "genesis"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-Genesis",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-Genesis",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Console Genesis by Sega (1988)"
+    },
+    {
+      "id": "spiritualized-gg",
+      "identifier": "Spiritualized.GG",
+      "displayName": "Game Gear [spiritualized1997]",
+      "platformIds": [
+        "gg"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-GG",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-GG",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Handheld Game Gear by Sega (1990)"
+    },
+    {
+      "id": "spiritualized-intv",
+      "identifier": "Spiritualized.Intv",
+      "displayName": "Intellivision [spiritualized1997]",
+      "platformIds": [
+        "intv"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-Intellivision",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-Intellivision",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Console Intellivision by Mattel Electronics (1979)"
+    },
+    {
+      "id": "spiritualized-megaduck",
+      "identifier": "Spiritualized.Megaduck",
+      "displayName": "Mega Duck [spiritualized1997]",
+      "platformIds": [
+        "mega_duck"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-Megaduck",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-Megaduck",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Handheld Mega Duck by Welback Holdings (1993)"
+    },
+    {
+      "id": "spiritualized-nes",
+      "identifier": "Spiritualized.NES",
+      "displayName": "NES [spiritualized1997]",
+      "platformIds": [
+        "nes"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-NES",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-NES",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Console NES by Nintendo (1983)"
+    },
+    {
+      "id": "spiritualized-odyssey2",
+      "identifier": "Spiritualized.Odyssey2",
+      "displayName": "Odyssey 2 [spiritualized1997]",
+      "platformIds": [
+        "odyssey2"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-Odyssey-2",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-Odyssey-2",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Console Odyssey 2 by Magnavox, Philips (1978)"
+    },
+    {
+      "id": "spiritualized-sg-1000",
+      "identifier": "Spiritualized.SG-1000",
+      "displayName": "SG-1000 [spiritualized1997]",
+      "platformIds": [
+        "sg1000"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-SG1000",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-SG1000",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Console SG-1000 by Sega (1983)"
+    },
+    {
+      "id": "spiritualized-sms",
+      "identifier": "Spiritualized.SMS",
+      "displayName": "Master System [spiritualized1997]",
+      "platformIds": [
+        "sms"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-SMS",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-SMS",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Console Master System by Sega (1985)"
+    },
+    {
+      "id": "spiritualized-studio2",
+      "identifier": "Spiritualized.Studio2",
+      "displayName": "Studio II [spiritualized1997]",
+      "platformIds": [
+        "studio2"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-Studio-2",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-Studio-2",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Console Studio II by RCA (1977)"
+    },
+    {
+      "id": "spiritualized-supergb",
+      "identifier": "Spiritualized.SuperGB",
+      "displayName": "Super Gameboy [spiritualized1997]",
+      "platformIds": [
+        "sgb"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-Super-GB",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-Super-GB",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Console Super Gameboy by Nintendo (1994)"
+    },
+    {
+      "id": "spiritualized-supervision",
+      "identifier": "Spiritualized.Supervision",
+      "displayName": "Supervision [spiritualized1997]",
+      "platformIds": [
+        "supervision"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-Supervision",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-Supervision",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Handheld Supervision by Watara (1992)"
+    },
+    {
+      "id": "spiritualized-videobrain",
+      "identifier": "Spiritualized.VideoBrain",
+      "displayName": "VideoBrain Family Computer [spiritualized1997]",
+      "platformIds": [
+        "videobrain"
+      ],
+      "owner": "spiritualized1997",
+      "repo": "openFPGA-VideoBrain",
+      "homepage": "https://github.com/spiritualized1997/openFPGA-VideoBrain",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "From the openFPGA Cores Inventory. Computer VideoBrain Family Computer by Umtech (1977)"
     }
   ]
 }

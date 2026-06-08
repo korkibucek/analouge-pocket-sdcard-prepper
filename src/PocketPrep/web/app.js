@@ -195,12 +195,28 @@ async function stepCores() {
   panel(`<h2>5. openFPGA cores (optional)</h2>
     <p class="warnote">Cores are made by independent authors under their own licences.</p>
     ${instLine}
+    <div class="card"><strong>Install the whole inventory</strong>
+      <p class="meta">${cores.length} cores. This is a large download (dozens of repositories) and may take a while.</p>
+      <div class="row"><button id="instAll">Install ALL ${cores.length} cores</button>
+        <span id="allout" class="meta"></span></div></div>
     <p><button id="chk" class="secondary">Check for updates</button>
        <button id="updall" class="secondary">Update all</button>
        <span id="updout" class="meta"></span></p>
     ${cores.length ? rows : '<p>No cores manifest available.</p>'}
     <button id="c">Continue →</button>`);
   $('#c').onclick = () => go(5);
+  $('#instAll').onclick = async () => {
+    $('#allout').innerHTML = inProgress(`Downloading & installing all ${cores.length} cores (large; tip: set GITHUB_TOKEN if it rate-limits)`);
+    busy(true);
+    try {
+      const r = await api('/api/cores/install-all', 'POST', {});
+      let summary = `<p class="ok">Installed ${r.InstalledCount}/${r.Requested}; failed ${r.FailedCount}; skipped ${r.SkippedCount}${r.DryRun ? ' [dry-run]' : ''}.</p>`;
+      if (r.RateLimited) summary += '<p class="warnote">GitHub rate limit reached — set GITHUB_TOKEN and retry to finish the rest.</p>';
+      const fails = (r.Results || []).filter(x => x.Status === 'failed').slice(0, 8);
+      if (fails.length) summary += '<p class="meta">Failed: ' + fails.map(x => `${x.Identifier} (${x.Error})`).join('; ') + '</p>';
+      $('#allout').innerHTML = summary;
+    } catch (e) { $('#allout').innerHTML = errLine(e.message); } finally { busy(false); }
+  };
   $('#chk').onclick = async () => {
     $('#updout').textContent = 'checking…'; busy(true);
     try {

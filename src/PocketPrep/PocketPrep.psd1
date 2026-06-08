@@ -23,6 +23,7 @@
         'Resolve-PocketCore',
         'Test-PocketCoreZip',
         'Install-PocketCore',
+        'Install-PocketCoreSet',
         'Get-PocketInstalledCore',
         'Compare-PocketVersion',
         'Test-PocketPlatformIdInstalled',

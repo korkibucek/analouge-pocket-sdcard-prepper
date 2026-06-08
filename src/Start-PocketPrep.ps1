@@ -235,6 +235,17 @@ if ($installedCores.Count -gt 0) {
 }
 if ((Test-Path -LiteralPath $CoresManifest) -and (Confirm-YesNo "Install any openFPGA cores now?" $false)) {
     $cores = Resolve-PocketCore -Manifest (Get-PocketCoreManifest -Path $CoresManifest)
+    if (Confirm-YesNo "Install ALL $($cores.Count) cores from the inventory? (large download; set GITHUB_TOKEN to avoid rate limits)" $false) {
+        Write-Host "  Installing all cores - this can take a while..." -ForegroundColor Yellow
+        try {
+            $setRes = Install-PocketCoreSet -Root $target.Root -CoresManifest $CoresManifest -DryRun:$DryRun -Logger $logger
+            Write-Host "  Installed $($setRes.InstalledCount)/$($setRes.Requested); failed $($setRes.FailedCount); skipped $($setRes.SkippedCount)." -ForegroundColor Green
+            if ($setRes.RateLimited) { Write-Host "  GitHub rate limit reached - set GITHUB_TOKEN and re-run to finish the rest." -ForegroundColor Yellow }
+            $setRes.Results | Where-Object Status -eq 'failed' | Select-Object -First 8 | ForEach-Object { Write-Host "    failed: $($_.Identifier) - $($_.Error)" -ForegroundColor Red }
+            $setRes.Results | Where-Object Status -eq 'installed' | ForEach-Object { $coreResults.Add([pscustomobject]@{ Identifier=$_.Identifier; PlacedCount=$_.PlacedCount; SkippedCount=0; Version=$_.Version; DryRun=$DryRun }) }
+        } catch { Write-Host "  Install-all failed: $_" -ForegroundColor Red }
+        $installedCores = Get-PocketInstalledCore -Root $target.Root
+    }
     foreach ($core in $cores) {
         $already = $installedCores | Where-Object { $_.Identifier -ieq $core.Identifier } | Select-Object -First 1
         $label = if ($already) { "$($core.DisplayName) [$($core.Id)] (installed v$($already.Version) - reinstall/update?)" } else { "$($core.DisplayName) [$($core.Id)]" }

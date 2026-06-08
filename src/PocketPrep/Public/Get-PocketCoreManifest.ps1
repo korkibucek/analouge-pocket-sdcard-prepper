@@ -32,10 +32,15 @@ function Get-PocketCoreManifest {
 
     $seen = @{}
     foreach ($c in $json.cores) {
-        foreach ($field in 'id', 'identifier', 'displayName', 'platformIds', 'owner', 'repo') {
+        # platformIds may legitimately be empty (cores with no ROM platform); only require
+        # the property to exist, not to be non-empty.
+        foreach ($field in 'id', 'identifier', 'displayName', 'owner', 'repo') {
             if (-not $c.PSObject.Properties[$field] -or -not $c.$field) {
                 throw "Cores manifest '$Path' has an entry missing required field '$field'."
             }
+        }
+        if (-not $c.PSObject.Properties['platformIds']) {
+            throw "Cores manifest '$Path' entry '$($c.id)' is missing 'platformIds'."
         }
         if ($seen.ContainsKey($c.id)) {
             throw "Cores manifest '$Path' has duplicate core id '$($c.id)'."
