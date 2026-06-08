@@ -62,6 +62,10 @@ function Install-PocketCore {
 
         [switch] $Overwrite,
         [switch] $DryRun,
+        # Validate the zip's openFPGA structure + zip-slip safety but NOT that it contains a
+        # Cores/<identifier>/ folder. Needed for bulk/whole-inventory installs where one repo
+        # ships several cores under different folder names (e.g. GB-GBC ships only GBC).
+        [switch] $SkipIdentifierCheck,
         [psobject] $Logger
     )
 
@@ -120,7 +124,7 @@ function Install-PocketCore {
         }
 
         # Validate the zip structure (and traversal safety) before touching the card.
-        $verdict = if ($Core) {
+        $verdict = if ($Core -and -not $SkipIdentifierCheck) {
             Test-PocketCoreZip -Path $zipPath -ExpectedIdentifier $Core.Identifier
         } else {
             Test-PocketCoreZip -Path $zipPath
@@ -131,7 +135,7 @@ function Install-PocketCore {
         if (-not $verdict.HasStructure) {
             throw "Zip does not look like an openFPGA core (no Assets/Cores/Platforms folder)."
         }
-        if ($Core -and -not $verdict.HasExpectedCore) {
+        if ($Core -and -not $SkipIdentifierCheck -and -not $verdict.HasExpectedCore) {
             throw "Zip does not contain the expected core folder Cores/$($Core.Identifier)/."
         }
 

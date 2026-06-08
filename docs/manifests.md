@@ -135,10 +135,23 @@ Sources:
 > setting `GITHUB_TOKEN`, 404s and offline errors are reported plainly, and downloads
 > retry transient failures with a timeout (see `Invoke-PocketHttp`).
 
-Adding a core: find its `identifier` and GitHub `owner`/`repo` in the
-[openFPGA Cores Inventory](https://github.com/joshcampbell191/openfpga-cores-inventory),
-add an entry, and run the tests. Download mode uses the unauthenticated GitHub API
-(60 requests/hour) — offline mode has no such limit.
+`cores.json` is the **entire community inventory**, generated from the canonical
+[openFPGA Cores Inventory](https://github.com/joshcampbell191/openfpga-cores-inventory)
+by `scripts/Update-CoresManifest.ps1`:
+
+```powershell
+pwsh ./scripts/Update-CoresManifest.ps1   # refreshes manifests/cores.json
+```
+
+A monthly CI workflow (`.github/workflows/cores-refresh.yml`) runs this and opens a PR when
+the inventory changes. To add/override a core by hand, edit `cores.json` and re-run
+`Validate-Manifests.ps1`.
+
+**Installing all cores** (`Install-PocketCoreSet` / the "Install ALL cores" UI button /
+`POST /api/cores/install-all`) installs each *unique repository* once — a repo's release
+zip ships every core it provides (e.g. the GB-GBC repo provides both GB and GBC), so the
+~51 inventory entries map to ~50 downloads. It's a large download; set the `GITHUB_TOKEN`
+environment variable to avoid the unauthenticated GitHub API rate limit (60 req/hour).
 
 ## Schemas
 

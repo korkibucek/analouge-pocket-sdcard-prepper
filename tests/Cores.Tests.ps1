@@ -28,11 +28,11 @@ BeforeAll {
 
 Describe 'Get-PocketCoreManifest / Resolve-PocketCore' {
     It 'loads the shipped cores manifest' {
-        (Get-PocketCoreManifest -Path $script:coresManifest).cores.Count | Should -BeGreaterThan 3
+        (Get-PocketCoreManifest -Path $script:coresManifest).cores.Count | Should -BeGreaterThan 30   # full inventory
     }
     It 'resolves a core by id with GitHub coordinates' {
         $m = Get-PocketCoreManifest -Path $script:coresManifest
-        $c = Resolve-PocketCore -Manifest $m -Id 'nes'
+        $c = Resolve-PocketCore -Manifest $m -Id 'agg23-nes'
         $c.Identifier | Should -Be 'agg23.NES'
         $c.Owner | Should -Be 'agg23'
         $c.PlatformIds | Should -Contain 'nes'
@@ -136,5 +136,15 @@ Describe 'Install-PocketCore (offline)' {
         $wrong = New-TestZip @{ 'Cores/Other.Core/x' = 'x'; 'Platforms/p.json' = '{}' }
         { Install-PocketCore -Root $script:root -LocalZip $wrong -Core $script:core } | Should -Throw
         Remove-Item $wrong -Force
+    }
+
+    It '-SkipIdentifierCheck installs a structurally-valid zip whose folder name differs' {
+        # The repo ships Cores/Other.Core/ but the manifest entry identifier is Test.Core
+        # (the GB/GBC combined-repo case). With -SkipIdentifierCheck it still installs.
+        $combined = New-TestZip @{ 'Cores/Other.Core/core.json' = '{}'; 'Platforms/gb.json' = '{}'; 'Assets/gb/common/x' = 'x' }
+        $r = Install-PocketCore -Root $script:root -LocalZip $combined -Core $script:core -SkipIdentifierCheck
+        $r.PlacedCount | Should -BeGreaterThan 0
+        (Test-Path (Join-Path $script:root 'Cores/Other.Core/core.json')) | Should -BeTrue
+        Remove-Item $combined -Force
     }
 }

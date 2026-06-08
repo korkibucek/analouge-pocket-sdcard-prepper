@@ -27,7 +27,7 @@ Honest list of what the tool does **not** do or where it needs care, as of the c
 ## Systems / cores
 - **Neo Geo, arcade (JT cores), and CD-based systems are experimental**: they need BIOS
   files and/or specific romset layouts the tool does not fully manage. Treat them as
-  advanced/verify-manually. Core *installation* covers a curated set; add more via the manifest.
+  advanced/verify-manually. Core *installation* covers the **full community inventory** (install one or all at once); installing everything is a large download (set `GITHUB_TOKEN` to avoid GitHub API rate limits).
 - Cores are downloaded from their authors' GitHub releases (no publisher checksums unless a
   release is pinned with a SHA-256 in the manifest); integrity otherwise relies on HTTPS.
 - BIOS files are never copied automatically.

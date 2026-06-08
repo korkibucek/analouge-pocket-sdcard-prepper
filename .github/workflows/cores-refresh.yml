@@ -1,0 +1,47 @@
+name: Refresh cores inventory
+
+# Monthly (and on-demand) regeneration of manifests/cores.json from the community
+# openFPGA Cores Inventory. Opens a PR when the inventory has changed so a maintainer
+# reviews and merges. Never commits to main directly.
+
+on:
+  schedule:
+    - cron: '0 7 1 * *'   # 07:00 UTC on the 1st of each month
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Regenerate cores.json
+        shell: pwsh
+        run: ./scripts/Update-CoresManifest.ps1
+      - name: Validate manifests
+        shell: pwsh
+        run: ./scripts/Validate-Manifests.ps1
+      - name: Open a PR if the inventory changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- manifests/cores.json; then
+            echo "cores.json unchanged; nothing to do."
+            exit 0
+          fi
+          COUNT=$(jq '.cores | length' manifests/cores.json)
+          BRANCH="bot/cores-refresh-$(date +%Y%m%d)"
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git checkout -b "$BRANCH"
+          git add manifests/cores.json
+          git commit -m "chore: refresh cores.json from the openFPGA inventory ($COUNT cores)"
+          git push -u origin "$BRANCH"
+          gh pr create --base main --head "$BRANCH" \
+            --title "chore: refresh openFPGA cores inventory ($COUNT cores)" \
+            --body "Automated regeneration of manifests/cores.json from the community openFPGA Cores Inventory via scripts/Update-CoresManifest.ps1. Review the diff and merge if it looks right." \
+            || gh pr edit "$BRANCH" --body "Updated."
