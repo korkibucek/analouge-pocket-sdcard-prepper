@@ -139,9 +139,35 @@ async function onUseTarget() {
 }
 
 /* ---- Step 1: Card checks ---- */
+function cardBreakdownHtml(sum) {
+  // Compact "what's already on this card" panel for returning users.
+  const fw = sum.Firmware.Present ? `v${sum.Firmware.Version} (${sum.Firmware.FileName})` : 'none';
+  const roms = (sum.Roms.Systems || []).length
+    ? (sum.Roms.Systems.map(s => `${s.DisplayName} ${s.FileCount}`).join(', '))
+    : 'none';
+  const cfg = sum.Config.Exists ? `${sum.Config.SourceCount} saved folder(s)` : 'no saved folder list';
+  const anything = sum.Firmware.Present || sum.Cores.Count > 0 || sum.Roms.TotalFiles > 0;
+  if (!anything && !sum.Config.Exists) return '';
+  return `<div class="card"><strong>Already on this card</strong>
+    <ul class="list" style="margin-top:.4rem">
+      <li>Firmware: ${fw}</li>
+      <li>Cores: ${sum.Cores.Count}</li>
+      <li>ROMs: ${sum.Roms.TotalFiles} total — ${roms}</li>
+      <li>ROM config: ${cfg}</li>
+    </ul>
+    <div class="row" style="margin-top:.5rem">
+      <button id="manageroms" class="secondary">${sum.Config.Exists ? 'Rescan / modify ROM folders →' : 'Manage ROM folders →'}</button>
+    </div></div>`;
+}
+
 async function stepCard() {
   panel('<h2>2. Card checks</h2><p>Checking…</p>');
   let html = '<h2>2. Card checks</h2>';
+  // Breakdown of existing content first, so returning users can jump straight to rescan.
+  let breakdown = '';
+  try { breakdown = cardBreakdownHtml(await api('/api/card-summary')); } catch { /* non-fatal */ }
+  html += breakdown;
+  const wireManage = () => { if ($('#manageroms')) $('#manageroms').onclick = () => go(5); };
   try {
     if (S.drive && S.drive.FileSystem) {
       const fs = await api('/api/filesystem', 'POST', { fileSystem: S.drive.FileSystem });
@@ -152,7 +178,7 @@ async function stepCard() {
     if (empty.IsEmpty) {
       html += '<p class="ok">Card appears empty — good.</p>';
       html += '<button id="c">Continue →</button>';
-      panel(html); $('#c').onclick = () => go(2); return;
+      panel(html); $('#c').onclick = () => go(2); wireManage(); return;
     }
     html += `<p class="warnote">Card is NOT empty (${empty.EntryCount} item(s)). Nothing will be deleted.</p>`;
     html += '<ul class="list">' + empty.Entries.slice(0, 12).map(x => `<li>${x}</li>`).join('') + '</ul>';
@@ -165,6 +191,7 @@ async function stepCard() {
     html += '<label class="row"><input type="checkbox" id="ok"> I understand; leave existing files in place and continue</label>';
     html += '<button id="c" disabled>Continue →</button>';
     panel(html);
+    wireManage();
     $('#ok').onchange = (e) => { $('#c').disabled = !e.target.checked; };
     $('#c').onclick = () => go(2);
     if ($('#bbtn')) $('#bbtn').onclick = async () => {
@@ -174,7 +201,7 @@ async function stepCard() {
         $('#bout').innerHTML = `<p class="ok">Backed up ${r.FileCount} file(s) to ${r.Destination}${r.DryRun ? ' [dry-run]' : ''}.</p>`;
       } catch (e) { $('#bout').innerHTML = errLine(e.message); } finally { busy(false); }
     };
-  } catch (e) { panel(html + errLine(e.message) + '<button id="c">Continue →</button>'); $('#c').onclick = () => go(2); }
+  } catch (e) { panel(html + errLine(e.message) + '<button id="c">Continue →</button>'); $('#c').onclick = () => go(2); wireManage(); }
 }
 
 /* ---- Step 2: Firmware ---- */

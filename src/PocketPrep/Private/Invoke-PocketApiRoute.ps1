@@ -126,6 +126,12 @@ function Invoke-PocketApiRoute {
                     -Skip $skip -First $first
                 return @{ Status = 200; Body = $res }
             }
+            '^GET /api/card-summary$' {
+                # Read-only breakdown of what is already on the card (firmware/cores/ROMs +
+                # whether a saved config exists), for the post-drive-select panel.
+                return @{ Status = 200; Body = (Get-PocketCardSummary -Root $State.Root `
+                    -SystemsManifest $State.SystemsManifest -FirmwareManifest $State.FirmwareManifest) }
+            }
             '^GET /api/rom/config$' {
                 # The saved source-folder -> system mapping on the card (empty if none).
                 return @{ Status = 200; Body = (Get-PocketRomConfig -Root $State.Root) }

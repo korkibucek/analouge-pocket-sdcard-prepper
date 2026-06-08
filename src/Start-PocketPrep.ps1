@@ -136,6 +136,17 @@ $logName = "pocketprep-{0:yyyyMMdd-HHmmss}.log" -f (Get-Date)
 $logger = New-PocketLogger -Path (Join-Path $LogDirectory $logName)
 Write-PocketLog -Logger $logger -Message "Run started. Target=$($target.Root) TestMode=$($target.IsTestMode) DryRun=$DryRun" | Out-Null
 
+# --- Card content breakdown (what's already installed) ----------------------
+$cardSummary = Get-PocketCardSummary -Root $target.Root -SystemsManifest $SystemsManifest -FirmwareManifest $FirmwareManifest
+if ($cardSummary.Firmware.Present -or $cardSummary.Cores.Count -gt 0 -or $cardSummary.Roms.TotalFiles -gt 0 -or $cardSummary.Config.Exists) {
+    Write-Banner 'Already on this card'
+    Write-Host "  Firmware : $(if ($cardSummary.Firmware.Present) { "v$($cardSummary.Firmware.Version) ($($cardSummary.Firmware.FileName))" } else { 'none' })"
+    Write-Host "  Cores    : $($cardSummary.Cores.Count)"
+    $romBreak = if (@($cardSummary.Roms.Systems).Count) { ($cardSummary.Roms.Systems | ForEach-Object { "$($_.DisplayName) $($_.FileCount)" }) -join ', ' } else { 'none' }
+    Write-Host "  ROMs     : $($cardSummary.Roms.TotalFiles) total - $romBreak"
+    Write-Host "  ROM config: $(if ($cardSummary.Config.Exists) { "$($cardSummary.Config.SourceCount) saved folder(s) - you'll be offered a rescan" } else { 'none saved yet' })"
+}
+
 # --- Step 3/4: filesystem + emptiness ---------------------------------------
 Write-Banner '3. Filesystem & emptiness'
 if (-not $target.IsTestMode -and $chosen) {

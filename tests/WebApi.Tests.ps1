@@ -83,6 +83,16 @@ Describe 'Invoke-PocketApiRoute' {
         $copied | Should -Be 4
         (Get-ChildItem (Join-Path $script:state.Root 'Assets/gb/common') -File).Count | Should -Be 4
     }
+    It 'GET /api/card-summary breaks down firmware/cores/ROMs/config' {
+        'fw' | Set-Content (Join-Path $script:root 'pocket_firmware_2_5.bin')
+        $common = Join-Path $script:root 'Assets/gb/common'; New-Item -ItemType Directory $common -Force | Out-Null
+        'a' | Set-Content (Join-Path $common 'one.gb')
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method GET -Path '/api/card-summary' -State $s }
+        $r.Status | Should -Be 200
+        $r.Body.Firmware.Version | Should -Be '2.5'
+        $r.Body.Roms.TotalFiles | Should -Be 1
+    }
     It 'GET/POST /api/rom/config round-trips and POST /api/rom/rescan copies' {
         $src = Join-Path $script:root '_rcfg'; New-Item -ItemType Directory $src -Force | Out-Null
         'a' | Set-Content (Join-Path $src 'one.gb'); 'b' | Set-Content (Join-Path $src 'two.gb')
