@@ -292,19 +292,58 @@ async function stepRoms() {
   panel('<h2>6. ROM import</h2><p>Loading systems…</p>');
   let systems = [];
   try { systems = (await api('/api/systems')).systems || []; } catch (e) { panel('<h2>6. ROM import</h2>' + errLine(e.message)); }
-  const rows = systems.map((s, i) => `
+  // A saved source mapping (if any) lets us prefill folders and offer a one-click rescan.
+  let cfg = { Exists: false, Sources: [] };
+  try { cfg = await api('/api/rom/config'); } catch { /* no config yet */ }
+  const saved = {};
+  (cfg.Sources || []).forEach(s => { saved[s.SystemId] = s; });
+  const esc = v => (v || '').replace(/"/g, '&quot;');
+  const rows = systems.map((s, i) => {
+    const sv = saved[s.Id];
+    return `
     <div class="card"><strong>${s.DisplayName}</strong> <span class="meta">[${s.Id}] ${s.SupportedExtensions.join(' ')}</span>
       ${s.Experimental ? `<span class="tag fixed">experimental</span><p class="warnote">${s.Notes}</p>` : ''}
-      <div class="row"><input type="text" id="src${i}" placeholder="source ROM folder">
+      <div class="row"><input type="text" id="src${i}" placeholder="source ROM folder" value="${sv ? esc(sv.Path) : ''}">
         <button data-browse="${i}" class="secondary">Browse…</button>
-        <label class="row"><input type="checkbox" id="rec${i}"> subfolders</label>
+        <label class="row"><input type="checkbox" id="rec${i}" ${sv && sv.Recurse ? 'checked' : ''}> subfolders</label>
         <button data-i="${i}" data-act="plan" class="secondary">Count</button>
         <button data-i="${i}" data-act="copy">Copy</button></div>
-      <div id="rout${i}"></div></div>`).join('');
+      <div id="rout${i}"></div></div>`;
+  }).join('');
+  const rescanBtn = (cfg.Exists && (cfg.Sources || []).length)
+    ? `<button id="rescan" class="secondary">Rescan ${cfg.Sources.length} saved folder(s)</button>` : '';
   panel(`<h2>6. ROM import</h2>
     <p class="warnote">Copies ROMs you already own. BIOS files are not copied automatically.</p>
-    ${rows}<button id="c">Continue to summary →</button>`);
+    ${cfg.Exists ? `<p class="ok">A saved ROM-folder list was found on the card and pre-filled below.</p>` : ''}
+    ${rows}
+    <div class="row"><button id="savecfg" class="secondary">Save folder list to card</button>${rescanBtn}</div>
+    <div id="cfgout"></div>
+    <button id="c">Continue to summary →</button>`);
   $('#c').onclick = () => go(6);
+
+  // Gather the currently-filled rows into a sources[] payload.
+  const gather = () => systems.map((s, i) => ({ systemId: s.Id, path: $('#src' + i).value.trim(), recurse: $('#rec' + i).checked }))
+    .filter(r => r.path);
+
+  $('#savecfg').onclick = async () => {
+    const sources = gather();
+    if (!sources.length) { $('#cfgout').innerHTML = errLine('Fill in at least one source folder first.'); return; }
+    busy(true);
+    try { const r = await api('/api/rom/config', 'POST', { sources });
+      $('#cfgout').innerHTML = `<p class="ok">Saved ${r.SourceCount} folder(s) to the card. Next time, just rescan.</p>`;
+    } catch (e) { $('#cfgout').innerHTML = errLine(e.message); } finally { busy(false); }
+  };
+
+  if (rescanBtn) $('#rescan').onclick = async () => {
+    busy(true);
+    $('#cfgout').innerHTML = `<p>Rescanning saved folders…</p>`;
+    try { const r = await api('/api/rom/rescan', 'POST', {});
+      (r.Results || []).forEach(x => { if (!x.Missing) { S.roms = S.roms.filter(y => y.SystemId !== x.SystemId); S.roms.push(x); } });
+      const missing = (r.Results || []).filter(x => x.Missing).map(x => x.SystemId);
+      $('#cfgout').innerHTML = `<p class="ok">Rescan copied ${r.TotalCopied} file(s) from ${r.SourceCount} folder(s).</p>` +
+        (missing.length ? `<p class="warnote">Missing folder(s): ${missing.join(', ')}.</p>` : '');
+    } catch (e) { $('#cfgout').innerHTML = errLine(e.message); } finally { busy(false); }
+  };
   document.querySelectorAll('button[data-browse]').forEach(btn => btn.onclick = async () => {
     const i = +btn.dataset.browse;
     const chosen = await pickFolder($('#src' + i).value.trim());

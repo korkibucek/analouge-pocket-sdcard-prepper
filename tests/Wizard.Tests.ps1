@@ -45,6 +45,29 @@ Describe 'Start-PocketPrep wizard (subprocess, fake SD root)' {
         (Test-Path (Join-Path $script:root 'Assets/gb/common/another-demo.gb')) | Should -BeTrue
     }
 
+    It 'saves the source mapping and a later run rescans it without re-entering folders' {
+        $src = Join-Path ([System.IO.Path]::GetTempPath()) ("wizsrc_" + [System.IO.Path]::GetRandomFileName())
+        New-Item -ItemType Directory -Path $src -Force | Out-Null
+        'a' | Set-Content (Join-Path $src 'one.gb')
+        try {
+            # Run 1: import GB from $src and save the folder list to the card.
+            # firmware:n, cores:n, gb:y, source, recurse:n, copy:y, 9 systems:n, save-log:n
+            $a1 = @('n', 'n', 'y', $src, 'n', 'y') + (1..9 | ForEach-Object { 'n' }) + @('n')
+            Invoke-Wizard -Answers $a1 -WizardArgs @('-TestMode', '-Root', $script:root) | Out-Null
+            (Test-Path (Join-Path $script:root 'pocketprep/rom-sources.json')) | Should -BeTrue
+
+            # Add a new ROM, then Run 2: accept the rescan offer (no folder re-entry).
+            # The card is now non-empty, so the run opens with backup/continue prompts.
+            'b' | Set-Content (Join-Path $src 'two.gb')
+            # backup-saves:n, continue:y, firmware:n, cores:n, rescan-saved:y, save-log:n
+            $r2 = Invoke-Wizard -Answers @('n', 'y', 'n', 'n', 'y', 'n') -WizardArgs @('-TestMode', '-Root', $script:root)
+            $r2.Output | Should -Match 'Rescan complete'
+            (Test-Path (Join-Path $script:root 'Assets/gb/common/two.gb')) | Should -BeTrue
+        } finally {
+            Remove-Item $src -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     It '-CleanFirst shows a dry-run preview then wipes after the typed-token confirmation' {
         # Non-test-mode run against an injected "removable" drive whose RootPath is our temp
         # folder, so the CleanFirst branch (gated off test mode) actually runs.

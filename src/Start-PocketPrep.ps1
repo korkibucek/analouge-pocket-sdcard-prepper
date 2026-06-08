@@ -273,7 +273,35 @@ if ((Test-Path -LiteralPath $CoresManifest) -and (Confirm-YesNo "Install any ope
 Write-Banner '7. ROM import'
 $systems = Get-PocketSystem -Path $SystemsManifest
 $romResults = [System.Collections.Generic.List[object]]::new()
+$romSources = [System.Collections.Generic.List[object]]::new()
+
+# Returning user: if the card already has a saved source mapping, offer a one-step
+# rescan (re-copy from every saved folder) instead of re-entering everything.
+$savedConfig = Get-PocketRomConfig -Root $target.Root
+$rescanOnly = $false
+if ($savedConfig.Exists -and @($savedConfig.Sources).Count -gt 0) {
+    Write-Host "Found a saved ROM library config on the card with $(@($savedConfig.Sources).Count) folder(s):" -ForegroundColor Cyan
+    $savedConfig.Sources | ForEach-Object { Write-Host "  - [$($_.SystemId)] $($_.Path)$(if ($_.Recurse) { ' (+subfolders)' })" }
+    if (Confirm-YesNo "Rescan these saved folders now (pick up new ROMs) and skip manual setup?" $true) {
+        $rescanOnly = $true
+        $rsProgress = {
+            param($done, $total, $name)
+            $pct = if ($total -gt 0) { [int](($done / $total) * 100) } else { 100 }
+            Write-Progress -Activity 'Rescanning saved ROM folders' -Status "[$done/$total] $name" -PercentComplete $pct
+        }
+        $rescan = Invoke-PocketRomRescan -Root $target.Root -SystemsManifest $SystemsManifest -DryRun:$DryRun -Logger $logger -OnProgress $rsProgress
+        Write-Progress -Activity 'Rescanning saved ROM folders' -Completed
+        foreach ($r in @($rescan.Results)) {
+            if ($r.Missing) { Write-Host "  [$($r.SystemId)] $($r.Source): folder missing, skipped." -ForegroundColor Yellow; continue }
+            Write-Host "  [$($r.SystemId)] copied $($r.CopiedCount), skipped $($r.SkippedCount), failed $($r.FailedCount)." -ForegroundColor Green
+            $romResults.Add($r)
+        }
+        Write-Host "Rescan complete: $($rescan.TotalCopied) file(s) copied." -ForegroundColor Green
+    }
+}
+
 foreach ($sys in $systems) {
+    if ($rescanOnly) { break }
     $expTag = if ($sys.Experimental) { ' [EXPERIMENTAL]' } else { '' }
     if (-not (Confirm-YesNo "Configure $($sys.DisplayName) [$($sys.Id)]${expTag}? (exts: $($sys.SupportedExtensions -join ' '))" $false)) {
         continue
@@ -288,6 +316,8 @@ foreach ($sys in $systems) {
         Write-Host "  Folder not found, skipping." -ForegroundColor Yellow; continue
     }
     $recurse = Confirm-YesNo "  Search subfolders too?" $false
+    # Remember this folder so a later run can rescan it without re-entering anything.
+    $romSources.Add([pscustomobject]@{ SystemId = $sys.Id; Path = $src; Recurse = [bool]$recurse })
     $plan = New-PocketRomCopyPlan -System $sys -SourceFolder $src -Root $target.Root -Recurse:$recurse
     Write-Host "  Found $($plan.FileCount) matching file(s) ($([math]::Round($plan.TotalBytes/1MB,1)) MB). Skipping $($plan.SkippedNonMatching) non-matching."
     if ($plan.ProblemCount -gt 0) {
@@ -317,6 +347,18 @@ foreach ($sys in $systems) {
         $dupNote = if ($res.SkippedDuplicateCount -gt 0) { ", $($res.SkippedDuplicateCount) duplicate(s) skipped" } else { '' }
         Write-Host "  Copied $($res.CopiedCount), skipped $($res.SkippedCount)$dupNote, failed $($res.FailedCount)." -ForegroundColor Green
         $romResults.Add($res)
+    }
+}
+
+# Persist the source mapping to the card so a future run can rescan without the wizard.
+# Merge freshly-chosen folders with any already saved (new choices win on conflict).
+if (-not $rescanOnly -and $romSources.Count -gt 0) {
+    $merged = @($romSources) + @($savedConfig.Sources)
+    try {
+        $saved = Save-PocketRomConfig -Root $target.Root -Sources $merged -DryRun:$DryRun
+        Write-Host "Saved ROM library config ($($saved.SourceCount) folder(s)) to the card$(if ($DryRun) { ' [dry-run]' })." -ForegroundColor Green
+    } catch {
+        Write-Host "Could not save ROM library config: $_" -ForegroundColor Yellow
     }
 }
 

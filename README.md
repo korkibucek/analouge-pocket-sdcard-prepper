@@ -201,6 +201,20 @@ editable without code). For each system the wizard:
 > different core, confirm its platform-id and edit the manifest. See
 > [docs/manifests.md](docs/manifests.md).
 
+### Rescan: add a few games later without redoing setup
+
+When you import ROMs the tool saves your **source-folder → system** mapping to the card at
+`pocketprep/rom-sources.json` (plain JSON, **paths and options only — never any ROMs**).
+On a later run it offers to **rescan** those folders: it re-copies from each one, so any new
+ROMs you dropped in are picked up (existing files are skipped, duplicates are still
+de-duplicated). You can also **add a new folder** and save it back. This turns "I added
+some games, sync the card" into a one-click action instead of re-walking the wizard.
+
+- CLI: if a saved config is found, the wizard asks *"Rescan these saved folders now?"* up
+  front; otherwise your choices are saved at the end.
+- Web UI: saved folders are pre-filled, with **Save folder list to card** and **Rescan
+  saved folder(s)** buttons.
+
 ## How to use test mode
 
 Point the whole workflow at an ordinary folder instead of a card:
