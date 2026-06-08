@@ -90,6 +90,11 @@ function Get-PocketCardSummary {
     $romSystems = @($romSystems | Sort-Object DisplayName)
     $totalRoms = (@($romSystems | Measure-Object -Property FileCount -Sum).Sum) ?? 0
 
+    # --- BIOS status for BIOS-dependent systems (e.g. Neo Geo) -------------------------
+    $bios = if ($SystemsManifest -and (Test-Path -LiteralPath $SystemsManifest -PathType Leaf)) {
+        @(Get-PocketBiosStatus -Root $Root -SystemsManifest $SystemsManifest)
+    } else { @() }
+
     # --- Saved ROM config (#117) -------------------------------------------------------
     $config = Get-PocketRomConfig -Root $Root
 
@@ -109,5 +114,6 @@ function Get-PocketCardSummary {
             Exists      = $config.Exists
             SourceCount = @($config.Sources).Count
         }
+        Bios       = @($bios)
     }
 }

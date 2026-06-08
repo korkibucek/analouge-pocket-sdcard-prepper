@@ -332,8 +332,10 @@
       "owner": "Mazamars312",
       "repo": "Analogue_Pocket_Neogeo",
       "homepage": "https://github.com/Mazamars312/Analogue_Pocket_Neogeo",
-      "biosRequired": false,
-      "biosFiles": [],
+      "biosRequired": true,
+      "biosFiles": [
+        "neogeo.zip"
+      ],
       "notes": "From the openFPGA Cores Inventory. Console Neo Geo by SNK (1990)"
     },
     {

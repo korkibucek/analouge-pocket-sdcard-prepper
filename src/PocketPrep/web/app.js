@@ -146,6 +146,12 @@ function cardBreakdownHtml(sum) {
     ? (sum.Roms.Systems.map(s => `${s.DisplayName} ${s.FileCount}`).join(', '))
     : 'none';
   const cfg = sum.Config.Exists ? `${sum.Config.SourceCount} saved folder(s)` : 'no saved folder list';
+  // BIOS-dependent systems (e.g. Neo Geo) whose BIOS is missing. The tool never downloads
+  // copyrighted BIOS — it only flags what the user must supply themselves.
+  const biosMissing = (sum.Bios || []).filter(b => !b.Satisfied);
+  const biosNote = biosMissing.length
+    ? `<li class="warnote">BIOS needed: ${biosMissing.map(b => `${b.DisplayName} (missing ${b.Missing.join(', ')})`).join('; ')} — supply your own; this tool never downloads BIOS.</li>`
+    : '';
   const anything = sum.Firmware.Present || sum.Cores.Count > 0 || sum.Roms.TotalFiles > 0;
   if (!anything && !sum.Config.Exists) return '';
   // Used card with ROMs but no saved config -> offer to onboard (generate the config).
@@ -157,6 +163,7 @@ function cardBreakdownHtml(sum) {
       <li>Cores: ${sum.Cores.Count}</li>
       <li>ROMs: ${sum.Roms.TotalFiles} total — ${roms}</li>
       <li>ROM config: ${cfg}</li>
+      ${biosNote}
     </ul>
     <div class="row" style="margin-top:.5rem">
       ${onboardBtn}

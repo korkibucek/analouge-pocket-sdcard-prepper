@@ -150,6 +150,11 @@ function Invoke-PocketApiRoute {
                 return @{ Status = 200; Body = (Get-PocketCardSummary -Root $State.Root `
                     -SystemsManifest $State.SystemsManifest -FirmwareManifest $State.FirmwareManifest) }
             }
+            '^GET /api/bios-status$' {
+                # Read-only: which BIOS-dependent systems (e.g. Neo Geo) have their BIOS
+                # present. This tool never downloads copyrighted BIOS - it only detects/guides.
+                return @{ Status = 200; Body = @{ bios = @(Get-PocketBiosStatus -Root $State.Root -SystemsManifest $State.SystemsManifest) } }
+            }
             '^POST /api/card/onboard$' {
                 # Onboard a used card: scan existing content and generate a starter config.
                 return @{ Status = 200; Body = (Import-PocketUsedCard -Root $State.Root `
