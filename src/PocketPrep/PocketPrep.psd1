@@ -34,6 +34,7 @@
         'Get-PocketRomConfig',
         'Save-PocketRomConfig',
         'Invoke-PocketRomRescan',
+        'Get-PocketCardSummary',
         'New-PocketTarget',
         'Get-PocketDirectoryListing',
         'New-PocketLogger',

@@ -201,6 +201,14 @@ editable without code). For each system the wizard:
 > different core, confirm its platform-id and edit the manifest. See
 > [docs/manifests.md](docs/manifests.md).
 
+### Card breakdown after you pick a drive
+
+As soon as you select the card, the tool scans it and shows what's already there —
+**firmware version, installed core count, ROM counts per system, and whether a saved
+folder list exists** — so returning users can see the state at a glance. From the web UI
+breakdown you can jump straight to **rescan / modify ROM folders**; the CLI prints the same
+summary and then offers the rescan.
+
 ### Rescan: add a few games later without redoing setup
 
 When you import ROMs the tool saves your **source-folder → system** mapping to the card at
