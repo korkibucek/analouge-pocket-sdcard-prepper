@@ -62,6 +62,6 @@ jobs:
         run: |
           TAG="${{ github.event.inputs.tag || github.ref_name }}"
           NOTES="Automated release for $TAG. See CHANGELOG.md."
-          NOTES="$NOTES"$'\n\n'"NOTE: Windows builds are not yet code-signed (see docs/WINDOWS-FIRST-RUN.md)."
+          NOTES="$NOTES"$'\n\n'"NOTE: Windows builds are unsigned (free hobby project). Verify with SHA256SUMS and see docs/WINDOWS-FIRST-RUN.md."
           gh release create "$TAG" dist/* --title "$TAG" --notes "$NOTES" --verify-tag || \
           gh release upload "$TAG" dist/* --clobber
