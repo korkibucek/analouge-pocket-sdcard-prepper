@@ -126,6 +126,22 @@ function Invoke-PocketApiRoute {
                     -Skip $skip -First $first
                 return @{ Status = 200; Body = $res }
             }
+            '^GET /api/rom/config$' {
+                # The saved source-folder -> system mapping on the card (empty if none).
+                return @{ Status = 200; Body = (Get-PocketRomConfig -Root $State.Root) }
+            }
+            '^POST /api/rom/config$' {
+                $srcs = if ($Body -and $Body.sources) { @($Body.sources) } else { @() }
+                $res = Save-PocketRomConfig -Root $State.Root -Sources $srcs -DryRun:([bool]$State.DryRun)
+                return @{ Status = 200; Body = $res }
+            }
+            '^POST /api/rom/rescan$' {
+                # Re-copy ROMs from every saved source (skips the wizard). Reuses the copy
+                # engine, so dedupe / free-space / verify all apply.
+                $res = Invoke-PocketRomRescan -Root $State.Root -SystemsManifest $State.SystemsManifest `
+                    -DryRun:([bool]$State.DryRun) -Overwrite:([bool]$Body.overwrite)
+                return @{ Status = 200; Body = $res }
+            }
             '^GET /api/installed-cores$' {
                 return @{ Status = 200; Body = @{ cores = @(Get-PocketInstalledCore -Root $State.Root) } }
             }

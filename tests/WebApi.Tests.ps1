@@ -83,6 +83,26 @@ Describe 'Invoke-PocketApiRoute' {
         $copied | Should -Be 4
         (Get-ChildItem (Join-Path $script:state.Root 'Assets/gb/common') -File).Count | Should -Be 4
     }
+    It 'GET/POST /api/rom/config round-trips and POST /api/rom/rescan copies' {
+        $src = Join-Path $script:root '_rcfg'; New-Item -ItemType Directory $src -Force | Out-Null
+        'a' | Set-Content (Join-Path $src 'one.gb'); 'b' | Set-Content (Join-Path $src 'two.gb')
+
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method GET -Path '/api/rom/config' -State $s }
+        $r.Body.Exists | Should -BeFalse
+
+        $body = [pscustomobject]@{ sources = @([pscustomobject]@{ systemId='gb'; path=$src; recurse=$false }) }
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = $body } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/rom/config' -Body $b -State $s }
+        $r.Status | Should -Be 200
+        $r.Body.SourceCount | Should -Be 1
+
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method POST -Path '/api/rom/rescan' -Body ([pscustomobject]@{}) -State $s }
+        $r.Status | Should -Be 200
+        $r.Body.TotalCopied | Should -Be 2
+        (Test-Path (Join-Path $script:state.Root 'Assets/gb/common/one.gb')) | Should -BeTrue
+    }
     It 'POST /api/target sets a test-mode root' {
         $newRoot = Join-Path $script:root 'chosen'
         $body = [pscustomobject]@{ testMode = $true; rootPath = $newRoot }

@@ -7,8 +7,10 @@ outcome is "files copied to the wrong folder"** — never data loss.
 
 1. **No destructive operations exist in the codebase.** There is no format, wipe,
    delete-existing, or repartition path. The only filesystem mutations are:
-   - `New-Item -ItemType Directory` (create folders), and
-   - `Copy-Item` (copy files in).
+   - `New-Item -ItemType Directory` (create folders),
+   - `Copy-Item` (copy files in), and
+   - writing the small ROM-library config (`pocketprep/rom-sources.json`), which records
+     only source-folder paths and options — never any ROM data.
    Nothing removes user content. (The tool removes only its own temporary download
    folder.)
 2. **Removable-only by default.** `Get-PocketRemovableDrive` returns removable media
