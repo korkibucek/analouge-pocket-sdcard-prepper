@@ -147,6 +147,22 @@ A monthly CI workflow (`.github/workflows/cores-refresh.yml`) runs this and open
 the inventory changes. To add/override a core by hand, edit `cores.json` and re-run
 `Validate-Manifests.ps1`.
 
+### Curated supplement (`cores-supplement.json`)
+
+Some community cores aren't in the inventory yet. `manifests/cores-supplement.json` holds a
+hand-curated list of such cores **verified to publish a downloadable openFPGA GitHub release
+zip**; `Update-CoresManifest.ps1` merges it into `cores.json` (deduped by `owner/repo`,
+inventory wins on conflict). To propose a core, add it there with a real `owner`/`repo` and
+re-run the generator. `platformIds` may be left empty when the exact ROM platform isn't
+known — ROM import is still offered post-install from the core's own declared platform (the
+"installed-core platforms" path).
+
+Not auto-installable, and intentionally **omitted**: entries that point at repositories that
+don't exist, and cores distributed outside GitHub releases — notably **jotego** cores (Neo
+Geo, CPS1/2/3, and most arcade titles), which ship through `jotego/jtbin`/Patreon rather
+than per-repo release zips. Those must be installed manually following the author's
+instructions.
+
 **Installing all cores** (`Install-PocketCoreSet` / the "Install ALL cores" UI button /
 `POST /api/cores/install-all`) installs each *unique repository* once — a repo's release
 zip ships every core it provides (e.g. the GB-GBC repo provides both GB and GBC), so the

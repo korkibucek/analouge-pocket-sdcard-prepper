@@ -14,11 +14,13 @@
 [CmdletBinding()]
 param(
     [string] $InventoryUrl = 'https://joshcampbell191.github.io/openfpga-cores-inventory/api/v1/analogue-pocket/cores.json',
-    [string] $OutFile
+    [string] $OutFile,
+    [string] $SupplementFile
 )
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 if (-not $OutFile) { $OutFile = Join-Path $repo 'manifests/cores.json' }
+if (-not $SupplementFile) { $SupplementFile = Join-Path $repo 'manifests/cores-supplement.json' }
 
 Write-Host "Fetching inventory: $InventoryUrl"
 $inv = Invoke-RestMethod -Uri $InventoryUrl -Headers @{ 'User-Agent' = 'PocketPrep' } -TimeoutSec 60
@@ -63,6 +65,35 @@ $cores = foreach ($e in ($inv.data | Where-Object { $_.repository.platform -eq '
     }
 }
 $cores = @($cores)
+
+# Merge the curated supplement (community cores not in the inventory but verified to have a
+# downloadable openFPGA release zip). Inventory entries win on an owner/repo conflict.
+if (Test-Path -LiteralPath $SupplementFile) {
+    $haveRepos = @{}
+    foreach ($c in $cores) { $haveRepos["$($c.owner)/$($c.repo)".ToLowerInvariant()] = $true }
+    $supp = (Get-Content -LiteralPath $SupplementFile -Raw | ConvertFrom-Json).cores
+    $added = 0
+    foreach ($s in @($supp)) {
+        $key = "$($s.owner)/$($s.repo)".ToLowerInvariant()
+        if ($haveRepos.ContainsKey($key)) { continue }
+        $haveRepos[$key] = $true
+        $cores += [ordered]@{
+            id           = $s.id
+            identifier   = $s.identifier
+            displayName  = $s.displayName
+            platformIds  = @($s.platformIds)
+            owner        = $s.owner
+            repo         = $s.repo
+            homepage     = $s.homepage
+            biosRequired = [bool]$s.biosRequired
+            biosFiles    = @($s.biosFiles)
+            notes        = [string]$s.notes
+        }
+        $added++
+    }
+    $cores = @($cores | Sort-Object { $_.identifier })
+    Write-Host "Merged $added supplement core(s) from $SupplementFile"
+}
 
 $out = [ordered]@{
     '$schema'  = './schemas/cores.schema.json'

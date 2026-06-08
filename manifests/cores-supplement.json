@@ -1,0 +1,90 @@
+{
+  "$schema": "./schemas/cores.schema.json",
+  "_comment": "Curated supplement: community cores NOT in the openFPGA Cores Inventory but verified to publish a downloadable openFPGA GitHub release zip (checked against repos/<owner>/<repo>/releases/latest). Merged into cores.json by scripts/Update-CoresManifest.ps1 (deduped by owner/repo; inventory entries win on conflict). platformIds are left empty where the exact ROM platform isn't confidently known - ROM import for those is still offered post-install from the core's own declared platform (see issue #128). Entries from the user-supplied wishlist that point at non-existent repos (e.g. several boogermann/corenal/piercecolin/Raki-PCE/coinopcollection names) or non-release distribution (jotego cores ship via jotego/jtbin, not per-repo zips) are intentionally omitted - they cannot be auto-downloaded by the standard path.",
+  "cores": [
+    {
+      "id": "agg23-gameandwatch",
+      "identifier": "agg23.GameAndWatch",
+      "displayName": "Game & Watch [agg23]",
+      "platformIds": ["gameandwatch"],
+      "owner": "agg23",
+      "repo": "fpga-gameandwatch",
+      "homepage": "https://github.com/agg23/fpga-gameandwatch",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "Curated community core. LCD Game & Watch handhelds (needs MAME-style artwork/romsets you provide)."
+    },
+    {
+      "id": "agg23-tamagotchi",
+      "identifier": "agg23.Tamagotchi",
+      "displayName": "Tamagotchi [agg23]",
+      "platformIds": ["tamagotchi"],
+      "owner": "agg23",
+      "repo": "fpga-tamagotchi",
+      "homepage": "https://github.com/agg23/fpga-tamagotchi",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "Curated community core. Tamagotchi P1."
+    },
+    {
+      "id": "budude2-gbc",
+      "identifier": "budude2.GBC",
+      "displayName": "Game Boy Color [budude2]",
+      "platformIds": ["gbc"],
+      "owner": "budude2",
+      "repo": "openfpga-GBC",
+      "homepage": "https://github.com/budude2/openfpga-GBC",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "Curated community core. Alternative Game Boy Color core."
+    },
+    {
+      "id": "mazamars312-pcecd",
+      "identifier": "Mazamars312.PCECD",
+      "displayName": "PC Engine CD [Mazamars312]",
+      "platformIds": ["pcecd"],
+      "owner": "Mazamars312",
+      "repo": "openfpga-pcengine-cd",
+      "homepage": "https://github.com/Mazamars312/openfpga-pcengine-cd",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "Curated community core. PC Engine / TurboGrafx-CD. CD-ROM games need a system card and disc images you provide."
+    },
+    {
+      "id": "rndmnkiii-analogizer-genesis",
+      "identifier": "RndMnkIII.Genesis",
+      "displayName": "Genesis (Analogizer) [RndMnkIII]",
+      "platformIds": ["genesis"],
+      "owner": "RndMnkIII",
+      "repo": "Analogizer_openFPGA-Genesis",
+      "homepage": "https://github.com/RndMnkIII/Analogizer_openFPGA-Genesis",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "Curated community core. Genesis/Mega Drive with Analogizer analog-video adapter support."
+    },
+    {
+      "id": "thinkelastic-doom",
+      "identifier": "thinkelastic.Doom",
+      "displayName": "Doom [thinkelastic]",
+      "platformIds": [],
+      "owner": "thinkelastic",
+      "repo": "PocketDoom",
+      "homepage": "https://github.com/thinkelastic/PocketDoom",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "Curated community port. Doom for the Pocket; provide your own WAD per the core's docs."
+    },
+    {
+      "id": "thinkelastic-quake",
+      "identifier": "thinkelastic.Quake",
+      "displayName": "Quake [thinkelastic]",
+      "platformIds": [],
+      "owner": "thinkelastic",
+      "repo": "PocketQuake",
+      "homepage": "https://github.com/thinkelastic/PocketQuake",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "Curated community port. Quake for the Pocket; provide your own game data per the core's docs."
+    }
+  ]
+}
