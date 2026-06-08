@@ -32,6 +32,7 @@
         'New-PocketRomCopyPlan',
         'Invoke-PocketRomCopyPlan',
         'New-PocketTarget',
+        'Get-PocketDirectoryListing',
         'New-PocketLogger',
         'Write-PocketLog',
         'New-PocketInstallSummary',

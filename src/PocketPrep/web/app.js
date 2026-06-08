@@ -15,6 +15,46 @@ async function api(path, method = 'GET', body) {
 const fmtGB = (b) => (b ? (b / 1073741824).toFixed(1) + ' GB' : '—');
 const busy = (on) => { $('#busy').hidden = !on; };
 function announce(msg) { const el = $('#sr-status'); if (el) el.textContent = msg; }
+
+// Folder picker: opens a modal that browses the local filesystem (via the server) and
+// resolves to the chosen folder path, or null if cancelled.
+function pickFolder(startPath) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-label="Choose a folder">
+      <h3>Choose a folder</h3>
+      <p id="fb-path" class="meta"></p>
+      <div id="fb-roots" class="row"></div>
+      <ul id="fb-list" class="list" style="max-height:50vh;overflow:auto"></ul>
+      <div class="row"><button id="fb-up" class="secondary">▲ Up</button>
+        <button id="fb-use">Use this folder</button>
+        <button id="fb-cancel" class="secondary">Cancel</button></div>
+    </div>`;
+    document.body.appendChild(overlay);
+    let cur = startPath || '';
+    const close = (val) => { overlay.remove(); resolve(val); };
+
+    async function load(path) {
+      let d;
+      try { d = await api('/api/browse', 'POST', { path }); }
+      catch (e) { $('#fb-path').innerHTML = errLine(e.message); return; }
+      cur = d.Path;
+      $('#fb-path').textContent = cur;
+      $('#fb-roots').innerHTML = (d.Roots || []).map(r => `<button class="secondary fb-root" data-p="${encodeURIComponent(r.Path)}">${r.Name}</button>`).join(' ');
+      $('#fb-list').innerHTML = (d.Directories || []).length
+        ? d.Directories.map(x => `<li><button class="fb-dir" data-p="${encodeURIComponent(x.Path)}">📁 ${x.Name}</button></li>`).join('')
+        : '<li class="meta">(no sub-folders)</li>';
+      overlay.querySelectorAll('.fb-dir, .fb-root').forEach(b => b.onclick = () => load(decodeURIComponent(b.dataset.p)));
+      $('#fb-up').disabled = !d.Parent;
+      $('#fb-up').onclick = () => d.Parent && load(d.Parent);
+    }
+    $('#fb-use').onclick = () => close(cur);
+    $('#fb-cancel').onclick = () => close(null);
+    overlay.onclick = (e) => { if (e.target === overlay) close(null); };
+    load(cur);
+  });
+}
 function panel(html) {
   const p = $('#panel');
   p.innerHTML = html;
@@ -256,6 +296,7 @@ async function stepRoms() {
     <div class="card"><strong>${s.DisplayName}</strong> <span class="meta">[${s.Id}] ${s.SupportedExtensions.join(' ')}</span>
       ${s.Experimental ? `<span class="tag fixed">experimental</span><p class="warnote">${s.Notes}</p>` : ''}
       <div class="row"><input type="text" id="src${i}" placeholder="source ROM folder">
+        <button data-browse="${i}" class="secondary">Browse…</button>
         <label class="row"><input type="checkbox" id="rec${i}"> subfolders</label>
         <button data-i="${i}" data-act="plan" class="secondary">Count</button>
         <button data-i="${i}" data-act="copy">Copy</button></div>
@@ -264,6 +305,11 @@ async function stepRoms() {
     <p class="warnote">Copies ROMs you already own. BIOS files are not copied automatically.</p>
     ${rows}<button id="c">Continue to summary →</button>`);
   $('#c').onclick = () => go(6);
+  document.querySelectorAll('button[data-browse]').forEach(btn => btn.onclick = async () => {
+    const i = +btn.dataset.browse;
+    const chosen = await pickFolder($('#src' + i).value.trim());
+    if (chosen) $('#src' + i).value = chosen;
+  });
   document.querySelectorAll('button[data-act]').forEach(btn => btn.onclick = async () => {
     const i = +btn.dataset.i, act = btn.dataset.act, out = $('#rout' + i);
     const body = { systemId: systems[i].Id, sourceFolder: $('#src' + i).value.trim(), recurse: $('#rec' + i).checked };

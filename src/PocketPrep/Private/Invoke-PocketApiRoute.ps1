@@ -86,6 +86,12 @@ function Invoke-PocketApiRoute {
             '^POST /api/folders$' {
                 return @{ Status = 200; Body = (New-PocketFolderStructure -Root $State.Root -DryRun:([bool]$State.DryRun)) }
             }
+            '^POST /api/browse$' {
+                # Folder picker (read-only directory listing). POST so the client can send
+                # the target path in the body.
+                $p = if ($Body -and $Body.path) { [string]$Body.path } else { '' }
+                return @{ Status = 200; Body = (Get-PocketDirectoryListing -Path $p) }
+            }
             '^GET /api/systems$' {
                 return @{ Status = 200; Body = @{ systems = @(Get-PocketSystem -Path $State.SystemsManifest) } }
             }
