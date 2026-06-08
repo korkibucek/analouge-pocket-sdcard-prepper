@@ -40,7 +40,11 @@ function New-PocketRomCopyPlan {
 
         [switch] $PreserveStructure,
 
-        [switch] $Recurse
+        [switch] $Recurse,
+
+        # Disable content-based de-duplication (by default, byte-identical files among the
+        # matched set are detected and copied only once).
+        [switch] $NoContentDedupe
     )
 
     if (-not (Test-Path -LiteralPath $SourceFolder -PathType Container)) {
@@ -57,7 +61,12 @@ function New-PocketRomCopyPlan {
 
     # Characters that are invalid in FAT32/exFAT file names (besides the path separators).
     $invalidFatChars = [char[]]('<', '>', ':', '"', '|', '?', '*') + @(0..31 | ForEach-Object { [char]$_ })
-    $seenDest = @{}
+    $seenDest = @{}      # destination name dedupe
+    $seenHash = @{}      # content dedupe
+    # Content dedupe (on by default) only hashes files whose SIZE matches another matched
+    # file, so it's effectively free for libraries with no real duplicates.
+    $sizeCounts = @{}
+    foreach ($f in $matched) { $sizeCounts[$f.Length] = 1 + ($sizeCounts[$f.Length] ?? 0) }
 
     $items = foreach ($f in $matched) {
         if ($PreserveStructure -and $Recurse) {
@@ -68,8 +77,8 @@ function New-PocketRomCopyPlan {
             $dest = Join-Path $destRoot $f.Name
         }
 
-        # Detect problems that would otherwise fail or silently clobber on the card.
-        $problem = $null
+        # 1. Problems that can't go on the card at all.
+        $problem = $null; $duplicate = $null
         $leaf = Split-Path -Leaf $dest
         if ($leaf.IndexOfAny($invalidFatChars) -ge 0) {
             $problem = "name contains characters not allowed on FAT/exFAT"
@@ -78,7 +87,17 @@ function New-PocketRomCopyPlan {
         } else {
             $key = $dest.ToLowerInvariant()
             if ($seenDest.ContainsKey($key)) {
-                $problem = "duplicate destination name (collides with $($seenDest[$key]))"
+                # 2. Same destination name as an earlier file -> duplicate (only one can land).
+                $duplicate = "same name as $($seenDest[$key])"
+            } elseif ((-not $NoContentDedupe) -and $sizeCounts[$f.Length] -gt 1) {
+                # 3. Same bytes as an earlier file (different name) -> duplicate.
+                $hash = (Get-FileHash -LiteralPath $f.FullName -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash
+                if ($hash -and $seenHash.ContainsKey($hash)) {
+                    $duplicate = "identical to $($seenHash[$hash])"
+                } else {
+                    if ($hash) { $seenHash[$hash] = $f.Name }
+                    $seenDest[$key] = $f.Name
+                }
             } else {
                 $seenDest[$key] = $f.Name
             }
@@ -90,11 +109,13 @@ function New-PocketRomCopyPlan {
             RelativePath = $rel
             SizeBytes    = $f.Length
             Problem      = $problem
+            Duplicate    = $duplicate
         }
     }
     $items = @($items)
     $problemItems = @($items | Where-Object { $_.Problem })
-    $copyableItems = @($items | Where-Object { -not $_.Problem })
+    $duplicateItems = @($items | Where-Object { $_.Duplicate -and -not $_.Problem })
+    $copyableItems = @($items | Where-Object { -not $_.Problem -and -not $_.Duplicate })
     # Free-space requirement is based only on files that will actually be copied.
     $totalBytes = [int64]((($copyableItems | Measure-Object -Property SizeBytes -Sum).Sum) ?? 0)
 
@@ -116,6 +137,8 @@ function New-PocketRomCopyPlan {
         CopyableCount      = $copyableItems.Count
         ProblemCount       = $problemItems.Count
         Problems           = @($problemItems | ForEach-Object { [pscustomobject]@{ Source = $_.Source; RelativePath = $_.RelativePath; Reason = $_.Problem } })
+        DuplicateCount     = $duplicateItems.Count
+        Duplicates         = @($duplicateItems | ForEach-Object { [pscustomobject]@{ RelativePath = $_.RelativePath; Reason = $_.Duplicate } })
         TotalBytes         = $totalBytes
         DestinationFreeBytes = $freeBytes
         FitsInDestination  = $fits

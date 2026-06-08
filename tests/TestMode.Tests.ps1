@@ -9,8 +9,8 @@ Describe 'End-to-end against a fake SD root (test mode)' {
         $script:root = Join-Path ([System.IO.Path]::GetTempPath()) ("pp_e2e_" + [System.IO.Path]::GetRandomFileName())
         $script:src  = Join-Path ([System.IO.Path]::GetTempPath()) ("pp_e2esrc_" + [System.IO.Path]::GetRandomFileName())
         New-Item -ItemType Directory -Path $script:src -Force | Out-Null
-        'rom' | Set-Content (Join-Path $script:src 'mario.nes')
-        'rom' | Set-Content (Join-Path $script:src 'zelda.nes')
+        'mario rom' | Set-Content (Join-Path $script:src 'mario.nes')
+        'zelda rom' | Set-Content (Join-Path $script:src 'zelda.nes')
 
         # firmware payload to install offline
         $script:fw = Join-Path ([System.IO.Path]::GetTempPath()) ("pp_e2efw_" + [System.IO.Path]::GetRandomFileName() + '.bin')
