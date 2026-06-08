@@ -289,6 +289,19 @@ $romSources = [System.Collections.Generic.List[object]]::new()
 # Returning user: if the card already has a saved source mapping, offer a one-step
 # rescan (re-copy from every saved folder) instead of re-entering everything.
 $savedConfig = Get-PocketRomConfig -Root $target.Root
+
+# Used card with ROMs but no saved config: offer to onboard it (generate the config from
+# what's already on the card) so the rescan workflow lights up.
+if ((-not $savedConfig.Exists) -and $cardSummary.Roms.TotalFiles -gt 0) {
+    Write-Host "This card already has $($cardSummary.Roms.TotalFiles) ROM(s) but no saved folder list." -ForegroundColor Cyan
+    if (Confirm-YesNo "Onboard this card now (generate a config from its existing ROMs)?" $true) {
+        $imp = Import-PocketUsedCard -Root $target.Root -SystemsManifest $SystemsManifest -FirmwareManifest $FirmwareManifest -DryRun:$DryRun
+        Write-Host "  Registered $($imp.DetectedCount) system(s) from the card$(if ($imp.UnmappedCount) { "; $($imp.UnmappedCount) platform(s) had no matching system and were skipped" })." -ForegroundColor Green
+        Write-Host "  Tip: the sources point at the card itself - edit them to your computer's ROM folders to sync new games later." -ForegroundColor DarkGray
+        if (-not $DryRun) { $savedConfig = Get-PocketRomConfig -Root $target.Root }
+    }
+}
+
 $rescanOnly = $false
 if ($savedConfig.Exists -and @($savedConfig.Sources).Count -gt 0) {
     Write-Host "Found a saved ROM library config on the card with $(@($savedConfig.Sources).Count) folder(s):" -ForegroundColor Cyan
