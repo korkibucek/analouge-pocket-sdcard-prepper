@@ -105,10 +105,25 @@ function Invoke-PocketApiRoute {
                 return @{ Status = 200; Body = $plan }
             }
             '^POST /api/rom/copy$' {
+                # Batched copy: a client can send skip/first to transfer a large library a
+                # slice at a time and advance a progress bar between calls. The plan (which
+                # may hash files for dedupe) is cached per system+source so batches after
+                # the first are cheap and the de-dup view stays consistent across batches.
                 $sys = Get-PocketSystem -Path $State.SystemsManifest -Id ([string]$Body.systemId)
-                $plan = New-PocketRomCopyPlan -System $sys -SourceFolder ([string]$Body.sourceFolder) -Root $State.Root `
-                    -Recurse:([bool]$Body.recurse) -PreserveStructure:([bool]$Body.preserveStructure)
-                $res = Invoke-PocketRomCopyPlan -Plan $plan -DryRun:([bool]$State.DryRun) -Overwrite:([bool]$Body.overwrite)
+                $skip  = [int]($Body.skip ?? 0)
+                $first = [int]($Body.first ?? 0)
+                if (-not $State.RomPlans) { $State.RomPlans = @{} }
+                $cacheKey = "$($sys.Id)|$([string]$Body.sourceFolder)|$([bool]$Body.recurse)|$([bool]$Body.preserveStructure)"
+                $plan = if ($skip -gt 0 -and $State.RomPlans.ContainsKey($cacheKey)) {
+                    $State.RomPlans[$cacheKey]
+                } else {
+                    $p = New-PocketRomCopyPlan -System $sys -SourceFolder ([string]$Body.sourceFolder) -Root $State.Root `
+                        -Recurse:([bool]$Body.recurse) -PreserveStructure:([bool]$Body.preserveStructure)
+                    $State.RomPlans[$cacheKey] = $p
+                    $p
+                }
+                $res = Invoke-PocketRomCopyPlan -Plan $plan -DryRun:([bool]$State.DryRun) -Overwrite:([bool]$Body.overwrite) `
+                    -Skip $skip -First $first
                 return @{ Status = 200; Body = $res }
             }
             '^GET /api/installed-cores$' {

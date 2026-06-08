@@ -33,11 +33,23 @@ function Invoke-PocketRomCopyPlan {
 
         [switch] $SkipSpaceCheck,
 
+        # Copy only a slice of the plan's items - lets a caller transfer a large library
+        # in batches (so a single request/loop stays responsive and a progress bar can
+        # advance between batches). Skip is the 0-based start; First is the batch size.
+        [int] $Skip = 0,
+
+        [int] $First = 0,
+
+        # Optional callback invoked once per item processed: & $OnProgress $doneInBatch $totalInBatch $relativePath
+        [scriptblock] $OnProgress,
+
         [psobject] $Logger
     )
 
     process {
-        if (-not $DryRun -and $Plan.FileCount -gt 0 -and $Plan.Root) {
+        $isBatch = ($Skip -gt 0) -or ($First -gt 0)
+        # Free-space is checked once up-front (Skip 0); batched callers needn't re-check.
+        if (-not $DryRun -and $Skip -le 0 -and $Plan.FileCount -gt 0 -and $Plan.Root) {
             Assert-PocketFreeSpace -Root $Plan.Root -RequiredBytes ([int64]$Plan.TotalBytes) `
                 -Label "$($Plan.SystemId) ROMs" -Skip:$SkipSpaceCheck
         }
@@ -53,7 +65,18 @@ function Invoke-PocketRomCopyPlan {
             New-Item -ItemType Directory -Path $Plan.Destination -Force | Out-Null
         }
 
-        foreach ($item in $Plan.Items) {
+        # Select the batch slice (all items when Skip/First are unset).
+        $allItems = @($Plan.Items)
+        $batch = if ($isBatch) {
+            $f = if ($First -gt 0) { $First } else { $allItems.Count }
+            @($allItems | Select-Object -Skip ([Math]::Max(0, $Skip)) -First $f)
+        } else { $allItems }
+        $batchTotal = $batch.Count
+        $done = 0
+
+        foreach ($item in $batch) {
+            $done++
+            if ($OnProgress) { & $OnProgress $done $batchTotal $item.RelativePath }
             # Skip problematic items (invalid FAT name, too-long path, duplicate
             # destination) rather than fail mid-copy or silently overwrite.
             if ($item.PSObject.Properties['Problem'] -and $item.Problem) {
@@ -109,6 +132,11 @@ function Invoke-PocketRomCopyPlan {
             SystemId      = $Plan.SystemId
             Destination   = $Plan.Destination
             DryRun        = [bool]$DryRun
+            # Batch bookkeeping so a client can drive a determinate progress bar:
+            # ItemTotal is every item in the plan; BatchCount is how many this call handled.
+            ItemTotal     = $allItems.Count
+            BatchSkip     = [Math]::Max(0, $Skip)
+            BatchCount    = $batchTotal
             CopiedCount   = $copied.Count
             SkippedCount  = $skipped.Count
             SkippedProblemCount = $skippedProblems.Count

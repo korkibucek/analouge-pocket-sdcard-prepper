@@ -307,7 +307,13 @@ foreach ($sys in $systems) {
     }
     if ($plan.FileCount -eq 0) { continue }
     if (Confirm-YesNo "  Copy $($plan.FileCount) file(s) to $($plan.Destination)?" $true) {
-        $res = Invoke-PocketRomCopyPlan -Plan $plan -DryRun:$DryRun -Logger $logger
+        $onProgress = {
+            param($done, $total, $name)
+            $pct = if ($total -gt 0) { [int](($done / $total) * 100) } else { 100 }
+            Write-Progress -Activity "Copying $($sys.DisplayName) ROMs" -Status "[$done/$total] $name" -PercentComplete $pct
+        }
+        $res = Invoke-PocketRomCopyPlan -Plan $plan -DryRun:$DryRun -Logger $logger -OnProgress $onProgress
+        Write-Progress -Activity "Copying $($sys.DisplayName) ROMs" -Completed
         $dupNote = if ($res.SkippedDuplicateCount -gt 0) { ", $($res.SkippedDuplicateCount) duplicate(s) skipped" } else { '' }
         Write-Host "  Copied $($res.CopiedCount), skipped $($res.SkippedCount)$dupNote, failed $($res.FailedCount)." -ForegroundColor Green
         $romResults.Add($res)

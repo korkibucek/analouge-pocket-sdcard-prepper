@@ -191,6 +191,8 @@ editable without code). For each system the wizard:
 - **de-duplicates automatically** — the same ROM found in two source folders (same
   name, or byte-for-byte identical content under a different name) is copied only
   once; pass `-NoContentDedupe` to keep content-identical files,
+- copies in batches and shows a **progress bar** (web UI) or `[n/total]` progress
+  line (CLI) so a large library never looks frozen,
 - skips files that already exist unless you choose to overwrite, and
 - never copies BIOS files unless you explicitly opt in.
 
