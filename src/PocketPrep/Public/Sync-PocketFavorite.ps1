@@ -4,7 +4,7 @@ function Sync-PocketFavorite {
     Materialises a platform's Favorites folder from the saved favourites list.
 
 .DESCRIPTION
-    Ensures Assets/<platformId>/common/Favorites contains exactly the ROMs marked as
+    Ensures Assets/<platformId>/common/!Favorites contains exactly the ROMs marked as
     favourites (Save-PocketFavorite). Each favourite is found by name under common (the
     original stays put in its alphabetical/organized location) and surfaced in Favorites as
     a SYMBOLIC LINK where the filesystem supports it (Test-PocketSymlinkSupport), otherwise a
@@ -43,7 +43,7 @@ function Sync-PocketFavorite {
         [psobject] $Logger
     )
 
-    $favFolderName = 'Favorites'
+    $favFolderName = Get-PocketFavoritesFolderName   # "!Favorites" - sorts to the top of the menu
     $log = { param($m, $lvl = 'INFO') if ($Logger) { Write-PocketLog -Logger $Logger -Message $m -Level $lvl | Out-Null } }
 
     $common = Join-Path (Join-Path (Join-Path $Root 'Assets') $PlatformId) 'common'
@@ -61,11 +61,23 @@ function Sync-PocketFavorite {
         }
     }
 
-    # Index candidate sources by leaf name, excluding anything already inside Favorites.
-    $favPrefix = $favDir + [System.IO.Path]::DirectorySeparatorChar
+    # Migrate a legacy "Favorites" folder to "!Favorites" (so it sorts first), then continue.
+    $legacy = Join-Path $common 'Favorites'
+    if (-not $DryRun -and $favFolderName -ne 'Favorites' -and (Test-Path -LiteralPath $legacy -PathType Container)) {
+        if (-not (Test-Path -LiteralPath $favDir)) { New-Item -ItemType Directory -Path $favDir -Force | Out-Null }
+        foreach ($lf in @(Get-ChildItem -LiteralPath $legacy -File -ErrorAction SilentlyContinue)) {
+            $to = Join-Path $favDir $lf.Name
+            if (-not (Test-Path -LiteralPath $to)) { Move-Item -LiteralPath $lf.FullName -Destination $to -ErrorAction SilentlyContinue }
+        }
+        if (-not (Get-ChildItem -LiteralPath $legacy -Force -ErrorAction SilentlyContinue)) { Remove-Item -LiteralPath $legacy -Force -ErrorAction SilentlyContinue }
+        & $log "FAV migrated legacy Favorites -> $favFolderName" 'INFO'
+    }
+
+    # Index candidate sources by leaf name, excluding the tool-managed favourites folder(s).
+    $commonFull = (Resolve-Path -LiteralPath $common).Path
     $srcByKey = @{}
     foreach ($f in @(Get-ChildItem -LiteralPath $common -File -Recurse -ErrorAction SilentlyContinue)) {
-        if ($f.FullName.StartsWith($favPrefix, [System.StringComparison]::OrdinalIgnoreCase)) { continue }
+        if (Test-PocketReservedRomPath -Common $commonFull -FullPath $f.FullName) { continue }
         $k = $f.Name.ToLowerInvariant()
         if (-not $srcByKey.ContainsKey($k)) { $srcByKey[$k] = $f.FullName }
     }

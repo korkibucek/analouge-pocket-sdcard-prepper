@@ -201,7 +201,7 @@ Describe 'Invoke-PocketApiRoute' {
             Invoke-PocketApiRoute -Method POST -Path '/api/favorites' -Body $b -State $s }
         $r.Status | Should -Be 200
         ($r.Body.sync.LinkedCount + $r.Body.sync.CopiedCount) | Should -Be 1
-        (Test-Path (Join-Path $common 'Favorites/Tetris.gb')) | Should -BeTrue
+        (Test-Path (Join-Path $common '!Favorites/Tetris.gb')) | Should -BeTrue
         # GET reflects the saved favourite.
         $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
             Invoke-PocketApiRoute -Method GET -Path '/api/favorites' -State $s }

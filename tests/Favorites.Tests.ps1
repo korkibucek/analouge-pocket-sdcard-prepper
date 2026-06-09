@@ -47,7 +47,7 @@ Describe 'Sync-PocketFavorite' {
         $script:root = Join-Path ([System.IO.Path]::GetTempPath()) ("favs_" + [System.IO.Path]::GetRandomFileName())
         New-Item -ItemType Directory -Path $script:root -Force | Out-Null
         $script:common = New-GbRoms $script:root @('Tetris.gb', 'Zelda.gb', 'Mario.gb')
-        $script:favDir = Join-Path $script:common 'Favorites'
+        $script:favDir = Join-Path $script:common '!Favorites'
     }
     AfterEach { Remove-Item $script:root -Recurse -Force -ErrorAction SilentlyContinue }
 
@@ -83,6 +83,17 @@ Describe 'Sync-PocketFavorite' {
         Save-PocketFavorite -Root $script:root -PlatformId 'gb' -Names @('Ghost.gb') | Out-Null
         $r = Sync-PocketFavorite -Root $script:root -PlatformId 'gb'
         $r.Missing | Should -Contain 'Ghost.gb'
+    }
+
+    It 'writes to !Favorites (sorts first) and migrates a legacy Favorites folder' {
+        $legacy = Join-Path $script:common 'Favorites'
+        New-Item -ItemType Directory -Path $legacy -Force | Out-Null
+        'old' | Set-Content (Join-Path $legacy 'Mario.gb')
+        Save-PocketFavorite -Root $script:root -PlatformId 'gb' -Names @('Mario.gb', 'Tetris.gb') | Out-Null
+        Sync-PocketFavorite -Root $script:root -PlatformId 'gb' | Out-Null
+        (Test-Path (Join-Path $script:common '!Favorites/Mario.gb')) | Should -BeTrue
+        (Test-Path (Join-Path $script:common '!Favorites/Tetris.gb')) | Should -BeTrue
+        (Test-Path $legacy) | Should -BeFalse
     }
 
     It 'finds favourites even after the organizer moved them into subfolders' {

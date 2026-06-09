@@ -256,9 +256,12 @@ detects what's present and tells you the exact filename and where to put it.
 ### Favourites
 
 Tag ROMs as **favourites** (⭐ Favourites in the menu): pick a system, filter, tick the
-games you love, and Save. Each favourite is surfaced in a per-system
-`Assets/<platformId>/common/Favorites` folder while the **original stays put** in its
-alphabetical location.
+games you love, and Save. The games you've already favourited are shown **first** and clearly
+marked (with a *favourited only* toggle and a live count). Each favourite is surfaced in a
+per-system `Assets/<platformId>/common/!Favorites` folder — the leading `!` sorts it to the
+**top** of the Pocket's openFPGA menu (before the `#` and letter folders) — while the
+**original stays put** in its alphabetical location. (An older `Favorites` folder is migrated
+to `!Favorites` automatically.)
 
 > **How it's stored depends on the filesystem.** Where the filesystem supports symlinks
 > (e.g. a test folder on NTFS/ext4) the favourite is a **symlink** — no extra space. On a

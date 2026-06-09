@@ -134,28 +134,42 @@ async function showFavorites() {
   const esc = v => (v || '').replace(/"/g, '&quot;');
   const opts = systems.map(s => `<option value="${esc(s.PlatformId)}">${s.DisplayName} (${s.FileCount})</option>`).join('');
   panel(`<h2>⭐ Favourites</h2>
-    <p class="meta">Tag ROMs as favourites. They appear in a per-system <strong>Favorites</strong> folder — symlinked where the filesystem allows, otherwise copied — while the original stays in place.</p>
+    <p class="meta">Tag ROMs as favourites. They appear in a per-system <strong>!Favorites</strong> folder (sorted to the top of the menu) — symlinked where the filesystem allows, otherwise copied — while the original stays in place.</p>
     <p class="warnote">On a FAT32/exFAT card (a real Pocket card) favourites are <strong>copies</strong>: they use extra space and the copy has its own save file.</p>
     <label class="row">System: <select id="fav-plat">${opts}</select></label>
-    <label class="row">Filter: <input type="text" id="fav-filter" placeholder="type to filter the list"></label>
+    <div id="fav-current" class="meta"></div>
+    <label class="row">Filter: <input type="text" id="fav-filter" placeholder="type to filter the list">
+      <label class="row" style="margin-left:.5rem"><input type="checkbox" id="fav-only"> favourited only</label></label>
     <div id="fav-list" class="list" style="max-height:50vh;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:.5rem"></div>
     <div class="row"><button id="fav-save">Save favourites</button> <span id="fav-count" class="meta"></span></div>
     <div id="fav-out"></div>`);
   let names = [];
   let selected = new Map();   // lowercase -> original name, for the current platform
   const curPlat = () => $('#fav-plat').value;
+  const updateCurrent = () => {
+    const cur = [...selected.values()].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+    $('#fav-current').innerHTML = cur.length
+      ? `<strong>★ Current favourites (${cur.length}):</strong> ${cur.map(esc).join(', ')}`
+      : '<em>No favourites tagged for this system yet.</em>';
+    $('#fav-count').textContent = `${selected.size} favourite(s)`;
+  };
   const renderList = () => {
     const filt = ($('#fav-filter').value || '').toLowerCase();
-    const shown = names.filter(n => !filt || n.toLowerCase().includes(filt)).slice(0, 1000);
+    const onlyFav = !!($('#fav-only') || {}).checked;
+    // Favourited games sort to the TOP (and are always shown), so they're obvious.
+    const matches = names.filter(n => (!filt || n.toLowerCase().includes(filt)) && (!onlyFav || selected.has(n.toLowerCase())));
+    const isFav = n => selected.has(n.toLowerCase());
+    matches.sort((a, b) => (isFav(b) - isFav(a)) || a.toLowerCase().localeCompare(b.toLowerCase()));
+    const shown = matches.slice(0, 1000);
     $('#fav-list').innerHTML = shown.length
-      ? shown.map(n => `<label class="row"><input type="checkbox" class="fav-pick" data-n="${esc(n)}" ${selected.has(n.toLowerCase()) ? 'checked' : ''}> ${n}</label>`).join('')
+      ? shown.map(n => `<label class="row"><input type="checkbox" class="fav-pick" data-n="${esc(n)}" ${isFav(n) ? 'checked' : ''}> ${isFav(n) ? '★ ' : ''}${n}</label>`).join('')
       : '<p class="meta">(no matching ROMs)</p>';
     document.querySelectorAll('.fav-pick').forEach(c => c.onchange = () => {
       const n = c.dataset.n; const k = n.toLowerCase();
       if (c.checked) selected.set(k, n); else selected.delete(k);
-      $('#fav-count').textContent = `${selected.size} favourite(s)`;
+      updateCurrent();
     });
-    $('#fav-count').textContent = `${selected.size} favourite(s)`;
+    updateCurrent();
   };
   const loadPlat = async () => {
     selected = new Map((favMap[curPlat()] || []).map(n => [n.toLowerCase(), n]));
@@ -166,6 +180,7 @@ async function showFavorites() {
   };
   $('#fav-plat').onchange = loadPlat;
   $('#fav-filter').oninput = renderList;
+  $('#fav-only').onchange = renderList;
   $('#fav-save').onclick = async () => {
     const plat = curPlat(); const picked = [...selected.values()];
     busy(true); $('#fav-out').innerHTML = '<p>Saving & syncing…</p>';
@@ -174,6 +189,7 @@ async function showFavorites() {
       favMap[plat] = picked;
       const s = r.sync, miss = (s.Missing || []).length ? `; ${s.Missing.length} not found` : '';
       $('#fav-out').innerHTML = `<p class="ok">${picked.length} favourite(s) saved — ${s.Method} (${s.LinkedCount} linked, ${s.CopiedCount} copied, ${s.RemovedCount} removed${miss})${s.DryRun ? ' [dry-run]' : ''}.</p>`;
+      renderList();
     } catch (e) { $('#fav-out').innerHTML = errLine(e.message); } finally { busy(false); }
   };
   loadPlat();
