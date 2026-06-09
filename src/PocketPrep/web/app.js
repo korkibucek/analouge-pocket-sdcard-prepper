@@ -157,6 +157,17 @@ function cardBreakdownHtml(sum) {
   // Used card with ROMs but no saved config -> offer to onboard (generate the config).
   const canOnboard = sum.Roms.TotalFiles > 0 && !sum.Config.Exists;
   const onboardBtn = canOnboard ? `<button id="onboard">Onboard this card (generate config)</button>` : '';
+  // Library Organizer (separate maintenance tool): multiselect the platforms with ROMs and
+  // split each core's library into subfolders so no folder exceeds the per-folder game limit.
+  const romSystems = sum.Roms.Systems || [];
+  const organizer = romSystems.length ? `
+    <details class="card" style="margin-top:.6rem"><summary><strong>Organize library into folders</strong> — keep each core under the per-folder game limit (~1300)</summary>
+      <p class="meta">Select the cores to reorganize; each is split into alphabetical subfolders. Move-only — nothing is deleted.</p>
+      <div id="org-list">${romSystems.map(s => `<label class="row"><input type="checkbox" class="org-pick" value="${s.PlatformId}"> ${s.DisplayName} <span class="meta">(${s.FileCount} ROMs)</span></label>`).join('')}</div>
+      <label class="row">Max games per folder: <input type="number" id="org-cap" value="1000" min="1" style="min-width:6rem"></label>
+      <div class="row"><button id="org-preview" class="secondary">Preview</button><button id="org-run">Organize selected</button></div>
+      <div id="org-out"></div>
+    </details>` : '';
   return `<div class="card"><strong>Already on this card</strong>
     <ul class="list" style="margin-top:.4rem">
       <li>Firmware: ${fw}</li>
@@ -168,7 +179,8 @@ function cardBreakdownHtml(sum) {
     <div class="row" style="margin-top:.5rem">
       ${onboardBtn}
       <button id="manageroms" class="secondary">${sum.Config.Exists ? 'Rescan / modify ROM folders →' : 'Manage ROM folders →'}</button>
-    </div><div id="onboardout"></div></div>`;
+    </div><div id="onboardout"></div>
+    ${organizer}</div>`;
 }
 
 async function stepCard() {
@@ -189,6 +201,29 @@ async function stepCard() {
         if ($('#onboard')) $('#onboard').disabled = true;
       } catch (e) { $('#onboardout').innerHTML = errLine(e.message); } finally { busy(false); }
     };
+    // Library Organizer: preview (dry-run) or run the subfoldering for each selected platform.
+    const orgPicks = () => Array.from(document.querySelectorAll('.org-pick:checked')).map(c => c.value);
+    const orgCap = () => Math.max(1, parseInt(($('#org-cap') || {}).value, 10) || 1000);
+    const orgRun = async (dry) => {
+      const picks = orgPicks();
+      if (!picks.length) { $('#org-out').innerHTML = errLine('Select at least one core.'); return; }
+      busy(true); $('#org-out').innerHTML = `<p>${dry ? 'Previewing' : 'Organizing'}…</p>`;
+      try {
+        const lines = [];
+        for (const platformId of picks) {
+          if (dry) {
+            const p = await api('/api/rom/organize/plan', 'POST', { platformId, maxPerFolder: orgCap() });
+            lines.push(`${platformId}: ${p.FileCount} ROMs → ${p.NeedsBuckets ? `${p.BucketCount} folder(s) (${p.MoveCount} move(s))` : 'fits in one folder, no change'}`);
+          } else {
+            const r = await api('/api/rom/organize', 'POST', { platformId, maxPerFolder: orgCap() });
+            lines.push(`${platformId}: moved ${r.MovedCount}, skipped ${r.SkippedCount}, failed ${r.FailedCount}${r.DryRun ? ' [dry-run]' : ''}`);
+          }
+        }
+        $('#org-out').innerHTML = `<p class="${dry ? '' : 'ok'}">${lines.join('<br>')}</p>`;
+      } catch (e) { $('#org-out').innerHTML = errLine(e.message); } finally { busy(false); }
+    };
+    if ($('#org-preview')) $('#org-preview').onclick = () => orgRun(true);
+    if ($('#org-run')) $('#org-run').onclick = () => orgRun(false);
   };
   try {
     if (S.drive && S.drive.FileSystem) {

@@ -216,6 +216,16 @@ folder list exists** — so returning users can see the state at a glance. From 
 breakdown you can jump straight to **rescan / modify ROM folders**; the CLI prints the same
 summary and then offers the rescan.
 
+### Organize a large library into folders
+
+Some openFPGA cores won't list more than a certain number of games in one folder (the
+community ceiling is around **1300**). The **Library Organizer** (a separate maintenance
+tool, surfaced as a multiselect on the card breakdown panel) splits a core's ROMs into
+alphabetical subfolders under `Assets/<platformId>/common`, each capped at a configurable
+size (default **1000**). It's **move-only** — nothing is deleted or overwritten, BIOS files
+are left in place, there's a dry-run **Preview**, and re-running is idempotent. Analogue's
+docs explicitly allow these custom subdirectories.
+
 ### Onboard an already-used card
 
 Inserted a card that was set up elsewhere and already has ROMs on it? The tool can

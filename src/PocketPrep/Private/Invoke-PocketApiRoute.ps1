@@ -107,6 +107,27 @@ function Invoke-PocketApiRoute {
             '^GET /api/systems$' {
                 return @{ Status = 200; Body = @{ systems = @(Get-PocketSystem -Path $State.SystemsManifest) } }
             }
+            '^POST /api/rom/organize/plan$' {
+                $platId = [string]$Body.platformId
+                if (-not $platId) { return @{ Status = 400; Body = @{ error = 'Missing platformId.' } } }
+                $cap = if ($Body.maxPerFolder) { [int]$Body.maxPerFolder } else { 1000 }
+                $excl = @()
+                try { $sys = @(Get-PocketSystem -Path $State.SystemsManifest) | Where-Object { $_.PlatformId -eq $platId } | Select-Object -First 1
+                      if ($sys) { $excl = @($sys.BiosFiles) } } catch { $excl = @() }
+                $plan = New-PocketRomOrganizePlan -Root $State.Root -PlatformId $platId -MaxPerFolder $cap -ExcludeFiles $excl
+                return @{ Status = 200; Body = $plan }
+            }
+            '^POST /api/rom/organize$' {
+                $platId = [string]$Body.platformId
+                if (-not $platId) { return @{ Status = 400; Body = @{ error = 'Missing platformId.' } } }
+                $cap = if ($Body.maxPerFolder) { [int]$Body.maxPerFolder } else { 1000 }
+                $excl = @()
+                try { $sys = @(Get-PocketSystem -Path $State.SystemsManifest) | Where-Object { $_.PlatformId -eq $platId } | Select-Object -First 1
+                      if ($sys) { $excl = @($sys.BiosFiles) } } catch { $excl = @() }
+                $plan = New-PocketRomOrganizePlan -Root $State.Root -PlatformId $platId -MaxPerFolder $cap -ExcludeFiles $excl
+                $res = Invoke-PocketRomOrganizePlan -Plan $plan -DryRun:([bool]$State.DryRun)
+                return @{ Status = 200; Body = $res }
+            }
             '^GET /api/rom/extra-platforms$' {
                 # Platforms declared by installed cores that aren't in the systems manifest.
                 return @{ Status = 200; Body = @{ platforms = @(Get-PocketImportablePlatform -Root $State.Root -SystemsManifest $State.SystemsManifest) } }

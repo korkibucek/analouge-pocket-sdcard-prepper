@@ -31,6 +31,8 @@
         'Update-PocketCore',
         'New-PocketRomCopyPlan',
         'Invoke-PocketRomCopyPlan',
+        'New-PocketRomOrganizePlan',
+        'Invoke-PocketRomOrganizePlan',
         'Get-PocketRomConfig',
         'Save-PocketRomConfig',
         'Invoke-PocketRomRescan',

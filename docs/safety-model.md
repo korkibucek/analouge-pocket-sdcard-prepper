@@ -8,11 +8,17 @@ outcome is "files copied to the wrong folder"** — never data loss.
 1. **No destructive operations exist in the codebase.** There is no format, wipe,
    delete-existing, or repartition path. The only filesystem mutations are:
    - `New-Item -ItemType Directory` (create folders),
-   - `Copy-Item` (copy files in), and
+   - `Copy-Item` (copy files in),
    - writing the small ROM-library config (`pocketprep/rom-sources.json`), which records
-     only source-folder paths and options — never any ROM data.
+     only source-folder paths and options — never any ROM data, and
+   - the **Library Organizer** (`Invoke-PocketRomOrganizePlan`), which *relocates* a core's
+     existing ROMs into subfolders under `Assets/<platformId>/common`. This is **move/rename
+     only** — it never deletes or overwrites a ROM (a name clash is disambiguated, an
+     unexpected existing destination is skipped), every move is size-verified, it is an
+     explicit user action with a dry-run preview, and it only ever prunes the *empty*
+     subfolders it leaves behind (directories, never files).
    Nothing removes user content. (The tool removes only its own temporary download
-   folder.)
+   folder and now-empty organize subfolders.)
 2. **Removable-only by default.** `Get-PocketRemovableDrive` returns removable media
    only; fixed disks appear only with `-IncludeFixed` (advanced).
 3. **System volumes can never be targeted (any OS).** `Test-PocketDriveSafety` rejects
