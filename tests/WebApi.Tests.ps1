@@ -108,6 +108,22 @@ Describe 'Invoke-PocketApiRoute' {
         $r.Body.Firmware.Version | Should -Be '2.5'
         $r.Body.Roms.TotalFiles | Should -Be 1
     }
+    It 'POST /api/rom/dedupe plan + apply quarantines region duplicates by preference' {
+        $common = Join-Path $script:root 'Assets/gb/common'; New-Item -ItemType Directory $common -Force | Out-Null
+        'a' | Set-Content (Join-Path $common 'Sonic (USA).gb'); 'b' | Set-Content (Join-Path $common 'Sonic (Europe).gb')
+        $body = [pscustomobject]@{ platformId='gb'; regionOrder=@('EU','USA','JPN','Global') }
+        $p = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = $body } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/rom/dedupe/plan' -Body $b -State $s }
+        $p.Status | Should -Be 200
+        $p.Body.RemoveCount | Should -Be 1
+        $p.Body.Sets[0].Keep.Name | Should -Be 'Sonic (Europe).gb'
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = $body } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/rom/dedupe' -Body $b -State $s }
+        $r.Status | Should -Be 200
+        $r.Body.MovedCount | Should -Be 1
+        (Test-Path (Join-Path $common 'Sonic (Europe).gb')) | Should -BeTrue   # preferred kept
+        (Test-Path (Join-Path $common 'Sonic (USA).gb')) | Should -BeFalse     # quarantined
+    }
     It 'POST /api/rom/organize plans and moves a large library into subfolders' {
         $common = Join-Path $script:root 'Assets/gb/common'; New-Item -ItemType Directory $common -Force | Out-Null
         1..6 | ForEach-Object { "rom$_" | Set-Content (Join-Path $common ('{0:D2}.gb' -f $_)) }

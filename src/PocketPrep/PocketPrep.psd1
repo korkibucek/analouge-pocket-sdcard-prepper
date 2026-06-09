@@ -33,6 +33,8 @@
         'Invoke-PocketRomCopyPlan',
         'New-PocketRomOrganizePlan',
         'Invoke-PocketRomOrganizePlan',
+        'Get-PocketRomRegionDuplicate',
+        'Invoke-PocketRomRegionDedupe',
         'Test-PocketSymlinkSupport',
         'Get-PocketFavorite',
         'Save-PocketFavorite',

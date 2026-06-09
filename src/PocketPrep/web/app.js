@@ -307,6 +307,15 @@ function cardBreakdownHtml(sum) {
       <div class="row"><button id="org-preview" class="secondary">Preview</button><button id="org-run">Organize selected</button></div>
       <div id="org-out"></div>
     </details>` : '';
+  // Region-priority duplicate finder (1G1R-style): recommends which region variants to drop.
+  const deduper = romSystems.length ? `
+    <details class="card" style="margin-top:.6rem"><summary><strong>De-duplicate by region</strong> — recommend which region variants to remove</summary>
+      <p class="meta">Finds the same game in multiple regions (e.g. USA / Europe / Japan) and recommends keeping your preferred region. Apply moves the rest to a reversible quarantine (<code>pocketprep/quarantine</code>) — nothing is deleted.</p>
+      <label class="row">System: <select id="dd-plat">${romSystems.map(s => `<option value="${s.PlatformId}">${s.DisplayName} (${s.FileCount})</option>`).join('')}</select></label>
+      <label class="row">Region priority (drag-free: comma list): <input type="text" id="dd-order" value="USA,EU,JPN,Global" style="min-width:12rem"></label>
+      <div class="row"><button id="dd-preview" class="secondary">Preview recommendations</button><button id="dd-run">Quarantine duplicates</button></div>
+      <div id="dd-out"></div>
+    </details>` : '';
   return `<div class="card"><strong>Already on this card</strong>
     <ul class="list" style="margin-top:.4rem">
       <li>Firmware: ${fw}</li>
@@ -320,7 +329,8 @@ function cardBreakdownHtml(sum) {
       ${onboardBtn}
       <button id="manageroms" class="secondary">${sum.Config.Exists ? 'Rescan / modify ROM folders →' : 'Manage ROM folders →'}</button>
     </div><div id="onboardout"></div>
-    ${organizer}</div>`;
+    ${organizer}
+    ${deduper}</div>`;
 }
 
 async function stepCard() {
@@ -368,6 +378,28 @@ async function stepCard() {
     };
     if ($('#org-preview')) $('#org-preview').onclick = () => orgRun(true);
     if ($('#org-run')) $('#org-run').onclick = () => orgRun(false);
+
+    // Region-priority de-duplication.
+    const ddOrder = () => (($('#dd-order') || {}).value || 'USA,EU,JPN,Global').split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+    const ddRun = async (apply) => {
+      const platformId = ($('#dd-plat') || {}).value; if (!platformId) return;
+      const body = { platformId, regionOrder: ddOrder() };
+      busy(true); $('#dd-out').innerHTML = `<p>${apply ? 'Quarantining duplicates' : 'Scanning for region duplicates'}…</p>`;
+      try {
+        if (!apply) {
+          const p = await api('/api/rom/dedupe/plan', 'POST', body);
+          if (!p.RemoveCount) { $('#dd-out').innerHTML = `<p class="ok">No region duplicates found for ${platformId}.</p>`; return; }
+          const rows = (p.Sets || []).slice(0, 50).map(s => `<li>Keep <strong>${s.Keep.Name}</strong>; remove ${s.Remove.map(x => x.Name).join(', ')}</li>`).join('');
+          $('#dd-out').innerHTML = `<p class="warnote">${p.RemoveCount} duplicate(s) recommended for removal (${(p.ReclaimBytes / 1048576).toFixed(1)} MB), keeping your preferred region:</p><ul class="list">${rows}</ul>`;
+        } else {
+          const r = await api('/api/rom/dedupe', 'POST', body);
+          $('#dd-out').innerHTML = `<p class="ok">Quarantined ${r.MovedCount} duplicate(s) to ${r.QuarantineDir}${r.DryRun ? ' [dry-run]' : ''}. Nothing was deleted — restore from there if needed.</p>`;
+          refreshSpace();
+        }
+      } catch (e) { $('#dd-out').innerHTML = errLine(e.message); } finally { busy(false); }
+    };
+    if ($('#dd-preview')) $('#dd-preview').onclick = () => ddRun(false);
+    if ($('#dd-run')) $('#dd-run').onclick = () => ddRun(true);
   };
   try {
     if (S.drive && S.drive.FileSystem) {
