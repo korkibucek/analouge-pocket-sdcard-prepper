@@ -171,6 +171,25 @@ Describe 'Invoke-PocketApiRoute' {
         $ng = $r.Body.bios | Where-Object SystemId -eq 'neogeo'
         $ng.Satisfied | Should -BeFalse
     }
+    It 'POST /api/rom/list + favourites round-trip and materialise a Favorites folder' {
+        $common = Join-Path $script:root 'Assets/gb/common'; New-Item -ItemType Directory $common -Force | Out-Null
+        'a' | Set-Content (Join-Path $common 'Tetris.gb'); 'b' | Set-Content (Join-Path $common 'Zelda.gb')
+        # List ROMs for the picker.
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = [pscustomobject]@{ platformId='gb' } } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/rom/list' -Body $b -State $s }
+        $r.Status | Should -Be 200
+        @($r.Body.names) | Should -Contain 'Tetris.gb'
+        # Save favourites (also syncs).
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = [pscustomobject]@{ platformId='gb'; names=@('Tetris.gb') } } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/favorites' -Body $b -State $s }
+        $r.Status | Should -Be 200
+        ($r.Body.sync.LinkedCount + $r.Body.sync.CopiedCount) | Should -Be 1
+        (Test-Path (Join-Path $common 'Favorites/Tetris.gb')) | Should -BeTrue
+        # GET reflects the saved favourite.
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method GET -Path '/api/favorites' -State $s }
+        ($r.Body.Platforms | Where-Object PlatformId -eq 'gb').Names | Should -Contain 'Tetris.gb'
+    }
     It 'POST /api/card/onboard generates a config from existing card ROMs' {
         $common = Join-Path $script:root 'Assets/gb/common'; New-Item -ItemType Directory $common -Force | Out-Null
         'a' | Set-Content (Join-Path $common 'one.gb')

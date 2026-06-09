@@ -106,6 +106,7 @@ const panel2 = doc2.getElementById('panel');
 assert.ok(/what do you want to do/i.test(panel2.textContent), 'target-ready boot should land on the action menu');
 assert.ok(panel2.querySelectorAll('button.menu-act').length >= 5, 'menu should offer multiple standalone actions');
 assert.ok(/upload roms/i.test(panel2.textContent), 'menu should offer an Upload ROMs action');
+assert.ok(/favourites/i.test(panel2.textContent), 'menu should offer a Favourites action');
 const menuChip = [...doc2.querySelectorAll('#steps span[data-go]')].find(s => s.dataset.go === 'menu');
 assert.ok(menuChip, 'a clickable ☰ Menu nav chip should be present when a target is set');
 

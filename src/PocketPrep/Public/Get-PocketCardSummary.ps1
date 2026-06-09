@@ -76,7 +76,10 @@ function Get-PocketCardSummary {
         foreach ($pdir in Get-ChildItem -LiteralPath $assetsDir -Directory -ErrorAction SilentlyContinue) {
             $common = Join-Path $pdir.FullName 'common'
             if (-not (Test-Path -LiteralPath $common -PathType Container)) { continue }
-            $count = @(Get-ChildItem -LiteralPath $common -File -Recurse -ErrorAction SilentlyContinue).Count
+            # Don't count the tool-managed Favorites folder (symlinks/copies) as extra ROMs.
+            $favPrefix = (Join-Path $common 'Favorites') + [System.IO.Path]::DirectorySeparatorChar
+            $count = @(Get-ChildItem -LiteralPath $common -File -Recurse -ErrorAction SilentlyContinue |
+                Where-Object { -not $_.FullName.StartsWith($favPrefix, [System.StringComparison]::OrdinalIgnoreCase) }).Count
             if ($count -eq 0) { continue }
             $sys = $platformLabels[$pdir.Name]
             [pscustomobject]@{
