@@ -48,6 +48,8 @@
         'Get-PocketDiskSpace',
         'Get-PocketCardCleanup',
         'Invoke-PocketCardCleanup',
+        'Export-PocketProfile',
+        'Import-PocketProfile',
         'Import-PocketUsedCard',
         'Get-PocketImportablePlatform',
         'Get-PocketKnownPlatform',

@@ -259,6 +259,16 @@ function Invoke-PocketApiRoute {
                 # Removes only empty + temp dirs (never ROMs/saves/cores).
                 return @{ Status = 200; Body = (Invoke-PocketCardCleanup -Root $State.Root -CoresManifest $State.CoresManifest -DryRun:([bool]$State.DryRun)) }
             }
+            '^GET /api/profile/export$' {
+                return @{ Status = 200; Body = (Export-PocketProfile -Root $State.Root -CoresManifest $State.CoresManifest) }
+            }
+            '^POST /api/profile/import$' {
+                if (-not $Body.profile) { return @{ Status = 400; Body = @{ error = 'Missing profile.' } } }
+                $res = Import-PocketProfile -Root $State.Root -ProfileData $Body.profile `
+                    -CoresManifest $State.CoresManifest -SystemsManifest $State.SystemsManifest `
+                    -Rescan:([bool]$Body.rescan) -DryRun:([bool]$State.DryRun)
+                return @{ Status = 200; Body = $res }
+            }
             '^POST /api/card/onboard$' {
                 # Onboard a used card: scan existing content and generate a starter config.
                 return @{ Status = 200; Body = (Import-PocketUsedCard -Root $State.Root `

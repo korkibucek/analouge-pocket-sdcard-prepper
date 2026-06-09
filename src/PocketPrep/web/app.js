@@ -114,6 +114,7 @@ function showMenu() {
     { go: 5, icon: '🎮', label: 'Upload ROMs', desc: 'Copy ROMs for any core (built-in, installed, catalog or custom).' },
     { go: 'favorites', icon: '⭐', label: 'Favourites', desc: 'Tag ROMs; surface them in a per-system Favorites folder.' },
     { go: 'activity', icon: '📝', label: 'Activity log', desc: 'See and download everything done this session.' },
+    { go: 'profiles', icon: '💾', label: 'Setup profiles', desc: "Export this card's setup, or import one to a fresh card." },
     { go: 6, icon: '🧾', label: 'Summary', desc: 'Review what was done this session.' }
   ];
   const dr = !!(S.health && S.health.dryRun);
@@ -178,7 +179,44 @@ function wireEject() {
     finally { busy(false); }
   };
 }
-function go(step) { S.step = step; renderNav(); if (step === 'menu') { showMenu(); } else if (step === 'favorites') { showFavorites(); } else if (step === 'activity') { showActivity(); } else { RENDER[step](); } }
+function go(step) { S.step = step; renderNav(); if (step === 'menu') { showMenu(); } else if (step === 'favorites') { showFavorites(); } else if (step === 'activity') { showActivity(); } else if (step === 'profiles') { showProfiles(); } else { RENDER[step](); } }
+
+/* ---- Setup profiles: export this card's setup; import one onto a fresh card ---- */
+function showProfiles() {
+  panel(`<h2>💾 Setup profiles</h2>
+    <p class="meta">A profile records this card's <strong>installed cores</strong>, <strong>ROM source folders</strong> and <strong>favourites</strong> — references only, no ROMs or BIOS — so you can reproduce the setup on another card or after a reformat.</p>
+    <div class="card"><strong>Export</strong>
+      <div class="row"><button id="pf-export">Download this card's profile (.json)</button></div></div>
+    <div class="card"><strong>Import</strong>
+      <p class="meta">Installs the profile's cores, restores the ROM folder list and favourites.</p>
+      <label class="row"><input type="file" id="pf-file" accept="application/json,.json"></label>
+      <label class="row"><input type="checkbox" id="pf-rescan"> Also copy ROMs now from the restored source folders</label>
+      <div class="row"><button id="pf-import">Import profile</button></div>
+      <div id="pf-out"></div></div>`);
+  $('#pf-export').onclick = async () => {
+    busy(true);
+    try {
+      const p = await api('/api/profile/export');
+      const blob = new Blob([JSON.stringify(p, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'pocketprep-profile.json';
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    } catch (e) { $('#pf-out').innerHTML = errLine(e.message); } finally { busy(false); }
+  };
+  $('#pf-import').onclick = async () => {
+    const f = ($('#pf-file').files || [])[0];
+    if (!f) { $('#pf-out').innerHTML = errLine('Choose a profile .json file first.'); return; }
+    busy(true); $('#pf-out').innerHTML = inProgress('Importing profile (installing cores, restoring config)');
+    try {
+      const profile = JSON.parse(await f.text());
+      const r = await api('/api/profile/import', 'POST', { profile, rescan: $('#pf-rescan').checked });
+      const cores = r.CoreResult ? `${r.CoreResult.InstalledCount}/${r.CoreResult.Requested} cores installed` : `${r.CoresRequested} core(s) requested`;
+      const rescan = r.RescanResult ? `; ${r.RescanResult.TotalCopied} ROM(s) copied` : '';
+      $('#pf-out').innerHTML = `<p class="ok">Imported: ${cores}, ${r.RomSourcesRestored} source folder(s), ${r.FavoritesRestored} favourite set(s)${rescan}${r.DryRun ? ' [dry-run]' : ''}.</p>`;
+      refreshSpace();
+    } catch (e) { $('#pf-out').innerHTML = errLine(e.message); } finally { busy(false); }
+  };
+}
 
 /* ---- Favourites: tag ROMs; surfaced in a per-system Favorites folder ---- */
 async function showFavorites() {
