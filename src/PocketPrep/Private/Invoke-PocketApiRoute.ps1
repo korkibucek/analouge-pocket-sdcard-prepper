@@ -212,6 +212,11 @@ function Invoke-PocketApiRoute {
                 return @{ Status = 200; Body = (Get-PocketCardSummary -Root $State.Root `
                     -SystemsManifest $State.SystemsManifest -FirmwareManifest $State.FirmwareManifest) }
             }
+            '^GET /api/required-files$' {
+                # Files installed cores declare as required (data.json) but are missing on the
+                # card. Detect & guide only - never downloads BIOS/ROMs.
+                return @{ Status = 200; Body = @{ cores = @(Get-PocketCoreRequiredFile -Root $State.Root) } }
+            }
             '^GET /api/bios-status$' {
                 # Read-only: which BIOS-dependent systems (e.g. Neo Geo) have their BIOS
                 # present. This tool never downloads copyrighted BIOS - it only detects/guides.

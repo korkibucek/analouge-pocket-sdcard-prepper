@@ -236,7 +236,15 @@ function cardBreakdownHtml(sum) {
   const cfg = sum.Config.Exists ? `${sum.Config.SourceCount} saved folder(s)` : 'no saved folder list';
   // BIOS-dependent systems (e.g. Neo Geo) whose BIOS is missing. The tool never downloads
   // copyrighted BIOS — it only flags what the user must supply themselves.
-  const biosMissing = (sum.Bios || []).filter(b => !b.Satisfied);
+  // Required files each installed core declares but is missing (data.json-driven) — the
+  // authoritative "what do I still need" signal. Covers BIOS-needing cores generally.
+  const reqMissing = (sum.RequiredFiles || []).filter(c => !c.Satisfied);
+  const reqNote = reqMissing.length
+    ? `<li class="warnote">Required files missing: ${reqMissing.map(c => `${c.Identifier} needs ${c.Missing.join(', ')}`).join('; ')} — place your own under Assets/&lt;platform&gt;/common; this tool never downloads BIOS/ROMs.</li>`
+    : '';
+  // Fall back to the systems-manifest BIOS check for platforms not already covered above.
+  const covered = new Set(reqMissing.map(c => String(c.PlatformId).toLowerCase()));
+  const biosMissing = (sum.Bios || []).filter(b => !b.Satisfied && !covered.has(String(b.PlatformId).toLowerCase()));
   const biosNote = biosMissing.length
     ? `<li class="warnote">BIOS needed: ${biosMissing.map(b => `${b.DisplayName} (missing ${b.Missing.join(', ')})`).join('; ')} — supply your own; this tool never downloads BIOS.</li>`
     : '';
@@ -263,6 +271,7 @@ function cardBreakdownHtml(sum) {
       <li>Cores: ${sum.Cores.Count}</li>
       <li>ROMs: ${sum.Roms.TotalFiles} total — ${roms}</li>
       <li>ROM config: ${cfg}</li>
+      ${reqNote}
       ${biosNote}
     </ul>
     <div class="row" style="margin-top:.5rem">
