@@ -273,6 +273,14 @@ After cores are installed, the card breakdown flags any **required files a core 
 Engine CD core needs a BIOS you must supply. The tool **never downloads BIOS/ROMs** — it
 detects what's present and tells you the exact filename and where to put it.
 
+### Platform images
+
+On the cores step you can install a **platform image pack** — the system artwork the Pocket
+shows in its openFPGA menu — into `Platforms/_images`. The tool **bundles no images and picks
+no default pack**: you supply a GitHub owner/repo (or a local zip), so the source and its
+licence are your choice. Extraction is confined to `Platforms/_images` only, zip-slip-safe,
+non-destructive, and dry-run-aware.
+
 ### Setup profiles (export / import)
 
 **Setup profiles** (💾 in the menu) let you **export** a card's setup — its installed cores,
