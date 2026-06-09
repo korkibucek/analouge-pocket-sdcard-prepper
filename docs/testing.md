@@ -25,10 +25,22 @@ This installs Pester 5 automatically if missing (CurrentUser scope).
 | `Manifest.Tests.ps1` | Systems parse, destination path, lowercasing, duplicate/invalid rejection |
 | `Rom.Tests.ps1` | Extension matching, destination, flatten, dry-run, real copy, skip-existing |
 | `Logging.Tests.ps1` | Logger file+memory, install summary content |
-| `Cores.Tests.ps1` | Cores manifest parse/resolve, zip validation, **zip-slip rejection**, offline extract (merge, non-destructive, overwrite, dry-run) |
+| `Cores.Tests.ps1` / `CoreSet.Tests.ps1` / `CoresSupplement.Tests.ps1` | Manifest parse/resolve, zip validation, **zip-slip rejection**, offline extract, bulk/subset install, curated supplement coverage |
+| `Rom.Tests.ps1` | Extension matching, destination, flatten, **dedupe**, **batched copy + progress**, skip-existing, match-all (`*`) |
+| `RomOrganize.Tests.ps1` | Subfolder bucketing (cap/letter-range), idempotence, flatten-back, **filename shortening**, dry-run |
+| `RegionDedupe.Tests.ps1` | Region parsing/ranking, disc-not-collapsed, region-less ignored, PAL/NTSC-J mapping, reversible quarantine |
+| `Favorites.Tests.ps1` | Save/dedupe/clear, symlink-or-copy sync, stale removal, `!Favorites` + legacy migration, organizer exclusion |
+| `RomConfig.Tests.ps1` / `UsedCard.Tests.ps1` | Saved source mapping + rescan; onboarding a used card |
+| `CardSummary.Tests.ps1` / `RequiredFiles.Tests.ps1` / `BiosStatus.Tests.ps1` | Card breakdown; data.json-driven required-file/BIOS detection |
+| `KnownPlatform.Tests.ps1` / `ImportablePlatform.Tests.ps1` | Every-core platform union; installed-core platforms |
+| `DiskSpace.Tests.ps1` / `Dismount.Tests.ps1` | Free/total space; flush + best-effort eject |
+| `DirectoryListing.Tests.ps1` | Read-only folder picker |
+| `WebApi.Tests.ps1` | The full `Invoke-PocketApiRoute` surface + auth (`Test-PocketApiRequest`) without sockets |
+| `Wizard.Tests.ps1` | CLI wizard end-to-end (subprocess, fake SD root) |
 | `TestMode.Tests.ps1` | End-to-end against a fake SD root |
+| `tests/web/test.mjs` | Web UI bootstrap, action menu, a11y hooks (jsdom) |
 
-61 tests total.
+250+ Pester tests plus the jsdom web test, green on Windows/Linux/macOS CI.
 
 ## Web UI test (jsdom)
 
