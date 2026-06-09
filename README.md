@@ -45,8 +45,9 @@ from folders you point it at. You are responsible for the legality of your ROMs.
    (reversible quarantine), tag **favourites** (surfaced in a top-sorted `!Favorites`
    folder), and **onboard** an already-used card.
 10. **Insight & safety**: a card breakdown (firmware/cores/ROMs), **required-file/BIOS
-    detection** (what each installed core still needs), a free-space indicator, and a global
-    **Eject & quit** control. Prints a **summary** and writes a **log**.
+    detection** (what each installed core still needs), a **core integrity check** + per-core
+    **Repair** (re-download a core's files without touching ROMs or saves), a free-space
+    indicator, and a global **Eject & quit** control. Prints a **summary** and writes a **log**.
 
 Once a card is selected, the web UI presents an **action menu** — run the full wizard *or*
 jump straight to any single task.

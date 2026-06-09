@@ -29,6 +29,8 @@
         'Test-PocketPlatformIdInstalled',
         'Get-PocketCoreUpdateStatus',
         'Update-PocketCore',
+        'Test-PocketCoreIntegrity',
+        'Repair-PocketCore',
         'New-PocketRomCopyPlan',
         'Invoke-PocketRomCopyPlan',
         'New-PocketRomOrganizePlan',
