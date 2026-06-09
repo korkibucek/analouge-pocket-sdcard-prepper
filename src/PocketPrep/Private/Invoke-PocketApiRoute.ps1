@@ -153,9 +153,9 @@ function Invoke-PocketApiRoute {
                 $common = Join-Path (Join-Path (Join-Path $State.Root 'Assets') $platId) 'common'
                 $names = @()
                 if (Test-Path -LiteralPath $common -PathType Container) {
-                    $favPrefix = (Join-Path $common 'Favorites') + [System.IO.Path]::DirectorySeparatorChar
+                    $commonFull = (Resolve-Path -LiteralPath $common).Path
                     $names = @(Get-ChildItem -LiteralPath $common -File -Recurse -ErrorAction SilentlyContinue |
-                        Where-Object { -not $_.FullName.StartsWith($favPrefix, [System.StringComparison]::OrdinalIgnoreCase) } |
+                        Where-Object { -not (Test-PocketReservedRomPath -Common $commonFull -FullPath $_.FullName) } |
                         ForEach-Object { $_.Name } | Sort-Object -Unique)
                 }
                 return @{ Status = 200; Body = @{ platformId = $platId; names = @($names); total = @($names).Count } }
