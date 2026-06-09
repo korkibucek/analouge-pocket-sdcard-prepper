@@ -44,6 +44,14 @@ Describe 'Invoke-PocketApiRoute' {
         @($r.Body.candidates).Count | Should -Be 1       # the exFAT 64GB fixed disk
         $r.Body.candidates[0].RootPath | Should -Be 'G:\'
     }
+    It 'GET /api/space reports free/total bytes for the target volume' {
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method GET -Path '/api/space' -State $s }
+        $r.Status | Should -Be 200
+        $r.Body.ready | Should -BeTrue
+        $r.Body.totalBytes | Should -BeGreaterThan 0
+        $r.Body.freeBytes  | Should -BeGreaterThan 0
+    }
     It 'GET /api/empty reports a fresh root empty' {
         $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
             Invoke-PocketApiRoute -Method GET -Path '/api/empty' -State $s }

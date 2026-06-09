@@ -70,7 +70,7 @@ function errLine(msg) { return `<p class="error">${msg}</p>`; }
 function inProgress(label) { return `<p class="busy">${label}… please keep this tab open. This can take up to a minute and the page may be unresponsive while it runs.</p>`; }
 
 const STEP_LABELS = ['Target', 'Card', 'Firmware', 'Folders', 'Cores', 'ROMs', 'Done'];
-const S = { health: null, step: 0, drive: null, firmware: null, folder: null, roms: [], cores: [] };
+const S = { health: null, space: null, step: 0, drive: null, firmware: null, folder: null, roms: [], cores: [] };
 
 function renderNav() {
   // Non-linear once a target is set: every chip (and the Menu) is clickable.
@@ -108,9 +108,16 @@ function showMenu() {
 }
 function setCtx() {
   const h = S.health;
+  const space = (S.space && S.space.ready && S.space.totalBytes)
+    ? ` · ${fmtGB(S.space.freeBytes)} free of ${fmtGB(S.space.totalBytes)}` : '';
   $('#ctx').textContent = h && h.targetReady
-    ? `Target: ${h.root}${h.testMode ? ' (TEST MODE)' : ''}${h.dryRun ? ' · DRY-RUN' : ''}`
+    ? `Target: ${h.root}${h.testMode ? ' (TEST MODE)' : ''}${h.dryRun ? ' · DRY-RUN' : ''}${space}`
     : 'No target selected yet';
+}
+// Refresh the card's free/total space and update the context line (after target + big ops).
+async function refreshSpace() {
+  try { S.space = await api('/api/space'); } catch { S.space = null; }
+  setCtx();
 }
 function go(step) { S.step = step; renderNav(); if (step === 'menu') { showMenu(); } else if (step === 'favorites') { showFavorites(); } else { RENDER[step](); } }
 
@@ -219,6 +226,7 @@ async function onUseTarget() {
     }
     const r = await api('/api/target', 'POST', body);
     S.health = await api('/api/health'); setCtx();
+    refreshSpace();
     go('menu');
   } catch (e) {
     const reasons = e.data && e.data.verdict && e.data.verdict.Reasons ? '<ul>' + e.data.verdict.Reasons.map(x => `<li>${x}</li>`).join('') + '</ul>' : '';
@@ -464,6 +472,7 @@ async function stepCores() {
       const fails = (r.Results || []).filter(x => x.Status === 'failed').slice(0, 8);
       if (fails.length) summary += '<p class="meta">Failed: ' + fails.map(x => `${x.Identifier} (${x.Error})`).join('; ') + '</p>';
       $('#allout').innerHTML = summary;
+      refreshSpace();
     } catch (e) { $('#allout').innerHTML = errLine(e.message); } finally { busy(false); }
   };
   $('#instSel').onclick = () => { const ids = selectedIds(); if (!ids.length) { $('#allout').innerHTML = errLine('Tick at least one core, or use Install ALL.'); return; } installIds(ids, `${ids.length} selected core(s)`); };
@@ -615,6 +624,7 @@ async function stepRoms() {
         S.roms = S.roms.filter(x => x.SystemId !== agg.SystemId); S.roms.push(agg);
         const dupNote = agg.SkippedDuplicateCount > 0 ? `, ${agg.SkippedDuplicateCount} duplicate(s) skipped` : '';
         out.innerHTML = `<p class="ok">Copied ${agg.CopiedCount}, skipped ${agg.SkippedCount}${dupNote}, failed ${agg.FailedCount}${agg.DryRun ? ' [dry-run]' : ''}.</p>`;
+        refreshSpace();
       }
     } catch (e) { out.innerHTML = errLine(e.message); } finally { busy(false); }
   };
@@ -662,6 +672,7 @@ const RENDER = [stepTarget, stepCard, stepFirmware, stepFolders, stepCores, step
   window.__pocketUp = true;
   try {
     S.health = await api('/api/health'); setCtx();
+    if (S.health.targetReady) { refreshSpace(); }
     go(S.health.targetReady ? 'menu' : 0);
   } catch (e) {
     panel(errLine('Could not reach the local server: ' + e.message));

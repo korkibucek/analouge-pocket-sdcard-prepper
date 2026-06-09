@@ -41,6 +41,7 @@
         'Save-PocketRomConfig',
         'Invoke-PocketRomRescan',
         'Get-PocketCardSummary',
+        'Get-PocketDiskSpace',
         'Import-PocketUsedCard',
         'Get-PocketImportablePlatform',
         'Get-PocketKnownPlatform',
