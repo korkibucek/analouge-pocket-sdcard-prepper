@@ -271,6 +271,15 @@ After cores are installed, the card breakdown flags any **required files a core 
 Engine CD core needs a BIOS you must supply. The tool **never downloads BIOS/ROMs** — it
 detects what's present and tells you the exact filename and where to put it.
 
+### Maintenance & cleanup
+
+A **Maintenance & cleanup** panel scans the card and reports leftovers — **unmanaged cores**
+(installed but not in the catalog, so they won't auto-update), **orphan asset folders** (ROMs
+for a platform with no installed core — install the core or they won't load), **empty
+folders**, the tool's own temp folders, and a save-state count. Removal is **safe-only**: it
+clears just **empty** and **temp** folders and **never** a ROM, save, or core. Orphan ROM
+folders are reported but never deleted.
+
 ### De-duplicate by region (1G1R-style)
 
 Got the same game as **USA, Europe and Japan**? Set your **region priority** (e.g.

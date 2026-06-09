@@ -316,6 +316,13 @@ function cardBreakdownHtml(sum) {
       <div class="row"><button id="dd-preview" class="secondary">Preview recommendations</button><button id="dd-run">Quarantine duplicates</button></div>
       <div id="dd-out"></div>
     </details>` : '';
+  // Maintenance / cleanup: report leftovers; remove only empty + temp dirs.
+  const cleaner = `
+    <details class="card" style="margin-top:.6rem"><summary><strong>Maintenance &amp; cleanup</strong> — leftovers, empty folders, integrity</summary>
+      <p class="meta">Scans for unmanaged cores, orphan asset folders, empty folders and the tool's own temp files. Removal only ever clears <strong>empty</strong> and temp folders — never a ROM, save or core.</p>
+      <div class="row"><button id="cl-scan" class="secondary">Scan</button><button id="cl-run">Remove empty &amp; temp folders</button></div>
+      <div id="cl-out"></div>
+    </details>`;
   return `<div class="card"><strong>Already on this card</strong>
     <ul class="list" style="margin-top:.4rem">
       <li>Firmware: ${fw}</li>
@@ -330,7 +337,8 @@ function cardBreakdownHtml(sum) {
       <button id="manageroms" class="secondary">${sum.Config.Exists ? 'Rescan / modify ROM folders →' : 'Manage ROM folders →'}</button>
     </div><div id="onboardout"></div>
     ${organizer}
-    ${deduper}</div>`;
+    ${deduper}
+    ${cleaner}</div>`;
 }
 
 async function stepCard() {
@@ -400,6 +408,29 @@ async function stepCard() {
     };
     if ($('#dd-preview')) $('#dd-preview').onclick = () => ddRun(false);
     if ($('#dd-run')) $('#dd-run').onclick = () => ddRun(true);
+
+    // Maintenance / cleanup.
+    const renderCleanup = (c) => {
+      const parts = [];
+      if ((c.UnmanagedCores || []).length) parts.push(`<li class="meta">Unmanaged cores (not in catalog, won't auto-update): ${c.UnmanagedCores.join(', ')}</li>`);
+      if ((c.OrphanAssetPlatforms || []).length) parts.push(`<li class="warnote">ROMs for platforms with no installed core: ${c.OrphanAssetPlatforms.map(o => `${o.PlatformId} (${o.FileCount})`).join(', ')} — install the matching core, or they won't load. (Not removed.)</li>`);
+      if (c.SaveStateCount) parts.push(`<li class="meta">${c.SaveStateCount} save-state file(s) under Memories (left untouched).</li>`);
+      const removable = (c.RemovableDirCount != null) ? c.RemovableDirCount : ((c.EmptyDirs || []).length + (c.ProbeDirs || []).length);
+      parts.push(`<li>${removable} empty/temp folder(s) can be removed.</li>`);
+      return `<ul class="list">${parts.join('')}</ul>`;
+    };
+    if ($('#cl-scan')) $('#cl-scan').onclick = async () => {
+      busy(true); $('#cl-out').innerHTML = '<p>Scanning…</p>';
+      try { $('#cl-out').innerHTML = renderCleanup(await api('/api/cleanup')); }
+      catch (e) { $('#cl-out').innerHTML = errLine(e.message); } finally { busy(false); }
+    };
+    if ($('#cl-run')) $('#cl-run').onclick = async () => {
+      busy(true); $('#cl-out').innerHTML = '<p>Removing empty &amp; temp folders…</p>';
+      try { const r = await api('/api/cleanup', 'POST', {});
+        $('#cl-out').innerHTML = `<p class="ok">Removed ${r.RemovedCount} empty/temp folder(s)${r.DryRun ? ' [dry-run]' : ''}. No ROMs, saves or cores were touched.</p>` + renderCleanup(r);
+        refreshSpace();
+      } catch (e) { $('#cl-out').innerHTML = errLine(e.message); } finally { busy(false); }
+    };
   };
   try {
     if (S.drive && S.drive.FileSystem) {

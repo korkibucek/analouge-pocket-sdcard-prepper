@@ -26,6 +26,10 @@ outcome is "files copied to the wrong folder"** — never data loss.
    Nothing removes user content. (The tool removes only its own temporary download
    folder, now-empty organize subfolders, and untagged entries inside the managed Favorites
    folder.)
+   **Cleanup** (`Invoke-PocketCardCleanup`) removes **only empty sub-folders and the tool's own
+   `.pp-symlink-probe-*` temp folders** — never a ROM, save, core, or any non-empty folder.
+   Unmanaged cores and orphan asset folders are *reported* by `Get-PocketCardCleanup` but never
+   auto-removed (they may hold your ROMs).
    **Region de-duplication** (`Invoke-PocketRomRegionDedupe`) **moves** non-preferred region
    duplicates to a reversible quarantine (`pocketprep/quarantine/<platformId>/`, outside
    `Assets`) — it never deletes a ROM, and the preferred copy stays in place.

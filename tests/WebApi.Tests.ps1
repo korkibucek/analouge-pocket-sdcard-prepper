@@ -230,6 +230,19 @@ Describe 'Invoke-PocketApiRoute' {
             Invoke-PocketApiRoute -Method GET -Path '/api/favorites' -State $s }
         ($r.Body.Platforms | Where-Object PlatformId -eq 'gb').Names | Should -Contain 'Tetris.gb'
     }
+    It 'GET/POST /api/cleanup reports leftovers and removes only empty/temp dirs' {
+        New-Item -ItemType Directory -Path (Join-Path $script:root 'Assets/gb/common/EmptyBucket') -Force | Out-Null
+        'rom' | Set-Content (Join-Path $script:root 'Assets/gb/common/keep.gb')
+        $g = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method GET -Path '/api/cleanup' -State $s }
+        $g.Status | Should -Be 200
+        @($g.Body.EmptyDirs) | Should -Contain (Join-Path $script:root 'Assets/gb/common/EmptyBucket')
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method POST -Path '/api/cleanup' -State $s }
+        $r.Body.RemovedCount | Should -BeGreaterOrEqual 1
+        (Test-Path (Join-Path $script:root 'Assets/gb/common/EmptyBucket')) | Should -BeFalse
+        (Test-Path (Join-Path $script:root 'Assets/gb/common/keep.gb')) | Should -BeTrue
+    }
     It 'POST /api/card/onboard generates a config from existing card ROMs' {
         $common = Join-Path $script:root 'Assets/gb/common'; New-Item -ItemType Directory $common -Force | Out-Null
         'a' | Set-Content (Join-Path $common 'one.gb')

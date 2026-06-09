@@ -247,6 +247,13 @@ function Invoke-PocketApiRoute {
                 # present. This tool never downloads copyrighted BIOS - it only detects/guides.
                 return @{ Status = 200; Body = @{ bios = @(Get-PocketBiosStatus -Root $State.Root -SystemsManifest $State.SystemsManifest) } }
             }
+            '^GET /api/cleanup$' {
+                return @{ Status = 200; Body = (Get-PocketCardCleanup -Root $State.Root -CoresManifest $State.CoresManifest) }
+            }
+            '^POST /api/cleanup$' {
+                # Removes only empty + temp dirs (never ROMs/saves/cores).
+                return @{ Status = 200; Body = (Invoke-PocketCardCleanup -Root $State.Root -CoresManifest $State.CoresManifest -DryRun:([bool]$State.DryRun)) }
+            }
             '^POST /api/card/onboard$' {
                 # Onboard a used card: scan existing content and generate a starter config.
                 return @{ Status = 200; Body = (Import-PocketUsedCard -Root $State.Root `
