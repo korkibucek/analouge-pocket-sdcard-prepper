@@ -118,6 +118,34 @@ Describe 'Invoke-PocketApiRoute' {
         $r.Body.RenamedCount | Should -Be 1
         (Get-ChildItem -LiteralPath $common -File)[0].Name.Length | Should -BeLessOrEqual 40
     }
+    It 'GET /api/rom/all-platforms lists systems + catalog; copy works for catalog & custom platforms' {
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method GET -Path '/api/rom/all-platforms' -State $s }
+        $r.Status | Should -Be 200
+        @($r.Body.platforms.PlatformId) | Should -Contain 'gb'           # system
+        @($r.Body.platforms.PlatformId) | Should -Contain 'gameandwatch' # catalog-only
+
+        # Copy to a catalog platform (core not installed) - resolves via the catalog.
+        $src = Join-Path $script:root '_cat'; New-Item -ItemType Directory $src -Force | Out-Null
+        'a' | Set-Content (Join-Path $src 'game.bin')
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = [pscustomobject]@{ systemId='gameandwatch'; sourceFolder=$src } } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/rom/copy' -Body $b -State $s }
+        $r.Status | Should -Be 200
+        (Test-Path (Join-Path $script:state.Root 'Assets/gameandwatch/common/game.bin')) | Should -BeTrue
+
+        # Copy to a totally custom platform-id (opt-in) - synthesised match-all target.
+        $src2 = Join-Path $script:root '_custom'; New-Item -ItemType Directory $src2 -Force | Out-Null
+        'b' | Set-Content (Join-Path $src2 'thing.dat')
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = [pscustomobject]@{ systemId='mycore'; sourceFolder=$src2; customPlatform=$true } } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/rom/copy' -Body $b -State $s }
+        $r.Status | Should -Be 200
+        (Test-Path (Join-Path $script:state.Root 'Assets/mycore/common/thing.dat')) | Should -BeTrue
+
+        # Without the opt-in, an unknown id is rejected.
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = [pscustomobject]@{ systemId='zzznope'; sourceFolder=$src2 } } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/rom/copy' -Body $b -State $s }
+        $r.Status | Should -Be 400
+    }
     It 'GET /api/rom/extra-platforms + plan/copy work for an installed-core platform' {
         # Install a fake core that declares a platform the manifest does not know.
         $coreDir = Join-Path $script:root 'Cores/Some.WonderSwan'; New-Item -ItemType Directory $coreDir -Force | Out-Null

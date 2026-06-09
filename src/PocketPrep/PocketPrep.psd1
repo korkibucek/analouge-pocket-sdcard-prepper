@@ -39,6 +39,7 @@
         'Get-PocketCardSummary',
         'Import-PocketUsedCard',
         'Get-PocketImportablePlatform',
+        'Get-PocketKnownPlatform',
         'Get-PocketBiosStatus',
         'New-PocketTarget',
         'Get-PocketDirectoryListing',

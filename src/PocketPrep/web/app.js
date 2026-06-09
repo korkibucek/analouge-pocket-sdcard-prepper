@@ -421,33 +421,48 @@ async function stepRoms() {
   try { cfg = await api('/api/rom/config'); } catch { /* no config yet */ }
   const saved = {};
   (cfg.Sources || []).forEach(s => { saved[s.SystemId] = s; });
+  // Every other platform the tool knows about (catalog cores not already shown), so ROM
+  // upload covers every possible core, plus a custom platform-id escape hatch (#140).
+  let allPlatforms = [];
+  try { allPlatforms = (await api('/api/rom/all-platforms')).platforms || []; } catch { /* none */ }
   const esc = v => (v || '').replace(/"/g, '&quot;');
-  const rows = systems.map((s, i) => {
-    const sv = saved[s.Id];
-    return `
-    <div class="card"><strong>${s.DisplayName}</strong> <span class="meta">[${s.Id}] ${s.SupportedExtensions.join(' ')}</span>
+
+  const romRowHtml = (s, i, sv) => `
+    <div class="card" id="romrow${i}"><strong>${s.DisplayName}</strong> <span class="meta">[${s.Id}] ${(s.SupportedExtensions || ['*']).join(' ')}</span>
       ${extraIds.has(s.Id) ? '<span class="tag rm">installed core</span>' : ''}
-      ${s.Experimental ? `<span class="tag fixed">experimental</span><p class="warnote">${s.Notes}</p>` : ''}
+      ${s.Custom ? '<span class="tag rm">custom</span>' : ''}
+      ${s.Experimental ? `<span class="tag fixed">experimental</span>${s.Notes ? `<p class="warnote">${s.Notes}</p>` : ''}` : ''}
       <div class="row"><input type="text" id="src${i}" placeholder="source ROM folder" value="${sv ? esc(sv.Path) : ''}">
         <button data-browse="${i}" class="secondary">Browse…</button>
         <label class="row"><input type="checkbox" id="rec${i}" ${sv && sv.Recurse ? 'checked' : ''}> subfolders</label>
         <button data-i="${i}" data-act="plan" class="secondary">Count</button>
         <button data-i="${i}" data-act="copy">Copy</button></div>
       <div id="rout${i}"></div></div>`;
-  }).join('');
+
+  const rows = systems.map((s, i) => romRowHtml(s, i, saved[s.Id])).join('');
+  const shown = new Set(systems.map(s => String(s.Id).toLowerCase()));
+  const pickOpts = allPlatforms.filter(p => !shown.has(String(p.Id).toLowerCase()))
+    .map(p => `<option value="${esc(p.Id)}">${esc(p.DisplayName)}</option>`).join('');
   const rescanBtn = (cfg.Exists && (cfg.Sources || []).length)
     ? `<button id="rescan" class="secondary">Rescan ${cfg.Sources.length} saved folder(s)</button>` : '';
   panel(`<h2>6. ROM import</h2>
     <p class="warnote">Copies ROMs you already own. BIOS files are not copied automatically.</p>
     ${cfg.Exists ? `<p class="ok">A saved ROM-folder list was found on the card and pre-filled below.</p>` : ''}
-    ${rows}
+    <div id="rom-rows">${rows}</div>
+    <details class="card"><summary><strong>Add another core / platform</strong> — covers every core, including ones not listed above</summary>
+      <label class="row">Known platform:
+        <select id="add-known"><option value="">— choose —</option>${pickOpts}</select></label>
+      <label class="row">…or custom platform-id: <input type="text" id="add-custom" placeholder="e.g. mycore (→ Assets/mycore/common)"></label>
+      <button id="add-row" class="secondary">Add upload row</button>
+      <p class="meta">For non-built-in platforms the exact ROM extensions aren't known, so any file you point at the row is copied. Point it at a folder of only that system's ROMs.</p>
+    </details>
     <div class="row"><button id="savecfg" class="secondary">Save folder list to card</button>${rescanBtn}</div>
     <div id="cfgout"></div>
     <button id="c">Continue to summary →</button>`);
   $('#c').onclick = () => go(6);
 
   // Gather the currently-filled rows into a sources[] payload.
-  const gather = () => systems.map((s, i) => ({ systemId: s.Id, path: $('#src' + i).value.trim(), recurse: $('#rec' + i).checked }))
+  const gather = () => systems.map((s, i) => ({ systemId: s.Id, path: ($('#src' + i) || {}).value ? $('#src' + i).value.trim() : '', recurse: !!($('#rec' + i) || {}).checked }))
     .filter(r => r.path);
 
   $('#savecfg').onclick = async () => {
@@ -469,14 +484,16 @@ async function stepRoms() {
         (missing.length ? `<p class="warnote">Missing folder(s): ${missing.join(', ')}.</p>` : '');
     } catch (e) { $('#cfgout').innerHTML = errLine(e.message); } finally { busy(false); }
   };
-  document.querySelectorAll('button[data-browse]').forEach(btn => btn.onclick = async () => {
-    const i = +btn.dataset.browse;
-    const chosen = await pickFolder($('#src' + i).value.trim());
-    if (chosen) $('#src' + i).value = chosen;
-  });
-  document.querySelectorAll('button[data-act]').forEach(btn => btn.onclick = async () => {
-    const i = +btn.dataset.i, act = btn.dataset.act, out = $('#rout' + i);
+  // Wire the browse/count/copy buttons for a single row (called for initial and added rows).
+  const wireRow = (i) => {
+    const browse = document.querySelector(`button[data-browse="${i}"]`);
+    if (browse) browse.onclick = async () => { const c = await pickFolder($('#src' + i).value.trim()); if (c) $('#src' + i).value = c; };
+    document.querySelectorAll(`button[data-act][data-i="${i}"]`).forEach(btn => btn.onclick = () => runRowAct(i, btn.dataset.act));
+  };
+  const runRowAct = async (i, act) => {
+    const out = $('#rout' + i);
     const body = { systemId: systems[i].Id, sourceFolder: $('#src' + i).value.trim(), recurse: $('#rec' + i).checked };
+    if (systems[i].Custom) body.customPlatform = true;
     if (!body.sourceFolder) { out.innerHTML = errLine('Enter a source folder.'); return; }
     busy(true);
     try {
@@ -507,7 +524,26 @@ async function stepRoms() {
         out.innerHTML = `<p class="ok">Copied ${agg.CopiedCount}, skipped ${agg.SkippedCount}${dupNote}, failed ${agg.FailedCount}${agg.DryRun ? ' [dry-run]' : ''}.</p>`;
       }
     } catch (e) { out.innerHTML = errLine(e.message); } finally { busy(false); }
-  });
+  };
+  systems.forEach((_, i) => wireRow(i));
+
+  // "Add another core/platform": append a fresh upload row for a catalog or custom platform.
+  $('#add-row').onclick = () => {
+    const known = ($('#add-known').value || '').trim();
+    const custom = ($('#add-custom').value || '').trim();
+    const id = custom || known;
+    if (!id) { $('#cfgout').innerHTML = errLine('Choose a known platform or type a custom platform-id.'); return; }
+    if (systems.some(s => String(s.Id).toLowerCase() === id.toLowerCase())) { $('#cfgout').innerHTML = errLine(`"${id}" is already listed above.`); return; }
+    const meta = allPlatforms.find(p => String(p.Id).toLowerCase() === id.toLowerCase());
+    const sys = meta
+      ? { Id: meta.Id, PlatformId: meta.PlatformId, DisplayName: meta.DisplayName, SupportedExtensions: meta.SupportedExtensions || ['*'], Experimental: true, Notes: meta.Notes, Custom: false }
+      : { Id: id, PlatformId: id, DisplayName: id, SupportedExtensions: ['*'], Experimental: true, Notes: `Custom platform — files are copied to Assets/${id}/common.`, Custom: true };
+    const i = systems.length; systems.push(sys);
+    $('#rom-rows').insertAdjacentHTML('beforeend', romRowHtml(sys, i, null));
+    wireRow(i);
+    $('#add-custom').value = ''; $('#add-known').value = '';
+    $('#src' + i).scrollIntoView({ block: 'nearest' });
+  };
 }
 
 /* ---- Step 6: Summary ---- */

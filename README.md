@@ -207,12 +207,16 @@ editable without code). For each system the wizard:
 > different core, confirm its platform-id and edit the manifest. See
 > [docs/manifests.md](docs/manifests.md).
 
-**Beyond the built-in systems:** if you install a core whose system isn't in
-`systems.json`, the ROM step also lists that core's **declared platform** (read straight
-from the installed core, so the destination is always correct) and lets you copy ROMs to
-it. Because the exact ROM extensions aren't known there, *any* file you point at it is
-copied to `Assets/<platformId>/common` — so point it at a folder containing only that
-system's ROMs.
+**Covers every core.** The ROM step isn't limited to the 10 built-in systems. It also lists:
+- the **declared platform of every installed core** (read straight from the core, so the
+  destination is always correct), and
+- via **Add another core / platform**, every platform in the **core catalog** (`cores.json`)
+  plus a **custom platform-id** text field for anything else.
+
+For non-built-in platforms the exact ROM extensions aren't known, so *any* file you point at
+the row is copied to `Assets/<platformId>/common` — point it at a folder containing only that
+system's ROMs. (The web UI exposes the full picker; the CLI wizard covers the built-in
+systems and any installed core's platforms.)
 
 ### Card breakdown after you pick a drive
 

@@ -17,13 +17,20 @@ function Invoke-PocketApiRoute {
     # Resolve a ROM target by id: a manifest system first, else a platform declared by an
     # installed core (#128) so ROM import works for any installed core, not just the built-ins.
     $resolveRomTarget = {
-        param($id)
-        # Get-PocketSystem throws on an unknown id; an installed-core platform is a valid
-        # target too, so fall through to those rather than failing.
+        param($id, $allowCustom)
+        if (-not $id) { return $null }
+        # Fast path: a built-in system (Get-PocketSystem throws on an unknown id).
         $s = try { Get-PocketSystem -Path $State.SystemsManifest -Id ([string]$id) } catch { $null }
         if ($s) { return $s }
-        @(Get-PocketImportablePlatform -Root $State.Root -SystemsManifest $State.SystemsManifest) |
+        # Any known platform: installed-core OR catalog (#140), so ROM upload covers every core.
+        $hit = @(Get-PocketKnownPlatform -SystemsManifest $State.SystemsManifest -CoresManifest $State.CoresManifest -Root $State.Root) |
             Where-Object { $_.Id -eq [string]$id } | Select-Object -First 1
+        if ($hit) { return $hit }
+        # Custom free-text platform-id: copy any file to Assets/<id>/common (caller opted in).
+        if ($allowCustom) {
+            return [pscustomobject]@{ Id = [string]$id; PlatformId = [string]$id; SupportedExtensions = @('*'); DisplayName = [string]$id; Experimental = $true }
+        }
+        return $null
     }
 
     try {
@@ -136,8 +143,12 @@ function Invoke-PocketApiRoute {
                 # Platforms declared by installed cores that aren't in the systems manifest.
                 return @{ Status = 200; Body = @{ platforms = @(Get-PocketImportablePlatform -Root $State.Root -SystemsManifest $State.SystemsManifest) } }
             }
+            '^GET /api/rom/all-platforms$' {
+                # Every importable platform: built-in systems + installed cores + the catalog.
+                return @{ Status = 200; Body = @{ platforms = @(Get-PocketKnownPlatform -SystemsManifest $State.SystemsManifest -CoresManifest $State.CoresManifest -Root $State.Root) } }
+            }
             '^POST /api/rom/plan$' {
-                $sys = & $resolveRomTarget $Body.systemId
+                $sys = & $resolveRomTarget $Body.systemId ([bool]$Body.customPlatform)
                 if (-not $sys) { return @{ Status = 400; Body = @{ error = "Unknown system or platform: $($Body.systemId)" } } }
                 $plan = New-PocketRomCopyPlan -System $sys -SourceFolder ([string]$Body.sourceFolder) -Root $State.Root `
                     -Recurse:([bool]$Body.recurse) -PreserveStructure:([bool]$Body.preserveStructure)
@@ -151,7 +162,7 @@ function Invoke-PocketApiRoute {
                 # slice at a time and advance a progress bar between calls. The plan (which
                 # may hash files for dedupe) is cached per system+source so batches after
                 # the first are cheap and the de-dup view stays consistent across batches.
-                $sys = & $resolveRomTarget $Body.systemId
+                $sys = & $resolveRomTarget $Body.systemId ([bool]$Body.customPlatform)
                 if (-not $sys) { return @{ Status = 400; Body = @{ error = "Unknown system or platform: $($Body.systemId)" } } }
                 $skip  = [int]($Body.skip ?? 0)
                 $first = [int]($Body.first ?? 0)
