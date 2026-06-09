@@ -16,9 +16,16 @@ outcome is "files copied to the wrong folder"** — never data loss.
      only** — it never deletes or overwrites a ROM (a name clash is disambiguated, an
      unexpected existing destination is skipped), every move is size-verified, it is an
      explicit user action with a dry-run preview, and it only ever prunes the *empty*
-     subfolders it leaves behind (directories, never files).
+     subfolders it leaves behind (directories, never files), and
+   - **Favourites** (`Save-PocketFavorite` writes `pocketprep/favorites.json`;
+     `Sync-PocketFavorite` materialises `Assets/<platformId>/common/Favorites`). It links
+     (where the filesystem supports symlinks) or copies favourited ROMs into that
+     tool-managed `Favorites` folder; **originals are never touched**. Removals happen only
+     *inside* the `Favorites` folder (untagged favourites), so no original ROM is ever
+     deleted.
    Nothing removes user content. (The tool removes only its own temporary download
-   folder and now-empty organize subfolders.)
+   folder, now-empty organize subfolders, and untagged entries inside the managed Favorites
+   folder.)
 2. **Removable-only by default.** `Get-PocketRemovableDrive` returns removable media
    only; fixed disks appear only with `-IncludeFixed` (advanced).
 3. **System volumes can never be targeted (any OS).** `Test-PocketDriveSafety` rejects

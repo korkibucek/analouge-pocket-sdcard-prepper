@@ -97,6 +97,7 @@ function showMenu() {
     { go: 3, icon: '📁', label: 'Folder structure', desc: 'Create the openFPGA folder structure on the card.' },
     { go: 4, icon: '🧩', label: 'Cores: install / update', desc: 'Install the whole core set or update installed cores.' },
     { go: 5, icon: '🎮', label: 'Upload ROMs', desc: 'Copy ROMs for any core (built-in, installed, catalog or custom).' },
+    { go: 'favorites', icon: '⭐', label: 'Favourites', desc: 'Tag ROMs; surface them in a per-system Favorites folder.' },
     { go: 6, icon: '🧾', label: 'Summary', desc: 'Review what was done this session.' }
   ];
   panel(`<h2>What do you want to do?</h2>
@@ -111,7 +112,65 @@ function setCtx() {
     ? `Target: ${h.root}${h.testMode ? ' (TEST MODE)' : ''}${h.dryRun ? ' · DRY-RUN' : ''}`
     : 'No target selected yet';
 }
-function go(step) { S.step = step; renderNav(); if (step === 'menu') { showMenu(); } else { RENDER[step](); } }
+function go(step) { S.step = step; renderNav(); if (step === 'menu') { showMenu(); } else if (step === 'favorites') { showFavorites(); } else { RENDER[step](); } }
+
+/* ---- Favourites: tag ROMs; surfaced in a per-system Favorites folder ---- */
+async function showFavorites() {
+  panel('<h2>⭐ Favourites</h2><p>Loading…</p>');
+  let sum, favs;
+  try { sum = await api('/api/card-summary'); favs = await api('/api/favorites'); }
+  catch (e) { panel('<h2>⭐ Favourites</h2>' + errLine(e.message)); return; }
+  const systems = sum.Roms.Systems || [];
+  if (!systems.length) { panel('<h2>⭐ Favourites</h2><p class="warnote">No ROMs on the card yet — upload some first (🎮 Upload ROMs).</p>'); return; }
+  // favMap: platformId -> array of original favourite names (preserved even when filtered out).
+  const favMap = {}; (favs.Platforms || []).forEach(p => { favMap[p.PlatformId] = (p.Names || []).slice(); });
+  const esc = v => (v || '').replace(/"/g, '&quot;');
+  const opts = systems.map(s => `<option value="${esc(s.PlatformId)}">${s.DisplayName} (${s.FileCount})</option>`).join('');
+  panel(`<h2>⭐ Favourites</h2>
+    <p class="meta">Tag ROMs as favourites. They appear in a per-system <strong>Favorites</strong> folder — symlinked where the filesystem allows, otherwise copied — while the original stays in place.</p>
+    <p class="warnote">On a FAT32/exFAT card (a real Pocket card) favourites are <strong>copies</strong>: they use extra space and the copy has its own save file.</p>
+    <label class="row">System: <select id="fav-plat">${opts}</select></label>
+    <label class="row">Filter: <input type="text" id="fav-filter" placeholder="type to filter the list"></label>
+    <div id="fav-list" class="list" style="max-height:50vh;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:.5rem"></div>
+    <div class="row"><button id="fav-save">Save favourites</button> <span id="fav-count" class="meta"></span></div>
+    <div id="fav-out"></div>`);
+  let names = [];
+  let selected = new Map();   // lowercase -> original name, for the current platform
+  const curPlat = () => $('#fav-plat').value;
+  const renderList = () => {
+    const filt = ($('#fav-filter').value || '').toLowerCase();
+    const shown = names.filter(n => !filt || n.toLowerCase().includes(filt)).slice(0, 1000);
+    $('#fav-list').innerHTML = shown.length
+      ? shown.map(n => `<label class="row"><input type="checkbox" class="fav-pick" data-n="${esc(n)}" ${selected.has(n.toLowerCase()) ? 'checked' : ''}> ${n}</label>`).join('')
+      : '<p class="meta">(no matching ROMs)</p>';
+    document.querySelectorAll('.fav-pick').forEach(c => c.onchange = () => {
+      const n = c.dataset.n; const k = n.toLowerCase();
+      if (c.checked) selected.set(k, n); else selected.delete(k);
+      $('#fav-count').textContent = `${selected.size} favourite(s)`;
+    });
+    $('#fav-count').textContent = `${selected.size} favourite(s)`;
+  };
+  const loadPlat = async () => {
+    selected = new Map((favMap[curPlat()] || []).map(n => [n.toLowerCase(), n]));
+    $('#fav-list').innerHTML = '<p>Loading…</p>';
+    try { names = (await api('/api/rom/list', 'POST', { platformId: curPlat() })).names || []; }
+    catch (e) { $('#fav-list').innerHTML = errLine(e.message); return; }
+    renderList();
+  };
+  $('#fav-plat').onchange = loadPlat;
+  $('#fav-filter').oninput = renderList;
+  $('#fav-save').onclick = async () => {
+    const plat = curPlat(); const picked = [...selected.values()];
+    busy(true); $('#fav-out').innerHTML = '<p>Saving & syncing…</p>';
+    try {
+      const r = await api('/api/favorites', 'POST', { platformId: plat, names: picked });
+      favMap[plat] = picked;
+      const s = r.sync, miss = (s.Missing || []).length ? `; ${s.Missing.length} not found` : '';
+      $('#fav-out').innerHTML = `<p class="ok">${picked.length} favourite(s) saved — ${s.Method} (${s.LinkedCount} linked, ${s.CopiedCount} copied, ${s.RemovedCount} removed${miss})${s.DryRun ? ' [dry-run]' : ''}.</p>`;
+    } catch (e) { $('#fav-out').innerHTML = errLine(e.message); } finally { busy(false); }
+  };
+  loadPlat();
+}
 
 /* ---- Step 0: Target ---- */
 async function stepTarget() {

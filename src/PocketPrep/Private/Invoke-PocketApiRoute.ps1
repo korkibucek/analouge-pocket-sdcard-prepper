@@ -139,6 +139,32 @@ function Invoke-PocketApiRoute {
                 $res = Invoke-PocketRomOrganizePlan -Plan $plan -DryRun:([bool]$State.DryRun)
                 return @{ Status = 200; Body = $res }
             }
+            '^POST /api/rom/list$' {
+                # ROM leaf names under a platform's common folder (excluding the Favorites
+                # folder) - feeds the favourites selector.
+                $platId = [string]$Body.platformId
+                if (-not $platId) { return @{ Status = 400; Body = @{ error = 'Missing platformId.' } } }
+                $common = Join-Path (Join-Path (Join-Path $State.Root 'Assets') $platId) 'common'
+                $names = @()
+                if (Test-Path -LiteralPath $common -PathType Container) {
+                    $favPrefix = (Join-Path $common 'Favorites') + [System.IO.Path]::DirectorySeparatorChar
+                    $names = @(Get-ChildItem -LiteralPath $common -File -Recurse -ErrorAction SilentlyContinue |
+                        Where-Object { -not $_.FullName.StartsWith($favPrefix, [System.StringComparison]::OrdinalIgnoreCase) } |
+                        ForEach-Object { $_.Name } | Sort-Object -Unique)
+                }
+                return @{ Status = 200; Body = @{ platformId = $platId; names = @($names); total = @($names).Count } }
+            }
+            '^GET /api/favorites$' {
+                return @{ Status = 200; Body = (Get-PocketFavorite -Root $State.Root) }
+            }
+            '^POST /api/favorites$' {
+                $platId = [string]$Body.platformId
+                if (-not $platId) { return @{ Status = 400; Body = @{ error = 'Missing platformId.' } } }
+                $names = if ($Body -and $Body.names) { @($Body.names) } else { @() }
+                $saved = Save-PocketFavorite -Root $State.Root -PlatformId $platId -Names $names -DryRun:([bool]$State.DryRun)
+                $sync  = Sync-PocketFavorite -Root $State.Root -PlatformId $platId -DryRun:([bool]$State.DryRun)
+                return @{ Status = 200; Body = @{ saved = $saved; sync = $sync } }
+            }
             '^GET /api/rom/extra-platforms$' {
                 # Platforms declared by installed cores that aren't in the systems manifest.
                 return @{ Status = 200; Body = @{ platforms = @(Get-PocketImportablePlatform -Root $State.Root -SystemsManifest $State.SystemsManifest) } }

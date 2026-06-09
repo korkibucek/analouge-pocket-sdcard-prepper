@@ -242,6 +242,20 @@ short token appended to keep them unique — so they stay within the FAT/exFAT 2
 hard limit and the Pocket's practical preference for short names. This is also idempotent and
 move/rename only.
 
+### Favourites
+
+Tag ROMs as **favourites** (⭐ Favourites in the menu): pick a system, filter, tick the
+games you love, and Save. Each favourite is surfaced in a per-system
+`Assets/<platformId>/common/Favorites` folder while the **original stays put** in its
+alphabetical location.
+
+> **How it's stored depends on the filesystem.** Where the filesystem supports symlinks
+> (e.g. a test folder on NTFS/ext4) the favourite is a **symlink** — no extra space. On a
+> real **FAT32/exFAT** Pocket card (which has no symlinks), it's a **copy**: it uses a little
+> extra space and the copy keeps its *own* save file. The tool detects this automatically and
+> tells you which method it used. Favourites persist in `pocketprep/favorites.json` (names
+> only) and the organizer/breakdown ignore the `Favorites` folder.
+
 ### Onboard an already-used card
 
 Inserted a card that was set up elsewhere and already has ROMs on it? The tool can

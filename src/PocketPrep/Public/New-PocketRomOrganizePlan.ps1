@@ -85,7 +85,11 @@ function New-PocketRomOrganizePlan {
         return ($bn + $suffix + $ext)
     }
 
-    $all = @(Get-ChildItem -LiteralPath $common -File -Recurse -ErrorAction SilentlyContinue)
+    # The tool-managed Favorites folder (symlinks/copies of favourited ROMs) is not part of
+    # the library to re-bucket - skip anything inside it.
+    $favPrefix = (Join-Path $common 'Favorites') + [System.IO.Path]::DirectorySeparatorChar
+    $all = @(Get-ChildItem -LiteralPath $common -File -Recurse -ErrorAction SilentlyContinue |
+        Where-Object { -not $_.FullName.StartsWith($favPrefix, [System.StringComparison]::OrdinalIgnoreCase) })
     $files = @($all | Where-Object { -not $exclude.ContainsKey($_.Name.ToLowerInvariant()) } |
         Sort-Object { $_.Name.ToLowerInvariant() })
     $excludedCount = $all.Count - $files.Count
