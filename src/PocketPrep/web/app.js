@@ -624,6 +624,14 @@ async function stepCores() {
        <button id="updall" class="secondary">Update all</button>
        <button id="integ" class="secondary">Check integrity</button>
        <span id="updout" class="meta"></span></p>
+    <details class="card"><summary><strong>Platform images</strong> — system artwork for the openFPGA menu (Platforms/_images)</summary>
+      <p class="meta">Installs a platform image pack from a GitHub release you choose, or a local zip. The tool bundles none and picks no default — supply the source (check its licence). Only <code>Platforms/_images</code> is written.</p>
+      <label class="row">GitHub owner: <input type="text" id="ip-owner" placeholder="e.g. someuser"></label>
+      <label class="row">Repo: <input type="text" id="ip-repo" placeholder="image-pack repo"></label>
+      <label class="row">…or local zip: <input type="text" id="ip-zip" placeholder="path to image-pack .zip"></label>
+      <label class="row"><input type="checkbox" id="ip-ow"> overwrite existing images</label>
+      <div class="row"><button id="ip-install">Install platform images</button></div>
+      <div id="ip-out"></div></details>
     <div id="core-rows">${cores.length ? rows : '<p>No cores manifest available.</p>'}</div>
     <button id="c">Continue →</button>`);
   $('#c').onclick = () => go(5);
@@ -701,6 +709,17 @@ async function stepCores() {
         ? (bad.length ? `<span class="warnote">${bad.length} core(s) look incomplete: ${bad.map(x => `${x.Identifier} (missing ${(x.Missing || []).join(', ') || 'core.json'})`).join('; ')} — use Repair.</span>` : `<span class="ok">All ${c.length} installed core(s) look intact.</span>`)
         : 'no cores installed.';
     } catch (e) { $('#updout').innerHTML = errLine(e.message); } finally { busy(false); }
+  };
+  // Platform image pack install (user-supplied source).
+  $('#ip-install').onclick = async () => {
+    const zip = $('#ip-zip').value.trim(), owner = $('#ip-owner').value.trim(), repo = $('#ip-repo').value.trim();
+    const body = zip ? { mode: 'offline', localZip: zip } : { owner, repo };
+    if (!zip && (!owner || !repo)) { $('#ip-out').innerHTML = errLine('Enter a GitHub owner + repo, or a local zip path.'); return; }
+    if (body.overwrite = $('#ip-ow').checked) { /* set */ }
+    busy(true); $('#ip-out').innerHTML = inProgress('Installing platform images');
+    try { const r = await api('/api/cores/image-pack', 'POST', body);
+      $('#ip-out').innerHTML = `<p class="ok">Platform images: ${r.PlacedCount} placed, ${r.SkippedCount} skipped${r.Version ? ' (' + r.Version + ')' : ''}${r.DryRun ? ' [dry-run]' : ''}.</p>`;
+    } catch (e) { $('#ip-out').innerHTML = errLine(e.message); } finally { busy(false); }
   };
 }
 

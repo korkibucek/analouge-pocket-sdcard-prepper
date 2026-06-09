@@ -80,7 +80,7 @@ Layer separation:
 | ROM config / rescan | `Get-/Save-PocketRomConfig`, `Invoke-PocketRomRescan` (`pocketprep/rom-sources.json`) |
 | Profiles | `Export-PocketProfile` / `Import-PocketProfile` (portable setup: cores + ROM sources + favourites, references only) |
 | Card insight | `Get-PocketCardSummary`, `Get-PocketInstalledCore`, `Get-PocketCoreRequiredFile` (data.json BIOS/required files), `Get-PocketBiosStatus`, `Get-PocketDiskSpace`, `Import-PocketUsedCard` (onboard), `Get-PocketCardCleanup`/`Invoke-PocketCardCleanup` (safe leftovers cleanup) |
-| Cores | `Get-PocketCoreManifest`, `Resolve-PocketCore`, `Test-PocketCoreZip`, `Install-PocketCore`, `Install-PocketCoreSet` (bulk/subset), `Get-PocketCoreUpdateStatus`, `Update-PocketCore`, `Test-PocketCoreIntegrity`, `Repair-PocketCore` |
+| Cores | `Get-PocketCoreManifest`, `Resolve-PocketCore`, `Test-PocketCoreZip`, `Install-PocketCore`, `Install-PocketCoreSet` (bulk/subset), `Get-PocketCoreUpdateStatus`, `Update-PocketCore`, `Test-PocketCoreIntegrity`, `Repair-PocketCore`, `Install-PocketImagePack` (Platforms/_images) |
 | Folders | `New-PocketFolderStructure` |
 | Saves / removal | `Backup-PocketSaves`, `Restore-PocketSaves`, `Clear-PocketCard` (guarded), `Dismount-PocketDrive` (flush + best-effort eject) |
 | Config/data | `manifests/*.json` (+ `cores-supplement.json`) |

@@ -323,6 +323,18 @@ function Invoke-PocketApiRoute {
                 $cores = Resolve-PocketCore -Manifest (Get-PocketCoreManifest -Path $State.CoresManifest)
                 return @{ Status = 200; Body = @{ cores = @($cores) } }
             }
+            '^POST /api/cores/image-pack$' {
+                # Install platform menu images into Platforms/_images from a GitHub release
+                # (owner/repo) or a local zip. User supplies the source.
+                if ([string]$Body.mode -eq 'offline') {
+                    if (-not $Body.localZip) { return @{ Status = 400; Body = @{ error = 'Offline mode needs localZip.' } } }
+                    $res = Install-PocketImagePack -Root $State.Root -LocalZip ([string]$Body.localZip) -Overwrite:([bool]$Body.overwrite) -DryRun:([bool]$State.DryRun)
+                } else {
+                    if (-not $Body.owner -or -not $Body.repo) { return @{ Status = 400; Body = @{ error = 'Provide owner and repo (or a local zip).' } } }
+                    $res = Install-PocketImagePack -Root $State.Root -Owner ([string]$Body.owner) -Repo ([string]$Body.repo) -Tag ([string]$Body.tag) -Overwrite:([bool]$Body.overwrite) -DryRun:([bool]$State.DryRun)
+                }
+                return @{ Status = 200; Body = $res }
+            }
             '^POST /api/cores/install$' {
                 $core = Resolve-PocketCore -Manifest (Get-PocketCoreManifest -Path $State.CoresManifest) -Id ([string]$Body.coreId)
                 if ([string]$Body.mode -eq 'offline') {

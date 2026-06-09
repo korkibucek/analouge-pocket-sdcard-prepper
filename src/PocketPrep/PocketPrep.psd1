@@ -24,6 +24,7 @@
         'Test-PocketCoreZip',
         'Install-PocketCore',
         'Install-PocketCoreSet',
+        'Install-PocketImagePack',
         'Get-PocketInstalledCore',
         'Compare-PocketVersion',
         'Test-PocketPlatformIdInstalled',

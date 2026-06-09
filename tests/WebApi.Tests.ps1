@@ -329,6 +329,21 @@ Describe 'Invoke-PocketApiRoute' {
         $r.Body.PSObject.Properties.Name | Should -Contain 'PlatformProvided'
         $r.Body.PlatformProvided | Should -BeFalse   # no cores installed in this temp root
     }
+    It 'POST /api/cores/image-pack installs platform images from a local zip' {
+        $stage = Join-Path ([System.IO.Path]::GetTempPath()) ("ipa_" + [System.IO.Path]::GetRandomFileName())
+        New-Item -ItemType Directory -Path (Join-Path $stage 'Platforms/_images') -Force | Out-Null
+        'img' | Set-Content (Join-Path $stage 'Platforms/_images/gb.bin')
+        $zip = Join-Path ([System.IO.Path]::GetTempPath()) ("ipaz_" + [System.IO.Path]::GetRandomFileName() + '.zip')
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        [System.IO.Compression.ZipFile]::CreateFromDirectory($stage, $zip)
+        try {
+            $r = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = [pscustomobject]@{ mode='offline'; localZip=$zip } } { param($s,$b)
+                Invoke-PocketApiRoute -Method POST -Path '/api/cores/image-pack' -Body $b -State $s }
+            $r.Status | Should -Be 200
+            $r.Body.PlacedCount | Should -Be 1
+            (Test-Path (Join-Path $script:state.Root 'Platforms/_images/gb.bin')) | Should -BeTrue
+        } finally { Remove-Item $stage, $zip -Recurse -Force -ErrorAction SilentlyContinue }
+    }
     It 'GET /api/cores/integrity flags a core missing required files' {
         $cd = Join-Path $script:root 'Cores/broken.Core'; New-Item -ItemType Directory $cd -Force | Out-Null
         @{ core = @{ metadata = @{ shortname='B'; author='x'; version='1'; platform_ids=@('gb') } } } | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $cd 'core.json')
