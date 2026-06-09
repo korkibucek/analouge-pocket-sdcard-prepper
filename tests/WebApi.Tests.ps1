@@ -93,6 +93,20 @@ Describe 'Invoke-PocketApiRoute' {
         $r.Body.Firmware.Version | Should -Be '2.5'
         $r.Body.Roms.TotalFiles | Should -Be 1
     }
+    It 'POST /api/rom/organize plans and moves a large library into subfolders' {
+        $common = Join-Path $script:root 'Assets/gb/common'; New-Item -ItemType Directory $common -Force | Out-Null
+        1..6 | ForEach-Object { "rom$_" | Set-Content (Join-Path $common ('{0:D2}.gb' -f $_)) }
+        $body = [pscustomobject]@{ platformId = 'gb'; maxPerFolder = 2 }
+        $plan = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = $body } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/rom/organize/plan' -Body $b -State $s }
+        $plan.Status | Should -Be 200
+        $plan.Body.NeedsBuckets | Should -BeTrue
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = $body } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/rom/organize' -Body $b -State $s }
+        $r.Status | Should -Be 200
+        $r.Body.MovedCount | Should -Be 6
+        @(Get-ChildItem -LiteralPath $common -File).Count | Should -Be 0   # all in subfolders now
+    }
     It 'GET /api/rom/extra-platforms + plan/copy work for an installed-core platform' {
         # Install a fake core that declares a platform the manifest does not know.
         $coreDir = Join-Path $script:root 'Cores/Some.WonderSwan'; New-Item -ItemType Directory $coreDir -Force | Out-Null
