@@ -9,11 +9,26 @@ async function api(path, method = 'GET', body) {
   const res = await fetch(path, opts);
   let data = null;
   try { data = await res.json(); } catch {}
-  if (!res.ok) { const e = new Error((data && data.error) || `HTTP ${res.status}`); e.data = data; throw e; }
+  if (!res.ok) {
+    if (method !== 'GET') logActivity(method, path, false, (data && data.error) || `HTTP ${res.status}`);
+    const e = new Error((data && data.error) || `HTTP ${res.status}`); e.data = data; throw e;
+  }
+  if (method !== 'GET') logActivity(method, path, true);
   return data;
 }
 const fmtGB = (b) => (b ? (b / 1073741824).toFixed(1) + ' GB' : '—');
-const busy = (on) => { $('#busy').hidden = !on; };
+// Record state-changing (non-GET) actions for the session activity log.
+function logActivity(method, path, ok, err) {
+  const t = new Date().toISOString().replace('T', ' ').slice(0, 19);
+  S.activity.push({ t, method, path, ok, err: err || '' });
+  if (S.activity.length > 500) S.activity.shift();
+}
+// Spinner + disable in-panel buttons (and eject) during an operation, so a long request
+// can't be double-submitted and the UI never looks idly clickable.
+const busy = (on) => {
+  $('#busy').hidden = !on;
+  document.querySelectorAll('#panel button, #ejectBtn').forEach(b => { b.disabled = on; });
+};
 function announce(msg) { const el = $('#sr-status'); if (el) el.textContent = msg; }
 
 // Folder picker: opens a modal that browses the local filesystem (via the server) and
@@ -70,7 +85,7 @@ function errLine(msg) { return `<p class="error">${msg}</p>`; }
 function inProgress(label) { return `<p class="busy">${label}… please keep this tab open. This can take up to a minute and the page may be unresponsive while it runs.</p>`; }
 
 const STEP_LABELS = ['Target', 'Card', 'Firmware', 'Folders', 'Cores', 'ROMs', 'Done'];
-const S = { health: null, space: null, step: 0, drive: null, firmware: null, folder: null, roms: [], cores: [] };
+const S = { health: null, space: null, step: 0, drive: null, firmware: null, folder: null, roms: [], cores: [], activity: [] };
 
 function renderNav() {
   // Non-linear once a target is set: every chip (and the Menu) is clickable.
@@ -98,13 +113,39 @@ function showMenu() {
     { go: 4, icon: '🧩', label: 'Cores: install / update', desc: 'Install the whole core set or update installed cores.' },
     { go: 5, icon: '🎮', label: 'Upload ROMs', desc: 'Copy ROMs for any core (built-in, installed, catalog or custom).' },
     { go: 'favorites', icon: '⭐', label: 'Favourites', desc: 'Tag ROMs; surface them in a per-system Favorites folder.' },
+    { go: 'activity', icon: '📝', label: 'Activity log', desc: 'See and download everything done this session.' },
     { go: 6, icon: '🧾', label: 'Summary', desc: 'Review what was done this session.' }
   ];
+  const dr = !!(S.health && S.health.dryRun);
   panel(`<h2>What do you want to do?</h2>
     <p class="meta">Pick a single task, or run the full wizard. Return here any time via <strong>☰ Menu</strong>.</p>
+    <label class="row card" style="gap:.5rem"><input type="checkbox" id="dry-toggle" ${dr ? 'checked' : ''}>
+      <span><strong>Dry-run mode</strong> — preview actions without writing to the card${dr ? ' <span class="tag fixed">ON</span>' : ''}</span></label>
     <ul class="list" id="menu-list">${acts.map((a, i) =>
       `<li><button class="menu-act" data-i="${i}">${a.icon} <strong>${a.label}</strong><br><span class="meta">${a.desc}</span></button></li>`).join('')}</ul>`);
   document.querySelectorAll('.menu-act').forEach(b => b.onclick = () => go(acts[+b.dataset.i].go));
+  $('#dry-toggle').onchange = async (e) => {
+    try { const r = await api('/api/dryrun', 'POST', { enabled: e.target.checked }); if (S.health) S.health.dryRun = r.dryRun; setCtx(); showMenu(); }
+    catch (err) { announce('Could not change dry-run mode: ' + err.message); }
+  };
+}
+/* ---- Activity log: session record of state-changing actions, downloadable ---- */
+function showActivity() {
+  const esc = v => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const rows = S.activity.length
+    ? S.activity.slice().reverse().map(a => `<li><span class="meta">${a.t}</span> ${a.ok ? '<span class="ok">✓</span>' : '<span class="error">✗</span>'} <code>${esc(a.method)} ${esc(a.path)}</code>${a.err ? ` <span class="error">${esc(a.err)}</span>` : ''}</li>`).join('')
+    : '<li class="meta">No actions yet this session.</li>';
+  panel(`<h2>📝 Activity log</h2>
+    <p class="meta">Every state-changing request this session (newest first). A full log is also written to disk by the tool.</p>
+    <div class="row"><button id="act-dl">Download log (.txt)</button> <span class="meta">${S.activity.length} entr${S.activity.length === 1 ? 'y' : 'ies'}</span></div>
+    <ul class="list" style="max-height:55vh;overflow:auto">${rows}</ul>`);
+  $('#act-dl').onclick = () => {
+    const text = S.activity.map(a => `${a.t}\t${a.ok ? 'OK ' : 'ERR'}\t${a.method} ${a.path}${a.err ? '\t' + a.err : ''}`).join('\n') || '(no activity)';
+    const blob = new Blob([`Analogue Pocket SD Card Prepper - session activity\n\n${text}\n`], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'pocketprep-activity.txt';
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  };
 }
 function setCtx() {
   const h = S.health;
@@ -137,7 +178,7 @@ function wireEject() {
     finally { busy(false); }
   };
 }
-function go(step) { S.step = step; renderNav(); if (step === 'menu') { showMenu(); } else if (step === 'favorites') { showFavorites(); } else { RENDER[step](); } }
+function go(step) { S.step = step; renderNav(); if (step === 'menu') { showMenu(); } else if (step === 'favorites') { showFavorites(); } else if (step === 'activity') { showActivity(); } else { RENDER[step](); } }
 
 /* ---- Favourites: tag ROMs; surfaced in a per-system Favorites folder ---- */
 async function showFavorites() {

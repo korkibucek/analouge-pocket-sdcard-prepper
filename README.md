@@ -50,7 +50,9 @@ from folders you point it at. You are responsible for the legality of your ROMs.
     indicator, and a global **Eject & quit** control. Prints a **summary** and writes a **log**.
 
 Once a card is selected, the web UI presents an **action menu** — run the full wizard *or*
-jump straight to any single task.
+jump straight to any single task. The menu also has a **Dry-run toggle** (preview any action
+without writing) and an **Activity log** (every action this session, downloadable as a text
+file). Buttons disable while their operation runs, so nothing can be double-submitted.
 
 ## What it does NOT do
 

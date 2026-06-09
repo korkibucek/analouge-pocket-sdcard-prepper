@@ -68,6 +68,11 @@ function Invoke-PocketApiRoute {
                 $res = Dismount-PocketDrive -Root $State.Root -FlushOnly:([bool]$State.IsTestMode)
                 return @{ Status = 200; Body = $res }
             }
+            '^POST /api/dryrun$' {
+                # Toggle dry-run at runtime so any action can be previewed without writing.
+                $State.DryRun = [bool]$Body.enabled
+                return @{ Status = 200; Body = @{ dryRun = [bool]$State.DryRun } }
+            }
             '^GET /api/space$' {
                 # Free/total bytes on the current target volume, for the UI space indicator.
                 if (-not $State.Root) { return @{ Status = 200; Body = @{ ready = $false } } }
