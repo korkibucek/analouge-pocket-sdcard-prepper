@@ -78,8 +78,8 @@ Layer separation:
 | ROM library mgmt | `New-/Invoke-PocketRomOrganizePlan` (subfolders + filename shortening), `Get-PocketRomRegionDuplicate` + `Invoke-PocketRomRegionDedupe` (region 1G1R → reversible quarantine), `Test-PocketReservedRomPath` |
 | Favourites | `Get-/Save-PocketFavorite`, `Sync-PocketFavorite` (symlink-or-copy into `!Favorites`), `Test-PocketSymlinkSupport`, `Private/Get-PocketFavoritesFolder` |
 | ROM config / rescan | `Get-/Save-PocketRomConfig`, `Invoke-PocketRomRescan` (`pocketprep/rom-sources.json`) |
-| Card insight | `Get-PocketCardSummary`, `Get-PocketInstalledCore`, `Get-PocketCoreRequiredFile` (data.json BIOS/required files), `Get-PocketBiosStatus`, `Get-PocketDiskSpace`, `Import-PocketUsedCard` (onboard) |
-| Cores | `Get-PocketCoreManifest`, `Resolve-PocketCore`, `Test-PocketCoreZip`, `Install-PocketCore`, `Install-PocketCoreSet` (bulk/subset), `Get-PocketCoreUpdateStatus`, `Update-PocketCore` |
+| Card insight | `Get-PocketCardSummary`, `Get-PocketInstalledCore`, `Get-PocketCoreRequiredFile` (data.json BIOS/required files), `Get-PocketBiosStatus`, `Get-PocketDiskSpace`, `Import-PocketUsedCard` (onboard), `Get-PocketCardCleanup`/`Invoke-PocketCardCleanup` (safe leftovers cleanup) |
+| Cores | `Get-PocketCoreManifest`, `Resolve-PocketCore`, `Test-PocketCoreZip`, `Install-PocketCore`, `Install-PocketCoreSet` (bulk/subset), `Get-PocketCoreUpdateStatus`, `Update-PocketCore`, `Test-PocketCoreIntegrity`, `Repair-PocketCore` |
 | Folders | `New-PocketFolderStructure` |
 | Saves / removal | `Backup-PocketSaves`, `Restore-PocketSaves`, `Clear-PocketCard` (guarded), `Dismount-PocketDrive` (flush + best-effort eject) |
 | Config/data | `manifests/*.json` (+ `cores-supplement.json`) |

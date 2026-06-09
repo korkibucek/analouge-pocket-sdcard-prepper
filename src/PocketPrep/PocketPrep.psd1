@@ -46,6 +46,8 @@
         'Invoke-PocketRomRescan',
         'Get-PocketCardSummary',
         'Get-PocketDiskSpace',
+        'Get-PocketCardCleanup',
+        'Invoke-PocketCardCleanup',
         'Import-PocketUsedCard',
         'Get-PocketImportablePlatform',
         'Get-PocketKnownPlatform',
