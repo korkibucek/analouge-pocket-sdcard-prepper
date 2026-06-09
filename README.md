@@ -273,6 +273,14 @@ After cores are installed, the card breakdown flags any **required files a core 
 Engine CD core needs a BIOS you must supply. The tool **never downloads BIOS/ROMs** — it
 detects what's present and tells you the exact filename and where to put it.
 
+### Setup profiles (export / import)
+
+**Setup profiles** (💾 in the menu) let you **export** a card's setup — its installed cores,
+ROM source-folder mapping, and favourites — to a single JSON file (references only, **no
+ROMs or BIOS**), and **import** it onto a fresh card or after a reformat to reinstall the
+cores and restore the config/favourites (optionally copying the ROMs from your source folders
+in the same step). Handy for replicating a known-good setup across cards.
+
 ### Maintenance & cleanup
 
 A **Maintenance & cleanup** panel scans the card and reports leftovers — **unmanaged cores**

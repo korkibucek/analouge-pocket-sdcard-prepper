@@ -254,6 +254,27 @@ Describe 'Invoke-PocketApiRoute' {
         (Test-Path (Join-Path $script:root 'Assets/gb/common/EmptyBucket')) | Should -BeFalse
         (Test-Path (Join-Path $script:root 'Assets/gb/common/keep.gb')) | Should -BeTrue
     }
+    It 'GET /api/profile/export + POST /api/profile/import round-trip config & favourites' {
+        # Seed a source mapping + favourite, export, then import onto a fresh root.
+        Save-PocketRomConfig -Root $script:state.Root -Sources @([pscustomobject]@{ SystemId='gb'; Path='/roms/gb'; Recurse=$true }) | Out-Null
+        Save-PocketFavorite -Root $script:state.Root -PlatformId 'gb' -Names @('Tetris.gb') | Out-Null
+        $exp = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method GET -Path '/api/profile/export' -State $s }
+        $exp.Status | Should -Be 200
+        $exp.Body.romSources[0].systemId | Should -Be 'gb'
+
+        $dest = Join-Path ([System.IO.Path]::GetTempPath()) ("pfimp_" + [System.IO.Path]::GetRandomFileName())
+        New-Item -ItemType Directory $dest -Force | Out-Null
+        try {
+            $st2 = $script:state.Clone(); $st2.Root = $dest
+            $imp = InModuleScope PocketPrep -Parameters @{ s = $st2; b = [pscustomobject]@{ profile = $exp.Body } } { param($s,$b)
+                Invoke-PocketApiRoute -Method POST -Path '/api/profile/import' -Body $b -State $s }
+            $imp.Status | Should -Be 200
+            $imp.Body.RomSourcesRestored | Should -Be 1
+            (Get-PocketRomConfig -Root $dest).Exists | Should -BeTrue
+            @(Get-PocketFavorite -Root $dest -PlatformId 'gb') | Should -Contain 'Tetris.gb'
+        } finally { Remove-Item $dest -Recurse -Force -ErrorAction SilentlyContinue }
+    }
     It 'POST /api/card/onboard generates a config from existing card ROMs' {
         $common = Join-Path $script:root 'Assets/gb/common'; New-Item -ItemType Directory $common -Force | Out-Null
         'a' | Set-Content (Join-Path $common 'one.gb')
