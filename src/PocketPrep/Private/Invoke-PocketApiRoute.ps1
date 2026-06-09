@@ -269,6 +269,15 @@ function Invoke-PocketApiRoute {
                     -DryRun:([bool]$State.DryRun) -Overwrite:([bool]$Body.overwrite)
                 return @{ Status = 200; Body = $res }
             }
+            '^GET /api/cores/integrity$' {
+                return @{ Status = 200; Body = @{ cores = @(Test-PocketCoreIntegrity -Root $State.Root) } }
+            }
+            '^POST /api/cores/repair$' {
+                if (-not (Test-Path -LiteralPath $State.CoresManifest)) { return @{ Status = 400; Body = @{ error = 'No cores manifest available.' } } }
+                if (-not $Body.coreId) { return @{ Status = 400; Body = @{ error = 'Missing coreId.' } } }
+                $res = Repair-PocketCore -Root $State.Root -Id ([string]$Body.coreId) -CoresManifest $State.CoresManifest -DryRun:([bool]$State.DryRun)
+                return @{ Status = 200; Body = $res }
+            }
             '^GET /api/installed-cores$' {
                 return @{ Status = 200; Body = @{ cores = @(Get-PocketInstalledCore -Root $State.Root) } }
             }

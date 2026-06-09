@@ -284,6 +284,20 @@ Describe 'Invoke-PocketApiRoute' {
         $r.Body.PSObject.Properties.Name | Should -Contain 'PlatformProvided'
         $r.Body.PlatformProvided | Should -BeFalse   # no cores installed in this temp root
     }
+    It 'GET /api/cores/integrity flags a core missing required files' {
+        $cd = Join-Path $script:root 'Cores/broken.Core'; New-Item -ItemType Directory $cd -Force | Out-Null
+        @{ core = @{ metadata = @{ shortname='B'; author='x'; version='1'; platform_ids=@('gb') } } } | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $cd 'core.json')
+        # only core.json present -> missing data/video/input
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method GET -Path '/api/cores/integrity' -State $s }
+        $r.Status | Should -Be 200
+        ($r.Body.cores | Where-Object Identifier -eq 'broken.Core').Ok | Should -BeFalse
+    }
+    It 'POST /api/cores/repair rejects a missing coreId' {
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method POST -Path '/api/cores/repair' -Body ([pscustomobject]@{}) -State $s }
+        $r.Status | Should -Be 400
+    }
     It 'GET /api/cores/updates returns an updates array' {
         $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
             Invoke-PocketApiRoute -Method GET -Path '/api/cores/updates' -State $s }

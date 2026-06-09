@@ -495,6 +495,7 @@ async function stepCores() {
         <button data-i="${i}" data-mode="download" data-ow="${have ? 1 : 0}">${have ? 'Reinstall / update' : 'Download & install'}</button>
         <input type="text" id="cz${i}" placeholder="or path to ${c.Identifier} .zip">
         <button data-i="${i}" data-mode="offline" data-ow="${have ? 1 : 0}" class="secondary">Install local zip</button>
+        <button data-repair="${esc(c.Id)}" class="secondary" title="Re-download & reinstall this core's files (ROMs and saves are untouched)">Repair</button>
       </div><div id="cout${i}"></div></div>`;
   }).join('');
   panel(`<h2>5. openFPGA cores (optional)</h2>
@@ -511,6 +512,7 @@ async function stepCores() {
       </div><div id="allout"></div></div>
     <p><button id="chk" class="secondary">Check for updates</button>
        <button id="updall" class="secondary">Update all</button>
+       <button id="integ" class="secondary">Check integrity</button>
        <span id="updout" class="meta"></span></p>
     <div id="core-rows">${cores.length ? rows : '<p>No cores manifest available.</p>'}</div>
     <button id="c">Continue →</button>`);
@@ -571,6 +573,25 @@ async function stepCores() {
       out.innerHTML = `<p class="ok">${r.Identifier}: ${r.PlacedCount} placed, ${r.SkippedCount} skipped${r.Version ? ' (v' + r.Version + ')' : ''}${r.DryRun ? ' [dry-run]' : ''}</p>`;
     } catch (e) { out.innerHTML = errLine(e.message); } finally { busy(false); }
   });
+  // Per-core Repair: re-download & reinstall the core's files (ROMs/saves untouched).
+  document.querySelectorAll('button[data-repair]').forEach(btn => btn.onclick = async () => {
+    const row = btn.closest('.core-row'); const out = row ? row.querySelector('[id^=cout]') : null;
+    busy(true); if (out) out.innerHTML = inProgress(`Repairing ${btn.dataset.repair}`);
+    try { const r = await api('/api/cores/repair', 'POST', { coreId: btn.dataset.repair });
+      if (out) out.innerHTML = `<p class="ok">Repaired: ${r.PlacedCount} file(s) placed${r.Version ? ' (v' + r.Version + ')' : ''}${r.DryRun ? ' [dry-run]' : ''}. ROMs & saves untouched.</p>`;
+    } catch (e) { if (out) out.innerHTML = errLine(e.message); } finally { busy(false); }
+  });
+  // Integrity check: list installed cores missing required definition files.
+  $('#integ').onclick = async () => {
+    $('#updout').textContent = 'checking…'; busy(true);
+    try {
+      const c = (await api('/api/cores/integrity')).cores || [];
+      const bad = c.filter(x => !x.Ok);
+      $('#updout').innerHTML = c.length
+        ? (bad.length ? `<span class="warnote">${bad.length} core(s) look incomplete: ${bad.map(x => `${x.Identifier} (missing ${(x.Missing || []).join(', ') || 'core.json'})`).join('; ')} — use Repair.</span>` : `<span class="ok">All ${c.length} installed core(s) look intact.</span>`)
+        : 'no cores installed.';
+    } catch (e) { $('#updout').innerHTML = errLine(e.message); } finally { busy(false); }
+  };
 }
 
 /* ---- Step 5: ROMs ---- */
