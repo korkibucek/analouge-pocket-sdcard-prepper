@@ -9,6 +9,14 @@ nav#steps { display:flex; flex-wrap:wrap; gap:.35rem; padding:.6rem 1.25rem; bor
 nav#steps span { font-size:.78rem; padding:.15rem .55rem; border-radius:999px; background:#00000014; color:#666; }
 nav#steps span.active { background: var(--accent); color:#fff; }
 nav#steps span.done { background:#2d7d4633; color: var(--accent); }
+nav#steps span[data-go] { cursor:pointer; }
+nav#steps span[data-go]:hover { background:#2d7d4633; color: var(--accent); }
+nav#steps span.active[data-go]:hover { color:#fff; }
+/* Action hub buttons: full-width, left-aligned cards. */
+ul#menu-list { gap:.6rem; }
+button.menu-act { display:block; width:100%; text-align:left; background:#0000000a; color:inherit; border:1px solid var(--line); padding:.8rem 1rem; border-radius:8px; font-size:1rem; line-height:1.45; cursor:pointer; }
+button.menu-act:hover { background:#2d7d4622; border-color: var(--accent); }
+button.menu-act .meta { color:#777; font-size:.85rem; }
 main { padding: 1.25rem; max-width: 880px; margin: 0 auto; min-height: 40vh; }
 .panel h2 { margin-top:0; }
 footer { max-width:880px; margin:0 auto; padding: 0 1.25rem 2rem; display:flex; gap:.6rem; align-items:center; }

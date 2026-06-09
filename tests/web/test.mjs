@@ -84,5 +84,30 @@ for (const input of doc.querySelectorAll('input[type=radio], input[type=checkbox
   assert.ok(hasLabel, `form control #${input.id || input.outerHTML} must have an associated label`);
 }
 
-console.log(`OK: web UI bootstrapped, called [${[...new Set(calls)].join(', ')}], rendered the target step; a11y hooks present.`);
+// 6. Action hub: when a target is already selected, the app lands on the menu (not the
+//    forced wizard), shows the standalone action buttons, and the nav is clickable.
+const API2 = {
+  '/api/health': { ok: true, root: '/tmp/PocketSDTest', testMode: true, dryRun: false, targetReady: true },
+  '/api/card-summary': { Firmware: { Present: false }, Cores: { Count: 0 }, Roms: { TotalFiles: 0, Systems: [] }, Config: { Exists: false, SourceCount: 0 }, Bios: [] },
+};
+const calls2 = [];
+const dom2 = new JSDOM(html, {
+  runScripts: 'dangerously',
+  url: 'http://127.0.0.1:8770/',
+  beforeParse(win) {
+    win.fetch = (url) => { calls2.push(String(url).split('?')[0]); return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(API2[String(url).split('?')[0]] ?? {}) }); };
+    win.POCKETPREP_TOKEN = 'TESTTOKEN';
+  },
+});
+dom2.window.eval(appJs);
+await new Promise((r) => setTimeout(r, 400));
+const doc2 = dom2.window.document;
+const panel2 = doc2.getElementById('panel');
+assert.ok(/what do you want to do/i.test(panel2.textContent), 'target-ready boot should land on the action menu');
+assert.ok(panel2.querySelectorAll('button.menu-act').length >= 5, 'menu should offer multiple standalone actions');
+assert.ok(/upload roms/i.test(panel2.textContent), 'menu should offer an Upload ROMs action');
+const menuChip = [...doc2.querySelectorAll('#steps span[data-go]')].find(s => s.dataset.go === 'menu');
+assert.ok(menuChip, 'a clickable ☰ Menu nav chip should be present when a target is set');
+
+console.log(`OK: web UI bootstrapped, called [${[...new Set(calls)].join(', ')}], rendered the target step; action menu renders on target-ready boot; a11y hooks present.`);
 process.exit(0);
