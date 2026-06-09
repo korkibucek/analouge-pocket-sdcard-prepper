@@ -76,6 +76,9 @@ runs on Windows, Linux, and macOS.
 The default front-end is a **local web UI**. A text **CLI wizard** is also available with
 `--cli` (Linux/macOS) or `PocketPrep.cmd cli` (Windows).
 
+The header shows the card's **free / total space**, refreshed after big operations (core
+installs, ROM copies) so you can see headroom at a glance.
+
 Once you pick the SD card, the web UI shows an **action menu** — you don't have to run the
 whole wizard. Choose **Run the full setup wizard**, or jump straight to a single task:
 firmware, folder structure, cores (install/update), **upload ROMs**, or the card overview

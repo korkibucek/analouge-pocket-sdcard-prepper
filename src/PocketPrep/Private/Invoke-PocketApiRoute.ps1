@@ -61,6 +61,12 @@ function Invoke-PocketApiRoute {
                 $State.IsTestMode = $false; $State.TargetReady = $true
                 return @{ Status = 200; Body = @{ root = $State.Root; isTestMode = $false; ready = $true; verdict = $v } }
             }
+            '^GET /api/space$' {
+                # Free/total bytes on the current target volume, for the UI space indicator.
+                if (-not $State.Root) { return @{ Status = 200; Body = @{ ready = $false } } }
+                $sp = Get-PocketDiskSpace -Path $State.Root
+                return @{ Status = 200; Body = @{ ready = $true; freeBytes = $sp.FreeBytes; totalBytes = $sp.TotalBytes; usedBytes = $sp.UsedBytes } }
+            }
             '^GET /api/drives$' {
                 $all = if ($State.DriveProvider) {
                     Get-PocketRemovableDrive -DataProvider $State.DriveProvider -IncludeFixed
