@@ -119,6 +119,24 @@ async function refreshSpace() {
   try { S.space = await api('/api/space'); } catch { S.space = null; }
   setCtx();
 }
+// Global "Eject & quit": flush + eject the card then stop the app. Available on every page
+// (footer button) once a target is set. Clearly dangerous; behind a confirm.
+function wireEject() {
+  const btn = $('#ejectBtn');
+  if (!btn) return;
+  btn.hidden = !(S.health && S.health.targetReady);
+  btn.onclick = async () => {
+    if (!window.confirm('Eject the card and close the app?\n\nThis flushes pending writes and ejects the card, then shuts the server down. Make sure no operation is running.')) return;
+    busy(true);
+    try {
+      const r = await api('/api/eject', 'POST', {});
+      const safe = r.Ejected ? 'Card ejected — safe to remove.' : (r.Flushed ? 'Writes flushed. ' + (r.Message || 'Please eject the card via your OS before unplugging.') : (r.Message || ''));
+      try { await api('/api/shutdown', 'POST', {}); } catch { /* server going away */ }
+      panel(`<h2>Done</h2><p class="ok">${safe}</p><p>The app has been closed. You can close this tab.</p>`);
+    } catch (e) { panel(`<h2>Done</h2>` + errLine(e.message) + '<p>You can close this tab; eject the card via your OS to be safe.</p>'); }
+    finally { busy(false); }
+  };
+}
 function go(step) { S.step = step; renderNav(); if (step === 'menu') { showMenu(); } else if (step === 'favorites') { showFavorites(); } else { RENDER[step](); } }
 
 /* ---- Favourites: tag ROMs; surfaced in a per-system Favorites folder ---- */
@@ -242,7 +260,7 @@ async function onUseTarget() {
     }
     const r = await api('/api/target', 'POST', body);
     S.health = await api('/api/health'); setCtx();
-    refreshSpace();
+    refreshSpace(); wireEject();
     go('menu');
   } catch (e) {
     const reasons = e.data && e.data.verdict && e.data.verdict.Reasons ? '<ul>' + e.data.verdict.Reasons.map(x => `<li>${x}</li>`).join('') + '</ul>' : '';
@@ -689,6 +707,7 @@ const RENDER = [stepTarget, stepCard, stepFirmware, stepFolders, stepCores, step
   try {
     S.health = await api('/api/health'); setCtx();
     if (S.health.targetReady) { refreshSpace(); }
+    wireEject();
     go(S.health.targetReady ? 'menu' : 0);
   } catch (e) {
     panel(errLine('Could not reach the local server: ' + e.message));

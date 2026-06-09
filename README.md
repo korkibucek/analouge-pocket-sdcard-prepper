@@ -77,7 +77,10 @@ The default front-end is a **local web UI**. A text **CLI wizard** is also avail
 `--cli` (Linux/macOS) or `PocketPrep.cmd cli` (Windows).
 
 The header shows the card's **free / total space**, refreshed after big operations (core
-installs, ROM copies) so you can see headroom at a glance.
+installs, ROM copies) so you can see headroom at a glance. A red **⏏ Eject & quit** button is
+available in the footer on **every page** — it flushes pending writes, best-effort
+ejects/unmounts the card, then closes the app, so you can safely finish from anywhere (it
+never touches the system drive, and tells you if you need to eject manually).
 
 Once you pick the SD card, the web UI shows an **action menu** — you don't have to run the
 whole wizard. Choose **Run the full setup wizard**, or jump straight to a single task:

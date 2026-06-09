@@ -44,6 +44,13 @@ Describe 'Invoke-PocketApiRoute' {
         @($r.Body.candidates).Count | Should -Be 1       # the exFAT 64GB fixed disk
         $r.Body.candidates[0].RootPath | Should -Be 'G:\'
     }
+    It 'POST /api/eject flushes (flush-only in test mode) without throwing' {
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method POST -Path '/api/eject' -Body ([pscustomobject]@{}) -State $s }
+        $r.Status | Should -Be 200
+        $r.Body.Flushed | Should -BeTrue
+        $r.Body.Skipped | Should -BeTrue   # test-mode state -> flush only, no eject
+    }
     It 'GET /api/space reports free/total bytes for the target volume' {
         $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
             Invoke-PocketApiRoute -Method GET -Path '/api/space' -State $s }

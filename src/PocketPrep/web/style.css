@@ -22,6 +22,8 @@ main { padding: 1.25rem; max-width: 880px; margin: 0 auto; min-height: 40vh; }
 footer { max-width:880px; margin:0 auto; padding: 0 1.25rem 2rem; display:flex; gap:.6rem; align-items:center; }
 button { background: var(--accent); color:#fff; border:0; padding:.55rem 1rem; border-radius:6px; cursor:pointer; font-size:.95rem; }
 button.secondary { background:#888; }
+button.danger { background: var(--err); }
+button.danger:hover { background:#8a0019; }
 button:disabled { opacity:.5; cursor:not-allowed; }
 .busy { color:#888; font-style:italic; }
 .error { color: var(--err); font-weight:600; }
