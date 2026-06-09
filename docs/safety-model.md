@@ -26,6 +26,9 @@ outcome is "files copied to the wrong folder"** — never data loss.
    Nothing removes user content. (The tool removes only its own temporary download
    folder, now-empty organize subfolders, and untagged entries inside the managed Favorites
    folder.)
+   **Region de-duplication** (`Invoke-PocketRomRegionDedupe`) **moves** non-preferred region
+   duplicates to a reversible quarantine (`pocketprep/quarantine/<platformId>/`, outside
+   `Assets`) — it never deletes a ROM, and the preferred copy stays in place.
    The **Eject & quit** action (`Dismount-PocketDrive`) only **flushes** writes and
    **best-effort unmounts/ejects** the selected removable target — it never writes, deletes,
    or touches a system/protected volume, and never throws (it reports if you must eject

@@ -256,6 +256,17 @@ After cores are installed, the card breakdown flags any **required files a core 
 Engine CD core needs a BIOS you must supply. The tool **never downloads BIOS/ROMs** — it
 detects what's present and tells you the exact filename and where to put it.
 
+### De-duplicate by region (1G1R-style)
+
+Got the same game as **USA, Europe and Japan**? Set your **region priority** (e.g.
+`USA, EU, JPN, Global`) and the tool finds region variants of the same title and
+**recommends which to remove**, keeping your preferred region (so a PAL fan keeps the Europe
+copy and drops NTSC/NTSC-J). It parses No-Intro/Redump-style region tags, and is careful:
+different **discs** and **revisions** are never collapsed, and region-less files are left
+alone. Applying is **reversible** — the non-preferred copies are *moved* to
+`pocketprep/quarantine/<platform>/` (outside the game folders, so the Pocket won't see them);
+**nothing is deleted**, and you can restore or delete the quarantine yourself.
+
 ### Favourites
 
 Tag ROMs as **favourites** (⭐ Favourites in the menu): pick a system, filter, tick the

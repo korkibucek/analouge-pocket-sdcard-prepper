@@ -127,6 +127,18 @@ function Invoke-PocketApiRoute {
             '^GET /api/systems$' {
                 return @{ Status = 200; Body = @{ systems = @(Get-PocketSystem -Path $State.SystemsManifest) } }
             }
+            '^POST /api/rom/dedupe/plan$' {
+                $platId = [string]$Body.platformId
+                if (-not $platId) { return @{ Status = 400; Body = @{ error = 'Missing platformId.' } } }
+                $order = if ($Body.regionOrder) { @($Body.regionOrder) } else { @('USA','EU','JPN','Global') }
+                return @{ Status = 200; Body = (Get-PocketRomRegionDuplicate -Root $State.Root -PlatformId $platId -RegionOrder $order) }
+            }
+            '^POST /api/rom/dedupe$' {
+                $platId = [string]$Body.platformId
+                if (-not $platId) { return @{ Status = 400; Body = @{ error = 'Missing platformId.' } } }
+                $order = if ($Body.regionOrder) { @($Body.regionOrder) } else { @('USA','EU','JPN','Global') }
+                return @{ Status = 200; Body = (Invoke-PocketRomRegionDedupe -Root $State.Root -PlatformId $platId -RegionOrder $order -DryRun:([bool]$State.DryRun)) }
+            }
             '^POST /api/rom/organize/plan$' {
                 $platId = [string]$Body.platformId
                 if (-not $platId) { return @{ Status = 400; Body = @{ error = 'Missing platformId.' } } }
