@@ -73,8 +73,14 @@ runs on Windows, Linux, and macOS.
 
 ## How to run
 
-The default front-end is a **local web UI** (a wizard in your browser). A text **CLI
-wizard** is also available with `--cli` (Linux/macOS) or `PocketPrep.cmd cli` (Windows).
+The default front-end is a **local web UI**. A text **CLI wizard** is also available with
+`--cli` (Linux/macOS) or `PocketPrep.cmd cli` (Windows).
+
+Once you pick the SD card, the web UI shows an **action menu** — you don't have to run the
+whole wizard. Choose **Run the full setup wizard**, or jump straight to a single task:
+firmware, folder structure, cores (install/update), **upload ROMs**, or the card overview
+(breakdown / reorganize / onboard). The step bar is clickable and **☰ Menu** returns you
+to the hub from anywhere.
 
 ### Windows
 Double-click **`PocketPrep.cmd`** — it starts the web UI in your browser. For the text

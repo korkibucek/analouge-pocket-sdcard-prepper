@@ -73,8 +73,37 @@ const STEP_LABELS = ['Target', 'Card', 'Firmware', 'Folders', 'Cores', 'ROMs', '
 const S = { health: null, step: 0, drive: null, firmware: null, folder: null, roms: [], cores: [] };
 
 function renderNav() {
-  $('#steps').innerHTML = STEP_LABELS.map((l, i) =>
-    `<span class="${i === S.step ? 'active' : (i < S.step ? 'done' : '')}">${i + 1}. ${l}</span>`).join('');
+  // Non-linear once a target is set: every chip (and the Menu) is clickable.
+  const ready = !!(S.health && S.health.targetReady);
+  const chip = (label, key) => {
+    const active = key === S.step ? ' active' : '';
+    const nav = ready ? ` role="button" tabindex="0" data-go="${key}"` : '';
+    return `<span class="${active.trim()}"${nav}>${label}</span>`;
+  };
+  const steps = STEP_LABELS.map((l, i) => chip(`${i + 1}. ${l}`, i)).join('');
+  $('#steps').innerHTML = chip('☰ Menu', 'menu') + steps;
+  document.querySelectorAll('#steps span[data-go]').forEach(s => {
+    const t = s.dataset.go === 'menu' ? 'menu' : +s.dataset.go;
+    s.onclick = () => go(t);
+    s.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(t); } };
+  });
+}
+/* ---- Action hub: pick a single task or run the full wizard ---- */
+function showMenu() {
+  const acts = [
+    { go: 1, icon: '🧙', label: 'Run the full setup wizard', desc: 'Step through firmware, folders, cores and ROMs in order.' },
+    { go: 1, icon: '💳', label: 'Card overview, breakdown & reorganize ROMs', desc: "See what's installed; split big libraries into folders; onboard a used card." },
+    { go: 2, icon: '🔧', label: 'Firmware', desc: 'Install or update the Analogue Pocket firmware.' },
+    { go: 3, icon: '📁', label: 'Folder structure', desc: 'Create the openFPGA folder structure on the card.' },
+    { go: 4, icon: '🧩', label: 'Cores: install / update', desc: 'Install the whole core set or update installed cores.' },
+    { go: 5, icon: '🎮', label: 'Upload ROMs', desc: 'Copy ROMs for any core (built-in, installed, catalog or custom).' },
+    { go: 6, icon: '🧾', label: 'Summary', desc: 'Review what was done this session.' }
+  ];
+  panel(`<h2>What do you want to do?</h2>
+    <p class="meta">Pick a single task, or run the full wizard. Return here any time via <strong>☰ Menu</strong>.</p>
+    <ul class="list" id="menu-list">${acts.map((a, i) =>
+      `<li><button class="menu-act" data-i="${i}">${a.icon} <strong>${a.label}</strong><br><span class="meta">${a.desc}</span></button></li>`).join('')}</ul>`);
+  document.querySelectorAll('.menu-act').forEach(b => b.onclick = () => go(acts[+b.dataset.i].go));
 }
 function setCtx() {
   const h = S.health;
@@ -82,7 +111,7 @@ function setCtx() {
     ? `Target: ${h.root}${h.testMode ? ' (TEST MODE)' : ''}${h.dryRun ? ' · DRY-RUN' : ''}`
     : 'No target selected yet';
 }
-function go(step) { S.step = step; renderNav(); RENDER[step](); }
+function go(step) { S.step = step; renderNav(); if (step === 'menu') { showMenu(); } else { RENDER[step](); } }
 
 /* ---- Step 0: Target ---- */
 async function stepTarget() {
@@ -131,7 +160,7 @@ async function onUseTarget() {
     }
     const r = await api('/api/target', 'POST', body);
     S.health = await api('/api/health'); setCtx();
-    go(1);
+    go('menu');
   } catch (e) {
     const reasons = e.data && e.data.verdict && e.data.verdict.Reasons ? '<ul>' + e.data.verdict.Reasons.map(x => `<li>${x}</li>`).join('') + '</ul>' : '';
     $('#terr').innerHTML = errLine(e.message) + reasons;
@@ -504,7 +533,7 @@ const RENDER = [stepTarget, stepCard, stepFirmware, stepFolders, stepCores, step
   window.__pocketUp = true;
   try {
     S.health = await api('/api/health'); setCtx();
-    go(S.health.targetReady ? 1 : 0);
+    go(S.health.targetReady ? 'menu' : 0);
   } catch (e) {
     panel(errLine('Could not reach the local server: ' + e.message));
   }
