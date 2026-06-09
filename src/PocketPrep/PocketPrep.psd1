@@ -55,6 +55,7 @@
         'Backup-PocketSaves',
         'Restore-PocketSaves',
         'Clear-PocketCard',
+        'Dismount-PocketDrive',
         'Start-PocketPrepServer'
     )
     CmdletsToExport   = @()

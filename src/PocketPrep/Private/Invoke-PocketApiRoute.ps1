@@ -61,6 +61,13 @@ function Invoke-PocketApiRoute {
                 $State.IsTestMode = $false; $State.TargetReady = $true
                 return @{ Status = 200; Body = @{ root = $State.Root; isTestMode = $false; ready = $true; verdict = $v } }
             }
+            '^POST /api/eject$' {
+                # Flush + best-effort unmount/eject the target so it's safe to remove. In test
+                # mode (fake root on the system volume) it flushes only.
+                if (-not $State.Root) { return @{ Status = 400; Body = @{ error = 'No target selected.' } } }
+                $res = Dismount-PocketDrive -Root $State.Root -FlushOnly:([bool]$State.IsTestMode)
+                return @{ Status = 200; Body = $res }
+            }
             '^GET /api/space$' {
                 # Free/total bytes on the current target volume, for the UI space indicator.
                 if (-not $State.Root) { return @{ Status = 200; Body = @{ ready = $false } } }

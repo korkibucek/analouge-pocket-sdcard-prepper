@@ -26,6 +26,10 @@ outcome is "files copied to the wrong folder"** — never data loss.
    Nothing removes user content. (The tool removes only its own temporary download
    folder, now-empty organize subfolders, and untagged entries inside the managed Favorites
    folder.)
+   The **Eject & quit** action (`Dismount-PocketDrive`) only **flushes** writes and
+   **best-effort unmounts/ejects** the selected removable target — it never writes, deletes,
+   or touches a system/protected volume, and never throws (it reports if you must eject
+   manually).
 2. **Removable-only by default.** `Get-PocketRemovableDrive` returns removable media
    only; fixed disks appear only with `-IncludeFixed` (advanced).
 3. **System volumes can never be targeted (any OS).** `Test-PocketDriveSafety` rejects

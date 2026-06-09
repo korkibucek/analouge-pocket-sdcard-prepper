@@ -109,6 +109,9 @@ assert.ok(/upload roms/i.test(panel2.textContent), 'menu should offer an Upload 
 assert.ok(/favourites/i.test(panel2.textContent), 'menu should offer a Favourites action');
 const menuChip = [...doc2.querySelectorAll('#steps span[data-go]')].find(s => s.dataset.go === 'menu');
 assert.ok(menuChip, 'a clickable ☰ Menu nav chip should be present when a target is set');
+const ejectBtn = doc2.getElementById('ejectBtn');
+assert.ok(ejectBtn && !ejectBtn.hidden, 'the global Eject & quit button should be visible once a target is set');
+assert.ok(ejectBtn.classList.contains('danger'), 'the Eject & quit button should be styled as dangerous');
 
 console.log(`OK: web UI bootstrapped, called [${[...new Set(calls)].join(', ')}], rendered the target step; action menu renders on target-ready boot; a11y hooks present.`);
 process.exit(0);
