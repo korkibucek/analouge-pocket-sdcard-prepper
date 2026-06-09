@@ -98,6 +98,9 @@ function Get-PocketCardSummary {
         @(Get-PocketBiosStatus -Root $Root -SystemsManifest $SystemsManifest)
     } else { @() }
 
+    # --- Required files declared by installed cores (data.json-driven; e.g. BIOS) ------
+    $requiredFiles = @(Get-PocketCoreRequiredFile -Root $Root)
+
     # --- Saved ROM config (#117) -------------------------------------------------------
     $config = Get-PocketRomConfig -Root $Root
 
@@ -118,5 +121,6 @@ function Get-PocketCardSummary {
             SourceCount = @($config.Sources).Count
         }
         Bios       = @($bios)
+        RequiredFiles = @($requiredFiles)
     }
 }

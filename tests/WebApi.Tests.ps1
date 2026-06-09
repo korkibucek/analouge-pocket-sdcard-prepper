@@ -164,6 +164,15 @@ Describe 'Invoke-PocketApiRoute' {
         $r.Status | Should -Be 200
         (Test-Path (Join-Path $script:state.Root 'Assets/wonderswan/common/g.ws')) | Should -BeTrue
     }
+    It 'GET /api/required-files flags an installed core''s missing required file' {
+        $cd = Join-Path $script:root 'Cores/Test.NeoGeo'; New-Item -ItemType Directory $cd -Force | Out-Null
+        @{ core = @{ metadata = @{ shortname='NG'; author='x'; version='1'; platform_ids=@('ng') } } } | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $cd 'core.json')
+        @{ data = @{ data_slots = @(@{ name='BIOS'; required=$true; filename='uni-bios.rom' }) } } | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $cd 'data.json')
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method GET -Path '/api/required-files' -State $s }
+        $r.Status | Should -Be 200
+        ($r.Body.cores | Where-Object Identifier -eq 'Test.NeoGeo').Missing | Should -Contain 'uni-bios.rom'
+    }
     It 'GET /api/bios-status flags missing Neo Geo BIOS (never downloads it)' {
         $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
             Invoke-PocketApiRoute -Method GET -Path '/api/bios-status' -State $s }

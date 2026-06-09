@@ -242,6 +242,14 @@ short token appended to keep them unique — so they stay within the FAT/exFAT 2
 hard limit and the Pocket's practical preference for short names. This is also idempotent and
 move/rename only.
 
+### "What do I still need?" — required-file detection
+
+After cores are installed, the card breakdown flags any **required files a core is missing**
+— read straight from each core's `data.json` (its required data slots), so it's correct for
+*any* core, not just a hard-coded list. This is how you find out, e.g., that a Neo Geo or PC
+Engine CD core needs a BIOS you must supply. The tool **never downloads BIOS/ROMs** — it
+detects what's present and tells you the exact filename and where to put it.
+
 ### Favourites
 
 Tag ROMs as **favourites** (⭐ Favourites in the menu): pick a system, filter, tick the

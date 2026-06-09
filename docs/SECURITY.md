@@ -15,6 +15,9 @@ See [safety-model.md](safety-model.md) for the full picture. In short:
   before placement. Core downloads are restricted to GitHub hosts.
 - Copyrighted system BIOS (e.g. the Neo Geo BIOS) is **never downloaded or supplied**. The
   tool only *detects* whether a BIOS you provided is present and guides you to add your own.
+  This detection is **data.json-driven**: it reads each installed core's declared required
+  data slots, so it correctly flags missing required files for *any* core — still without
+  ever fetching them.
 - Core zips are checked for path-traversal (zip-slip) entries and rejected; extraction
   is constrained to the SD root.
 
