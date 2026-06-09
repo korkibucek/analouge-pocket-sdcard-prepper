@@ -114,7 +114,9 @@ function Invoke-PocketApiRoute {
                 $excl = @()
                 try { $sys = @(Get-PocketSystem -Path $State.SystemsManifest) | Where-Object { $_.PlatformId -eq $platId } | Select-Object -First 1
                       if ($sys) { $excl = @($sys.BiosFiles) } } catch { $excl = @() }
-                $plan = New-PocketRomOrganizePlan -Root $State.Root -PlatformId $platId -MaxPerFolder $cap -ExcludeFiles $excl
+                $maxLen = if ($Body.maxFileNameLength) { [int]$Body.maxFileNameLength } else { 100 }
+                $plan = New-PocketRomOrganizePlan -Root $State.Root -PlatformId $platId -MaxPerFolder $cap -ExcludeFiles $excl `
+                    -ShortenNames:([bool]$Body.shortenNames) -MaxFileNameLength $maxLen
                 return @{ Status = 200; Body = $plan }
             }
             '^POST /api/rom/organize$' {
@@ -124,7 +126,9 @@ function Invoke-PocketApiRoute {
                 $excl = @()
                 try { $sys = @(Get-PocketSystem -Path $State.SystemsManifest) | Where-Object { $_.PlatformId -eq $platId } | Select-Object -First 1
                       if ($sys) { $excl = @($sys.BiosFiles) } } catch { $excl = @() }
-                $plan = New-PocketRomOrganizePlan -Root $State.Root -PlatformId $platId -MaxPerFolder $cap -ExcludeFiles $excl
+                $maxLen = if ($Body.maxFileNameLength) { [int]$Body.maxFileNameLength } else { 100 }
+                $plan = New-PocketRomOrganizePlan -Root $State.Root -PlatformId $platId -MaxPerFolder $cap -ExcludeFiles $excl `
+                    -ShortenNames:([bool]$Body.shortenNames) -MaxFileNameLength $maxLen
                 $res = Invoke-PocketRomOrganizePlan -Plan $plan -DryRun:([bool]$State.DryRun)
                 return @{ Status = 200; Body = $res }
             }

@@ -107,6 +107,17 @@ Describe 'Invoke-PocketApiRoute' {
         $r.Body.MovedCount | Should -Be 6
         @(Get-ChildItem -LiteralPath $common -File).Count | Should -Be 0   # all in subfolders now
     }
+    It 'POST /api/rom/organize shortens overlong filenames when requested' {
+        $common = Join-Path $script:root 'Assets/gb/common'; New-Item -ItemType Directory $common -Force | Out-Null
+        $long = ('L' * 130) + '.gb'
+        'rom' | Set-Content (Join-Path $common $long)
+        $body = [pscustomobject]@{ platformId='gb'; maxPerFolder=1000; shortenNames=$true; maxFileNameLength=40 }
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = $body } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/rom/organize' -Body $b -State $s }
+        $r.Status | Should -Be 200
+        $r.Body.RenamedCount | Should -Be 1
+        (Get-ChildItem -LiteralPath $common -File)[0].Name.Length | Should -BeLessOrEqual 40
+    }
     It 'GET /api/rom/extra-platforms + plan/copy work for an installed-core platform' {
         # Install a fake core that declares a platform the manifest does not know.
         $coreDir = Join-Path $script:root 'Cores/Some.WonderSwan'; New-Item -ItemType Directory $coreDir -Force | Out-Null

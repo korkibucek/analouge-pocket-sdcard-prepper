@@ -54,6 +54,42 @@ Describe 'New-PocketRomOrganizePlan' {
     It 'throws for a platform with no ROM folder' {
         { New-PocketRomOrganizePlan -Root $script:root -PlatformId 'nope' } | Should -Throw
     }
+
+    It 'does not rename anything without -ShortenNames' {
+        $long = ('X' * 120) + '.gb'
+        New-Roms $script:common @($long, 'short.gb')
+        $plan = New-PocketRomOrganizePlan -Root $script:root -PlatformId 'gb' -MaxPerFolder 1000
+        $plan.RenamedCount | Should -Be 0
+    }
+
+    It 'shortens overlong names, preserving the extension and staying within the cap' {
+        $long = ('VeryLongRomName ' * 10).Trim().Replace(' ', '') + '.gb'   # ~150 chars
+        New-Roms $script:common @($long, 'fine.gb')
+        $plan = New-PocketRomOrganizePlan -Root $script:root -PlatformId 'gb' -MaxPerFolder 1000 -ShortenNames -MaxFileNameLength 40
+        $plan.RenamedCount | Should -Be 1
+        $r = $plan.Renamed[0]
+        $r.To.Length | Should -BeLessOrEqual 40
+        [System.IO.Path]::GetExtension($r.To) | Should -Be '.gb'
+        ($plan.Items | Where-Object { $_.OriginalName -eq 'fine.gb' }).Renamed | Should -BeFalse
+    }
+
+    It 'disambiguates two long names that shorten to the same stem' {
+        $a = ('SameStemAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' + '1') + '.gb'
+        $b = ('SameStemAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' + '2') + '.gb'
+        New-Roms $script:common @($a, $b)
+        $plan = New-PocketRomOrganizePlan -Root $script:root -PlatformId 'gb' -MaxPerFolder 1000 -ShortenNames -MaxFileNameLength 24
+        # Two distinct destinations (no collision).
+        @($plan.Items.Destination | Select-Object -Unique).Count | Should -Be 2
+    }
+
+    It 'shortening is idempotent (already-short names are left alone on re-run)' {
+        $long = ('Z' * 130) + '.gb'
+        New-Roms $script:common @($long)
+        $p1 = New-PocketRomOrganizePlan -Root $script:root -PlatformId 'gb' -ShortenNames -MaxFileNameLength 40
+        Invoke-PocketRomOrganizePlan -Plan $p1 | Out-Null
+        $p2 = New-PocketRomOrganizePlan -Root $script:root -PlatformId 'gb' -ShortenNames -MaxFileNameLength 40
+        $p2.RenamedCount | Should -Be 0
+    }
 }
 
 Describe 'Invoke-PocketRomOrganizePlan' {
