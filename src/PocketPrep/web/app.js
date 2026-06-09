@@ -165,6 +165,7 @@ function cardBreakdownHtml(sum) {
       <p class="meta">Select the cores to reorganize; each is split into alphabetical subfolders. Move-only — nothing is deleted.</p>
       <div id="org-list">${romSystems.map(s => `<label class="row"><input type="checkbox" class="org-pick" value="${s.PlatformId}"> ${s.DisplayName} <span class="meta">(${s.FileCount} ROMs)</span></label>`).join('')}</div>
       <label class="row">Max games per folder: <input type="number" id="org-cap" value="1000" min="1" style="min-width:6rem"></label>
+      <label class="row"><input type="checkbox" id="org-shorten"> Shorten overlong filenames to <input type="number" id="org-namelen" value="100" min="16" max="255" style="min-width:5rem"> chars</label>
       <div class="row"><button id="org-preview" class="secondary">Preview</button><button id="org-run">Organize selected</button></div>
       <div id="org-out"></div>
     </details>` : '';
@@ -204,6 +205,8 @@ async function stepCard() {
     // Library Organizer: preview (dry-run) or run the subfoldering for each selected platform.
     const orgPicks = () => Array.from(document.querySelectorAll('.org-pick:checked')).map(c => c.value);
     const orgCap = () => Math.max(1, parseInt(($('#org-cap') || {}).value, 10) || 1000);
+    const orgShorten = () => !!($('#org-shorten') || {}).checked;
+    const orgNameLen = () => Math.min(255, Math.max(16, parseInt(($('#org-namelen') || {}).value, 10) || 100));
     const orgRun = async (dry) => {
       const picks = orgPicks();
       if (!picks.length) { $('#org-out').innerHTML = errLine('Select at least one core.'); return; }
@@ -211,12 +214,14 @@ async function stepCard() {
       try {
         const lines = [];
         for (const platformId of picks) {
+          const body = { platformId, maxPerFolder: orgCap(), shortenNames: orgShorten(), maxFileNameLength: orgNameLen() };
           if (dry) {
-            const p = await api('/api/rom/organize/plan', 'POST', { platformId, maxPerFolder: orgCap() });
-            lines.push(`${platformId}: ${p.FileCount} ROMs → ${p.NeedsBuckets ? `${p.BucketCount} folder(s) (${p.MoveCount} move(s))` : 'fits in one folder, no change'}`);
+            const p = await api('/api/rom/organize/plan', 'POST', body);
+            const ren = p.RenamedCount ? `, ${p.RenamedCount} rename(s)` : '';
+            lines.push(`${platformId}: ${p.FileCount} ROMs → ${p.NeedsBuckets ? `${p.BucketCount} folder(s) (${p.MoveCount} move(s))` : 'fits in one folder'}${ren}`);
           } else {
-            const r = await api('/api/rom/organize', 'POST', { platformId, maxPerFolder: orgCap() });
-            lines.push(`${platformId}: moved ${r.MovedCount}, skipped ${r.SkippedCount}, failed ${r.FailedCount}${r.DryRun ? ' [dry-run]' : ''}`);
+            const r = await api('/api/rom/organize', 'POST', body);
+            lines.push(`${platformId}: moved ${r.MovedCount} (${r.RenamedCount} renamed), skipped ${r.SkippedCount}, failed ${r.FailedCount}${r.DryRun ? ' [dry-run]' : ''}`);
           }
         }
         $('#org-out').innerHTML = `<p class="${dry ? '' : 'ok'}">${lines.join('<br>')}</p>`;

@@ -226,6 +226,12 @@ size (default **1000**). It's **move-only** — nothing is deleted or overwritte
 are left in place, there's a dry-run **Preview**, and re-running is idempotent. Analogue's
 docs explicitly allow these custom subdirectories.
 
+The same tool can optionally **shorten overlong filenames** (tick *Shorten overlong
+filenames*): names longer than your chosen limit are truncated — extension preserved, with a
+short token appended to keep them unique — so they stay within the FAT/exFAT 255-character
+hard limit and the Pocket's practical preference for short names. This is also idempotent and
+move/rename only.
+
 ### Onboard an already-used card
 
 Inserted a card that was set up elsewhere and already has ROMs on it? The tool can

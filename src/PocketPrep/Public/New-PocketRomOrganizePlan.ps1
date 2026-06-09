@@ -39,10 +39,19 @@ function New-PocketRomOrganizePlan {
 
         [int] $MaxPerFolder = 1000,
 
-        [string[]] $ExcludeFiles = @()
+        [string[]] $ExcludeFiles = @(),
+
+        # Shorten ROM filenames that exceed MaxFileNameLength (keeping the extension and
+        # uniqueness). FAT32/exFAT allow at most 255 chars per name; the Pocket community
+        # recommends shorter names. Off by default.
+        [switch] $ShortenNames,
+
+        [int] $MaxFileNameLength = 100
     )
 
     if ($MaxPerFolder -lt 1) { throw "MaxPerFolder must be at least 1." }
+    # Clamp the name cap: never above the FAT/exFAT hard limit (255), never absurdly small.
+    $nameCap = [Math]::Max(16, [Math]::Min($MaxFileNameLength, 255))
     $common = Join-Path (Join-Path (Join-Path $Root 'Assets') $PlatformId) 'common'
     if (-not (Test-Path -LiteralPath $common -PathType Container)) {
         throw "No ROM folder for platform '$PlatformId' at $common"
@@ -57,6 +66,23 @@ function New-PocketRomOrganizePlan {
         $c = ($name.Trim()).ToUpperInvariant()
         $ch = if ($c.Length -gt 0) { $c[0] } else { '#' }
         if ($ch -ge 'A' -and $ch -le 'Z') { [string]$ch } else { '#' }
+    }
+
+    # Shorten an overlong filename: keep the extension, truncate the base, and append a short
+    # deterministic token (from the original name) to keep distinct long names distinct. Names
+    # already within the cap are returned unchanged, so re-running is idempotent.
+    $shorten = {
+        param($name)
+        if (-not $ShortenNames -or $name.Length -le $nameCap) { return $name }
+        $ext = [System.IO.Path]::GetExtension($name)
+        $bn  = [System.IO.Path]::GetFileNameWithoutExtension($name)
+        $md5 = [System.Security.Cryptography.MD5]::Create()
+        try { $hash = $md5.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($name)) } finally { $md5.Dispose() }
+        $suffix = '~' + (($hash[0].ToString('x2') + $hash[1].ToString('x2')))   # ~ + 4 hex chars
+        $budget = $nameCap - $ext.Length - $suffix.Length
+        if ($budget -lt 1) { $budget = 1 }
+        if ($bn.Length -gt $budget) { $bn = $bn.Substring(0, $budget) }
+        return ($bn + $suffix + $ext)
     }
 
     $all = @(Get-ChildItem -LiteralPath $common -File -Recurse -ErrorAction SilentlyContinue)
@@ -88,13 +114,14 @@ function New-PocketRomOrganizePlan {
         $bucket = if ($needsBuckets) { $bucketOf[$idx] } else { '' }
         $destDir = if ($bucket) { Join-Path $commonFull $bucket } else { $commonFull }
 
-        # Ensure a unique leaf within the destination folder (recursion can surface two files
-        # with the same name from different old subfolders).
-        $leaf = $f.Name
+        # Shorten an overlong name first, then ensure a unique leaf within the destination
+        # folder (recursion can surface two files with the same name from different old
+        # subfolders, and shortening can map two long names to the same short stem).
+        $leaf = & $shorten $f.Name
         $key = (Join-Path $destDir $leaf).ToLowerInvariant()
         if ($seenDest.ContainsKey($key)) {
-            $bn = [System.IO.Path]::GetFileNameWithoutExtension($f.Name)
-            $ext = [System.IO.Path]::GetExtension($f.Name)
+            $bn = [System.IO.Path]::GetFileNameWithoutExtension($leaf)
+            $ext = [System.IO.Path]::GetExtension($leaf)
             $n = 2
             do { $leaf = "$bn~$n$ext"; $key = (Join-Path $destDir $leaf).ToLowerInvariant(); $n++ }
             while ($seenDest.ContainsKey($key))
@@ -107,28 +134,36 @@ function New-PocketRomOrganizePlan {
                   else { 'Move' }
 
         [pscustomobject]@{
-            Source      = $f.FullName
-            Destination = $dest
-            Bucket      = $bucket
-            Action      = $action
-            SizeBytes   = $f.Length
+            Source       = $f.FullName
+            Destination  = $dest
+            Bucket       = $bucket
+            Action       = $action
+            SizeBytes    = $f.Length
+            OriginalName = $f.Name
+            NewName      = $leaf
+            Renamed      = ($leaf -ne $f.Name)
         }
     }
     $items = @($items)
     $moves = @($items | Where-Object { $_.Action -ne 'None' })
+    $renamed = @($items | Where-Object { $_.Renamed })
     $buckets = @($items | Where-Object { $_.Bucket } | ForEach-Object { $_.Bucket } | Select-Object -Unique)
 
     [pscustomobject]@{
-        PSTypeName    = 'PocketPrep.RomOrganizePlan'
-        PlatformId    = $PlatformId
-        Common        = $commonFull
-        FileCount     = $files.Count
-        ExcludedCount = $excludedCount
-        MaxPerFolder  = $MaxPerFolder
-        NeedsBuckets  = $needsBuckets
-        BucketCount   = $buckets.Count
-        Buckets       = @($buckets)
-        MoveCount     = $moves.Count
-        Items         = $items
+        PSTypeName        = 'PocketPrep.RomOrganizePlan'
+        PlatformId        = $PlatformId
+        Common            = $commonFull
+        FileCount         = $files.Count
+        ExcludedCount     = $excludedCount
+        MaxPerFolder      = $MaxPerFolder
+        NeedsBuckets      = $needsBuckets
+        BucketCount       = $buckets.Count
+        Buckets           = @($buckets)
+        MoveCount         = $moves.Count
+        ShortenNames      = [bool]$ShortenNames
+        MaxFileNameLength = $nameCap
+        RenamedCount      = $renamed.Count
+        Renamed           = @($renamed | ForEach-Object { [pscustomobject]@{ From = $_.OriginalName; To = $_.NewName } })
+        Items             = $items
     }
 }

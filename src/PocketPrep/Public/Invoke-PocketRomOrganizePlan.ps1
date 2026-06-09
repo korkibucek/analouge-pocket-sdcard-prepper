@@ -99,6 +99,7 @@ function Invoke-PocketRomOrganizePlan {
             PlatformId    = $Plan.PlatformId
             DryRun        = [bool]$DryRun
             MovedCount    = $moved.Count
+            RenamedCount  = @($moved | Where-Object { $_.Action -eq 'Rename' }).Count
             SkippedCount  = $skipped.Count
             FailedCount   = $failed.Count
             PrunedDirs    = $prunedDirs
