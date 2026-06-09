@@ -51,6 +51,17 @@ Describe 'Invoke-PocketApiRoute' {
         $r.Body.Flushed | Should -BeTrue
         $r.Body.Skipped | Should -BeTrue   # test-mode state -> flush only, no eject
     }
+    It 'POST /api/dryrun toggles dry-run at runtime' {
+        $state = $script:state.Clone(); $state.DryRun = $false
+        $on = InModuleScope PocketPrep -Parameters @{ s = $state } { param($s)
+            Invoke-PocketApiRoute -Method POST -Path '/api/dryrun' -Body ([pscustomobject]@{ enabled = $true }) -State $s }
+        $on.Body.dryRun | Should -BeTrue
+        $state.DryRun | Should -BeTrue
+        $off = InModuleScope PocketPrep -Parameters @{ s = $state } { param($s)
+            Invoke-PocketApiRoute -Method POST -Path '/api/dryrun' -Body ([pscustomobject]@{ enabled = $false }) -State $s }
+        $off.Body.dryRun | Should -BeFalse
+        $state.DryRun | Should -BeFalse
+    }
     It 'GET /api/space reports free/total bytes for the target volume' {
         $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
             Invoke-PocketApiRoute -Method GET -Path '/api/space' -State $s }
