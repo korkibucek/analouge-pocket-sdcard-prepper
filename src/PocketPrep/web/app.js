@@ -408,10 +408,15 @@ async function stepCores() {
   const instLine = installed.length
     ? `<p>Already installed: ${installed.map(ic => `${ic.Identifier} <span class="meta">v${ic.Version}</span>`).join(', ')}</p>`
     : '<p class="meta">No cores installed yet.</p>';
+  const esc = v => (v || '').replace(/"/g, '&quot;');
   const rows = cores.map((c, i) => {
     const have = instById[c.Identifier];
-    return `<div class="card"><strong>${c.DisplayName}</strong> <span class="meta">${c.Identifier}</span>
+    const hay = `${c.DisplayName} ${c.Identifier} ${c.Owner || ''} ${(c.PlatformIds || []).join(' ')}`.toLowerCase();
+    return `<div class="card core-row" data-hay="${esc(hay)}">
+      <label class="row"><input type="checkbox" class="core-pick" value="${i}"> <strong>${c.DisplayName}</strong></label>
+      <span class="meta">${c.Identifier}${c.Owner ? ' · ' + c.Owner : ''}${(c.PlatformIds || []).length ? ' · ' + c.PlatformIds.join(',') : ''}</span>
       ${have ? `<span class="tag rm">installed v${have.Version}</span>` : ''}
+      ${c.BiosRequired ? '<span class="tag fixed">BIOS needed</span>' : ''}
       <div class="row">
         <button data-i="${i}" data-mode="download" data-ow="${have ? 1 : 0}">${have ? 'Reinstall / update' : 'Download & install'}</button>
         <input type="text" id="cz${i}" placeholder="or path to ${c.Identifier} .zip">
@@ -421,21 +426,39 @@ async function stepCores() {
   panel(`<h2>5. openFPGA cores (optional)</h2>
     <p class="warnote">Cores are made by independent authors under their own licences.</p>
     ${instLine}
-    <div class="card"><strong>Install the whole inventory</strong>
-      <p class="meta">${cores.length} cores. This is a large download (dozens of repositories) and may take a while.</p>
-      <div class="row"><button id="instAll">Install ALL ${cores.length} cores</button>
-        <span id="allout" class="meta"></span></div></div>
+    <div class="card"><strong>Install cores</strong>
+      <p class="meta">${cores.length} cores in the catalog. Filter, tick the ones you want, and install the selection — or install everything (large download).</p>
+      <label class="row">Filter: <input type="text" id="core-filter" placeholder="name, author or platform"></label>
+      <div class="row">
+        <button id="instSel">Install selected (<span id="selN">0</span>)</button>
+        <button id="instAll" class="secondary">Install ALL ${cores.length}</button>
+        <button id="selAll" class="secondary">Select all (filtered)</button>
+        <button id="selNone" class="secondary">Clear</button>
+      </div><div id="allout"></div></div>
     <p><button id="chk" class="secondary">Check for updates</button>
        <button id="updall" class="secondary">Update all</button>
        <span id="updout" class="meta"></span></p>
-    ${cores.length ? rows : '<p>No cores manifest available.</p>'}
+    <div id="core-rows">${cores.length ? rows : '<p>No cores manifest available.</p>'}</div>
     <button id="c">Continue →</button>`);
   $('#c').onclick = () => go(5);
-  $('#instAll').onclick = async () => {
-    $('#allout').innerHTML = inProgress(`Downloading & installing all ${cores.length} cores (large; tip: set GITHUB_TOKEN if it rate-limits)`);
+
+  // Search/filter + multi-select install.
+  const pickEls = () => Array.from(document.querySelectorAll('.core-pick'));
+  const selectedIds = () => pickEls().filter(c => c.checked).map(c => cores[+c.value].Id);
+  const refreshCount = () => { $('#selN').textContent = pickEls().filter(c => c.checked).length; };
+  const visibleRows = () => Array.from(document.querySelectorAll('.core-row')).filter(r => r.style.display !== 'none');
+  $('#core-filter').oninput = () => {
+    const q = $('#core-filter').value.trim().toLowerCase();
+    document.querySelectorAll('.core-row').forEach(r => { r.style.display = (!q || r.dataset.hay.includes(q)) ? '' : 'none'; });
+  };
+  pickEls().forEach(c => c.onchange = refreshCount);
+  $('#selAll').onclick = () => { visibleRows().forEach(r => { const cb = r.querySelector('.core-pick'); if (cb) cb.checked = true; }); refreshCount(); };
+  $('#selNone').onclick = () => { pickEls().forEach(c => { c.checked = false; }); refreshCount(); };
+  const installIds = async (ids, label) => {
+    $('#allout').innerHTML = inProgress(`Downloading & installing ${label} (tip: set GITHUB_TOKEN if it rate-limits)`);
     busy(true);
     try {
-      const r = await api('/api/cores/install-all', 'POST', {});
+      const r = await api('/api/cores/install-all', 'POST', (ids && ids.length) ? { ids } : {});
       let summary = `<p class="ok">Installed ${r.InstalledCount}/${r.Requested}; failed ${r.FailedCount}; skipped ${r.SkippedCount}${r.DryRun ? ' [dry-run]' : ''}.</p>`;
       if (r.RateLimited) summary += '<p class="warnote">GitHub rate limit reached — set GITHUB_TOKEN and retry to finish the rest.</p>';
       const fails = (r.Results || []).filter(x => x.Status === 'failed').slice(0, 8);
@@ -443,6 +466,8 @@ async function stepCores() {
       $('#allout').innerHTML = summary;
     } catch (e) { $('#allout').innerHTML = errLine(e.message); } finally { busy(false); }
   };
+  $('#instSel').onclick = () => { const ids = selectedIds(); if (!ids.length) { $('#allout').innerHTML = errLine('Tick at least one core, or use Install ALL.'); return; } installIds(ids, `${ids.length} selected core(s)`); };
+  $('#instAll').onclick = () => installIds(null, `all ${cores.length} cores`);
   $('#chk').onclick = async () => {
     $('#updout').textContent = 'checking…'; busy(true);
     try {
