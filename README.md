@@ -37,9 +37,12 @@ from folders you point it at. You are responsible for the legality of your ROMs.
 7. Optionally installs **openFPGA cores** — search and multi-select, a single core, or the
    **entire community inventory** — by downloading the core's official GitHub release or a
    `.zip` you already have, extracted safely (zip-slip-protected, non-destructive).
-8. **ROM import for any core** — built-in systems, every installed core's platform, the whole
-   catalog, or a custom platform-id — with auto **de-duplication**, a **progress bar**, and a
-   saved folder list you can **rescan** later.
+8. **ROM import for any core** — **30 built-in systems** (Game Boy/Color/Advance, NES, SNES,
+   Genesis, Master System, Game Gear, PC Engine, Neo Geo, Neo Geo Pocket Color, Atari
+   2600/7800, ColecoVision, Intellivision, SG-1000, Super Game Boy, Pokémon Mini, Odyssey²,
+   Channel F, Arduboy, Supervision, and more), plus every installed core's platform, the
+   whole catalog, or a custom platform-id — with auto **de-duplication**, a **progress
+   bar**, and a saved folder list you can **rescan** later.
 9. **Library management tools** (run standalone from the action menu): **organize** big
    libraries into subfolders + shorten overlong filenames, **de-duplicate by region**
    (reversible quarantine), tag **favourites** (surfaced in a top-sorted `!Favorites`
