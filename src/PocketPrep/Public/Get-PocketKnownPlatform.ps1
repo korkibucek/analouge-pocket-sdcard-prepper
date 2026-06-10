@@ -46,6 +46,7 @@ function Get-PocketKnownPlatform {
             Id = $s.Id; PlatformId = $s.PlatformId; DisplayName = $s.DisplayName
             SupportedExtensions = @($s.SupportedExtensions); Source = 'system'
             Experimental = [bool]$s.Experimental; BiosRequired = [bool]$s.BiosRequired
+            Arcade = $false
             Notes = [string]$s.Notes
         })
     }
@@ -56,7 +57,8 @@ function Get-PocketKnownPlatform {
             & $add ([pscustomobject]@{
                 Id = $p.Id; PlatformId = $p.PlatformId; DisplayName = $p.DisplayName
                 SupportedExtensions = @('*'); Source = 'installed-core'
-                Experimental = $true; BiosRequired = $false; Notes = [string]$p.Notes
+                Experimental = $true; BiosRequired = $false; Arcade = $false
+                Notes = [string]$p.Notes
             })
         }
     }
@@ -67,12 +69,23 @@ function Get-PocketKnownPlatform {
             foreach ($c in @(Resolve-PocketCore -Manifest (Get-PocketCoreManifest -Path $CoresManifest))) {
                 foreach ($platId in @($c.PlatformIds)) {
                     if (-not $platId) { continue }
+                    # Arcade cores don't load raw ROMs: each game needs an instance .json +
+                    # a built .rom (assembled from the core's rom-recipes + the user's own
+                    # MAME set). Flag them so the UI can show accurate guidance instead of
+                    # the generic "any file" note.
+                    $isArcade = [bool]($c.Notes -match '\bArcade\b')
+                    $note = if ($isArcade) {
+                        "ARCADE core ('$($c.Identifier)'): a raw ROM/zip will NOT load. Each game needs an instance .json plus a built .rom in Assets/$platId/common - assembled from the core's rom-recipes release asset and a MAME romset you own. This tool never builds or downloads arcade ROMs."
+                    } else {
+                        "Catalog platform from core '$($c.Identifier)'. ROM extensions unknown - any file you point at it is copied to Assets/$platId/common."
+                    }
                     & $add ([pscustomobject]@{
                         Id = [string]$platId; PlatformId = [string]$platId
                         DisplayName = "$platId ($($c.DisplayName))"
                         SupportedExtensions = @('*'); Source = 'catalog'
                         Experimental = $true; BiosRequired = [bool]$c.BiosRequired
-                        Notes = "Catalog platform from core '$($c.Identifier)'. ROM extensions unknown - any file you point at it is copied to Assets/$platId/common."
+                        Arcade = $isArcade
+                        Notes = $note
                     })
                 }
             }

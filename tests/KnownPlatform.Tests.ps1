@@ -27,6 +27,21 @@ Describe 'Get-PocketKnownPlatform' {
         ($p | Where-Object PlatformId -eq 'gb').Source | Should -Be 'system'
     }
 
+    It 'flags arcade catalog platforms and gives romset guidance, not the generic note' {
+        $p = Get-PocketKnownPlatform -SystemsManifest $script:sys -CoresManifest $script:cores
+        # 'gberet' (Green Beret) is an arcade core in the catalog.
+        $gb = $p | Where-Object PlatformId -eq 'gberet'
+        $gb | Should -Not -BeNullOrEmpty
+        $gb.Arcade | Should -BeTrue
+        $gb.Notes | Should -Match 'instance \.json'
+        $gb.Notes | Should -Match 'rom-recipes'
+        # A non-arcade catalog platform stays unflagged with the generic note.
+        $gw = $p | Where-Object PlatformId -eq 'gameandwatch'
+        $gw.Arcade | Should -BeFalse
+        # Built-in systems are never flagged arcade.
+        ($p | Where-Object PlatformId -eq 'gb').Arcade | Should -BeFalse
+    }
+
     It 'includes platforms from installed cores when -Root is given' {
         $root = Join-Path ([System.IO.Path]::GetTempPath()) ("kp_" + [System.IO.Path]::GetRandomFileName())
         $cd = Join-Path $root 'Cores/Some.Mystery'; New-Item -ItemType Directory $cd -Force | Out-Null
