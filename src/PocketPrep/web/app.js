@@ -767,7 +767,9 @@ async function stepRoms() {
         <button data-browse="${i}" class="secondary">Browse…</button>
         <label class="row"><input type="checkbox" id="rec${i}" ${sv && sv.Recurse ? 'checked' : ''}> subfolders</label>
         <button data-i="${i}" data-act="plan" class="secondary">Count</button>
-        <button data-i="${i}" data-act="copy">Copy</button></div>
+        <button data-i="${i}" data-act="copy">Copy</button>
+        ${s.Arcade && s.CoreId ? `<button data-recipes="${i}" class="secondary" title="Download the core's recipe files (.mra) — metadata only, never ROMs">Fetch rom-recipes</button>` : ''}
+        ${s.Arcade ? `<button data-arcstatus="${i}" class="secondary" title="Check whether any instance .json + built .rom pairs are on the card">Check romset</button>` : ''}</div>
       <div id="rout${i}"></div></div>`;
 
   const rows = systems.map((s, i) => romRowHtml(s, i, saved[s.Id])).join('');
@@ -820,6 +822,25 @@ async function stepRoms() {
     const browse = document.querySelector(`button[data-browse="${i}"]`);
     if (browse) browse.onclick = async () => { const c = await pickFolder($('#src' + i).value.trim()); if (c) $('#src' + i).value = c; };
     document.querySelectorAll(`button[data-act][data-i="${i}"]`).forEach(btn => btn.onclick = () => runRowAct(i, btn.dataset.act));
+    // Arcade helpers: fetch the core's rom-recipes; check whether a built romset is present.
+    const rec = document.querySelector(`button[data-recipes="${i}"]`);
+    if (rec) rec.onclick = async () => {
+      const out = $('#rout' + i);
+      busy(true); out.innerHTML = inProgress('Downloading rom-recipes (metadata only, never ROMs)');
+      try { const r = await api('/api/rom/recipes', 'POST', { coreId: systems[i].CoreId });
+        out.innerHTML = `<p class="ok">Recipes ${r.Version ? '(' + r.Version + ') ' : ''}saved: ${r.PlacedCount} file(s) → ${r.Destination}${r.DryRun ? ' [dry-run]' : ''}. Combine them with a MAME set you own using an openFPGA arcade packager, then copy the built .json + .rom here.</p>`;
+      } catch (e) { out.innerHTML = errLine(e.message); } finally { busy(false); }
+    };
+    const arc = document.querySelector(`button[data-arcstatus="${i}"]`);
+    if (arc) arc.onclick = async () => {
+      const out = $('#rout' + i);
+      busy(true);
+      try { const r = await api('/api/rom/arcade-status', 'POST', { platformId: systems[i].PlatformId });
+        out.innerHTML = r.Ready
+          ? `<p class="ok">Romset present: ${r.InstanceJson} instance .json, ${r.BuiltRom} built .rom — games should load.</p>`
+          : `<p class="warnote">No playable romset yet (${r.InstanceJson} instance .json, ${r.BuiltRom} built .rom). Build them from the rom-recipes + your MAME set, then copy both file types into Assets/${systems[i].PlatformId}/common.</p>`;
+      } catch (e) { out.innerHTML = errLine(e.message); } finally { busy(false); }
+    };
   };
   const runRowAct = async (i, act) => {
     const out = $('#rout' + i);
@@ -868,7 +889,7 @@ async function stepRoms() {
     if (systems.some(s => String(s.Id).toLowerCase() === id.toLowerCase())) { $('#cfgout').innerHTML = errLine(`"${id}" is already listed above.`); return; }
     const meta = allPlatforms.find(p => String(p.Id).toLowerCase() === id.toLowerCase());
     const sys = meta
-      ? { Id: meta.Id, PlatformId: meta.PlatformId, DisplayName: meta.DisplayName, SupportedExtensions: meta.SupportedExtensions || ['*'], Experimental: true, Notes: meta.Notes, Custom: false, Arcade: !!meta.Arcade }
+      ? { Id: meta.Id, PlatformId: meta.PlatformId, DisplayName: meta.DisplayName, SupportedExtensions: meta.SupportedExtensions || ['*'], Experimental: true, Notes: meta.Notes, Custom: false, Arcade: !!meta.Arcade, CoreId: meta.CoreId }
       : { Id: id, PlatformId: id, DisplayName: id, SupportedExtensions: ['*'], Experimental: true, Notes: `Custom platform — files are copied to Assets/${id}/common.`, Custom: true };
     const i = systems.length; systems.push(sys);
     $('#rom-rows').insertAdjacentHTML('beforeend', romRowHtml(sys, i, null));

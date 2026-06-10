@@ -188,6 +188,18 @@ Describe 'Invoke-PocketApiRoute' {
             Invoke-PocketApiRoute -Method POST -Path '/api/rom/copy' -Body $b -State $s }
         $r.Status | Should -Be 400
     }
+    It 'POST /api/rom/arcade-status reports romset readiness; recipes route validates coreId' {
+        $common = Join-Path $script:root 'Assets/gberet/common'; New-Item -ItemType Directory $common -Force | Out-Null
+        'inst' | Set-Content (Join-Path $common 'Green Beret.json')
+        'rom'  | Set-Content (Join-Path $common 'gberet.rom')
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = [pscustomobject]@{ platformId='gberet' } } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/rom/arcade-status' -Body $b -State $s }
+        $r.Status | Should -Be 200
+        $r.Body.Ready | Should -BeTrue
+        $bad = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method POST -Path '/api/rom/recipes' -Body ([pscustomobject]@{}) -State $s }
+        $bad.Status | Should -Be 400
+    }
     It 'GET /api/rom/extra-platforms + plan/copy work for an installed-core platform' {
         # Install a fake core that declares a platform the manifest does not know.
         $coreDir = Join-Path $script:root 'Cores/Some.WonderSwan'; New-Item -ItemType Directory $coreDir -Force | Out-Null

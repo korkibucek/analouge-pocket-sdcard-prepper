@@ -244,8 +244,11 @@ systems and any installed core's platforms.)
 > **Arcade cores are different.** An arcade core (Green Beret, Galaga, Asteroids, …) will
 > **not** load a raw ROM/zip: each game needs an **instance `.json`** plus a **built `.rom`**
 > in `Assets/<platformId>/common`, assembled from the core's *rom-recipes* release asset and
-> a MAME romset **you own**. The picker tags these platforms `arcade — needs built romset`
-> and shows the guidance; this tool never builds or downloads arcade ROMs.
+> a MAME romset **you own**. The picker tags these platforms `arcade — needs built romset`,
+> and each arcade row has **Fetch rom-recipes** (downloads the core's recipe files — metadata
+> only, never ROMs — to `pocketprep/rom-recipes/<core>/`) and **Check romset** (reports
+> whether any playable `.json` + `.rom` pairs are on the card). Build the romset with an
+> openFPGA arcade packager outside this tool; it never builds or downloads arcade ROMs.
 
 ### Card breakdown after you pick a drive
 

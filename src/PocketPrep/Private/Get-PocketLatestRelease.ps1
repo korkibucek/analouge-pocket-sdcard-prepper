@@ -7,7 +7,11 @@ function Get-PocketLatestRelease {
     param(
         [Parameter(Mandatory)] [string] $Owner,
         [Parameter(Mandatory)] [string] $Repo,
-        [string] $Tag
+        [string] $Tag,
+        # Optional regex to select a specific .zip asset when a release ships several
+        # (e.g. opengateware arcade repos ship *_pocket-*.zip AND *_rom-recipes-*.zip).
+        # Default: the first .zip asset, as before.
+        [string] $AssetPattern
     )
 
     $allowedHosts = @('github.com', 'objects.githubusercontent.com',
@@ -35,7 +39,9 @@ function Get-PocketLatestRelease {
         }
         throw "Could not reach GitHub to resolve $Owner/$Repo release (offline or network error?): $msg"
     }
-    $asset = $rel.assets | Where-Object { $_.name -match '\.zip$' } | Select-Object -First 1
+    $zips = @($rel.assets | Where-Object { $_.name -match '\.zip$' })
+    $asset = if ($AssetPattern) { $zips | Where-Object { $_.name -match $AssetPattern } | Select-Object -First 1 }
+             else { $zips | Select-Object -First 1 }
     $zipUrl = $null
     if ($asset) {
         $dlHost = ([Uri]$asset.browser_download_url).Host
