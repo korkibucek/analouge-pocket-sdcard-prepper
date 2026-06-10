@@ -127,6 +127,10 @@ function Sync-PocketFavorite {
         }
     }
 
+    # Keep save data in sync between each favourite and its original (#171): the Pocket
+    # keys saves by launch path, so the two entries otherwise accumulate separate saves.
+    $saveSync = Sync-PocketFavoriteSave -Root $Root -PlatformId $PlatformId -DryRun:$DryRun -Logger $Logger
+
     [pscustomobject]@{
         PSTypeName   = 'PocketPrep.FavoritesSyncResult'
         PlatformId   = $PlatformId
@@ -135,6 +139,7 @@ function Sync-PocketFavorite {
         CopiedCount  = $copied
         RemovedCount = $removed
         Missing      = $missing.ToArray()
+        SaveSync     = $saveSync
         DryRun       = [bool]$DryRun
     }
 }

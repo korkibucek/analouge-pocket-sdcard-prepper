@@ -42,6 +42,7 @@
         'Get-PocketFavorite',
         'Save-PocketFavorite',
         'Sync-PocketFavorite',
+        'Sync-PocketFavoriteSave',
         'Get-PocketRomConfig',
         'Save-PocketRomConfig',
         'Invoke-PocketRomRescan',

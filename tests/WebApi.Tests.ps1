@@ -275,6 +275,21 @@ Describe 'Invoke-PocketApiRoute' {
             @(Get-PocketFavorite -Root $dest -PlatformId 'gb') | Should -Contain 'Tetris.gb'
         } finally { Remove-Item $dest -Recurse -Force -ErrorAction SilentlyContinue }
     }
+    It 'POST /api/favorites/sync-saves reconciles favourite and original saves' {
+        $common = Join-Path $script:root 'Assets/gb/common'
+        New-Item -ItemType Directory -Path (Join-Path $common '!Favorites') -Force | Out-Null
+        'rom' | Set-Content (Join-Path $common 'Zelda.gb')
+        'rom' | Set-Content (Join-Path $common '!Favorites/Zelda.gb')
+        Save-PocketFavorite -Root $script:root -PlatformId 'gb' -Names @('Zelda.gb') | Out-Null
+        $oSave = Join-Path $script:root 'Saves/gb/common/Zelda.sav'
+        New-Item -ItemType Directory -Path (Split-Path $oSave) -Force | Out-Null
+        'progress' | Set-Content $oSave
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = [pscustomobject]@{ platformId='gb' } } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/favorites/sync-saves' -Body $b -State $s }
+        $r.Status | Should -Be 200
+        ($r.Body.LinkedCount + $r.Body.CopiedToFavorite) | Should -BeGreaterOrEqual 1
+        (Test-Path (Join-Path $script:root 'Saves/gb/common/!Favorites/Zelda.sav')) | Should -BeTrue
+    }
     It 'POST /api/card/onboard generates a config from existing card ROMs' {
         $common = Join-Path $script:root 'Assets/gb/common'; New-Item -ItemType Directory $common -Force | Out-Null
         'a' | Set-Content (Join-Path $common 'one.gb')

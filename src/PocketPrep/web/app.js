@@ -238,7 +238,9 @@ async function showFavorites() {
     <label class="row">Filter: <input type="text" id="fav-filter" placeholder="type to filter the list">
       <label class="row" style="margin-left:.5rem"><input type="checkbox" id="fav-only"> favourited only</label></label>
     <div id="fav-list" class="list" style="max-height:50vh;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:.5rem"></div>
-    <div class="row"><button id="fav-save">Save favourites</button> <span id="fav-count" class="meta"></span></div>
+    <div class="row"><button id="fav-save">Save favourites</button>
+      <button id="fav-syncsaves" class="secondary" title="Reconcile save data between favourites and their originals (newest wins; original is the master)">Sync saves now</button>
+      <span id="fav-count" class="meta"></span></div>
     <div id="fav-out"></div>`);
   let names = [];
   let selected = new Map();   // lowercase -> original name, for the current platform
@@ -285,8 +287,18 @@ async function showFavorites() {
       const r = await api('/api/favorites', 'POST', { platformId: plat, names: picked });
       favMap[plat] = picked;
       const s = r.sync, miss = (s.Missing || []).length ? `; ${s.Missing.length} not found` : '';
-      $('#fav-out').innerHTML = `<p class="ok">${picked.length} favourite(s) saved — ${s.Method} (${s.LinkedCount} linked, ${s.CopiedCount} copied, ${s.RemovedCount} removed${miss})${s.DryRun ? ' [dry-run]' : ''}.</p>`;
+      const sv = s.SaveSync, svNote = sv && (sv.LinkedCount + sv.CopiedToFavorite + sv.CopiedToOriginal + sv.FoldedBackCount) > 0
+        ? ` Saves synced (${sv.Method}): ${sv.LinkedCount} linked, ${sv.CopiedToFavorite}→favourite, ${sv.CopiedToOriginal}→original, ${sv.FoldedBackCount} folded back.` : '';
+      $('#fav-out').innerHTML = `<p class="ok">${picked.length} favourite(s) saved — ${s.Method} (${s.LinkedCount} linked, ${s.CopiedCount} copied, ${s.RemovedCount} removed${miss})${s.DryRun ? ' [dry-run]' : ''}.${svNote}</p>`;
       renderList();
+    } catch (e) { $('#fav-out').innerHTML = errLine(e.message); } finally { busy(false); }
+  };
+  // Re-sync save data without changing the favourites list (e.g. after a play session).
+  $('#fav-syncsaves').onclick = async () => {
+    busy(true); $('#fav-out').innerHTML = '<p>Syncing save data…</p>';
+    try {
+      const sv = await api('/api/favorites/sync-saves', 'POST', { platformId: curPlat() });
+      $('#fav-out').innerHTML = `<p class="ok">Saves synced (${sv.Method}): ${sv.LinkedCount} linked, ${sv.CopiedToFavorite} copied to favourites, ${sv.CopiedToOriginal} copied to originals, ${sv.FoldedBackCount} folded back; ${sv.BackupCount} backup(s) in pocketprep/save-backups${sv.DryRun ? ' [dry-run]' : ''}.</p>`;
     } catch (e) { $('#fav-out').innerHTML = errLine(e.message); } finally { busy(false); }
   };
   loadPlat();
