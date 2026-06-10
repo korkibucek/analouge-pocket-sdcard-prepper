@@ -37,6 +37,8 @@
         'New-PocketRomOrganizePlan',
         'Invoke-PocketRomOrganizePlan',
         'Get-PocketRomRegionDuplicate',
+        'Save-PocketRomRecipe',
+        'Test-PocketArcadeRomset',
         'Invoke-PocketRomRegionDedupe',
         'Test-PocketSymlinkSupport',
         'Get-PocketFavorite',

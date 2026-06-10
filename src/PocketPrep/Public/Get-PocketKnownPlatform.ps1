@@ -85,6 +85,7 @@ function Get-PocketKnownPlatform {
                         SupportedExtensions = @('*'); Source = 'catalog'
                         Experimental = $true; BiosRequired = [bool]$c.BiosRequired
                         Arcade = $isArcade
+                        CoreId = $c.Id   # lets the UI fetch this core's rom-recipes
                         Notes = $note
                     })
                 }

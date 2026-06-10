@@ -202,6 +202,18 @@ function Invoke-PocketApiRoute {
                 if (-not $platId) { return @{ Status = 400; Body = @{ error = 'Missing platformId.' } } }
                 return @{ Status = 200; Body = (Sync-PocketFavoriteSave -Root $State.Root -PlatformId $platId -DryRun:([bool]$State.DryRun)) }
             }
+            '^POST /api/rom/recipes$' {
+                # Fetch an arcade core's rom-recipes asset (recipe metadata only, never ROMs)
+                # to pocketprep/rom-recipes/<coreId>/ on the card.
+                if (-not $Body.coreId) { return @{ Status = 400; Body = @{ error = 'Missing coreId.' } } }
+                if (-not (Test-Path -LiteralPath $State.CoresManifest)) { return @{ Status = 400; Body = @{ error = 'No cores manifest available.' } } }
+                $res = Save-PocketRomRecipe -Root $State.Root -CoreId ([string]$Body.coreId) -CoresManifest $State.CoresManifest -DryRun:([bool]$State.DryRun)
+                return @{ Status = 200; Body = $res }
+            }
+            '^POST /api/rom/arcade-status$' {
+                if (-not $Body.platformId) { return @{ Status = 400; Body = @{ error = 'Missing platformId.' } } }
+                return @{ Status = 200; Body = (Test-PocketArcadeRomset -Root $State.Root -PlatformId ([string]$Body.platformId)) }
+            }
             '^GET /api/rom/extra-platforms$' {
                 # Platforms declared by installed cores that aren't in the systems manifest.
                 return @{ Status = 200; Body = @{ platforms = @(Get-PocketImportablePlatform -Root $State.Root -SystemsManifest $State.SystemsManifest) } }
