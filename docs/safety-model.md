@@ -26,6 +26,11 @@ outcome is "files copied to the wrong folder"** — never data loss.
    Nothing removes user content. (The tool removes only its own temporary download
    folder, now-empty organize subfolders, and untagged entries inside the managed Favorites
    folder.)
+   **Favourite save sync** (`Sync-PocketFavoriteSave`) reconciles save files between a
+   favourite and its original (original = master). It writes only inside the two mirrored
+   `Saves` locations and `pocketprep/save-backups/`; any save about to be overwritten or
+   removed is **backed up first**, and an unfavourited save is folded back into the original
+   before its mirror is removed — so user progress is never silently lost.
    **Cleanup** (`Invoke-PocketCardCleanup`) removes **only empty sub-folders and the tool's own
    `.pp-symlink-probe-*` temp folders** — never a ROM, save, core, or any non-empty folder.
    Unmanaged cores and orphan asset folders are *reported* by `Get-PocketCardCleanup` but never

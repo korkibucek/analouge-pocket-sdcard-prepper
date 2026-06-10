@@ -195,6 +195,13 @@ function Invoke-PocketApiRoute {
                 $sync  = Sync-PocketFavorite -Root $State.Root -PlatformId $platId -DryRun:([bool]$State.DryRun)
                 return @{ Status = 200; Body = @{ saved = $saved; sync = $sync } }
             }
+            '^POST /api/favorites/sync-saves$' {
+                # Re-sync save data between favourites and originals (e.g. after playing),
+                # without changing which games are favourited.
+                $platId = [string]$Body.platformId
+                if (-not $platId) { return @{ Status = 400; Body = @{ error = 'Missing platformId.' } } }
+                return @{ Status = 200; Body = (Sync-PocketFavoriteSave -Root $State.Root -PlatformId $platId -DryRun:([bool]$State.DryRun)) }
+            }
             '^GET /api/rom/extra-platforms$' {
                 # Platforms declared by installed cores that aren't in the systems manifest.
                 return @{ Status = 200; Body = @{ platforms = @(Get-PocketImportablePlatform -Root $State.Root -SystemsManifest $State.SystemsManifest) } }

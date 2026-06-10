@@ -327,10 +327,18 @@ to `!Favorites` automatically.)
 
 > **How it's stored depends on the filesystem.** Where the filesystem supports symlinks
 > (e.g. a test folder on NTFS/ext4) the favourite is a **symlink** — no extra space. On a
-> real **FAT32/exFAT** Pocket card (which has no symlinks), it's a **copy**: it uses a little
-> extra space and the copy keeps its *own* save file. The tool detects this automatically and
-> tells you which method it used. Favourites persist in `pocketprep/favorites.json` (names
-> only) and the organizer/breakdown ignore the `Favorites` folder.
+> real **FAT32/exFAT** Pocket card (which has no symlinks), it's a **copy**. The tool detects
+> this automatically and tells you which method it used. Favourites persist in
+> `pocketprep/favorites.json` (names only) and the organizer/breakdown ignore the
+> `Favorites` folder.
+
+**Save data stays in sync.** The Pocket keys saves by launch path, so a favourite and its
+original would normally accumulate *separate* saves. The tool reconciles them whenever
+favourites are saved (and on demand via **Sync saves now**), with the **original as the
+master**: where symlinks work, the favourite's save *is* the original's (one file); on a
+FAT card it's a newest-wins two-way copy, and whichever side is about to be overwritten is
+backed up to `pocketprep/save-backups/` first — so no progress is ever lost. Untagging a
+favourite folds its save back into the original.
 
 ### Onboard an already-used card
 
