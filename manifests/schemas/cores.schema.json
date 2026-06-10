@@ -19,6 +19,7 @@
           "repo": { "type": "string", "description": "GitHub repository name." },
           "tag": { "type": "string", "description": "Optional: pin a specific release tag instead of latest." },
           "sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$", "description": "Optional: expected SHA-256 of the release zip (pin a tag too)." },
+          "assetPattern": { "type": "string", "description": "Optional regex selecting the release .zip asset, for releases that ship several zips (e.g. GB+GBC in one repo, or Pocket+MiSTer builds). Default: first zip." },
           "homepage": { "type": "string" },
           "biosRequired": { "type": "boolean" },
           "biosFiles": { "type": "array", "items": { "type": "string" } },

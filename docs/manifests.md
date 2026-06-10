@@ -147,6 +147,17 @@ A monthly CI workflow (`.github/workflows/cores-refresh.yml`) runs this and open
 the inventory changes. To add/override a core by hand, edit `cores.json` and re-run
 `Validate-Manifests.ps1`.
 
+### Multi-zip releases (`assetPattern`)
+
+Some releases ship **several** zip assets — the GB-GBC repo carries a GB zip *and* a GBC
+zip, agg23's repos ship MiSTer *and* Pocket builds, opengateware arcade repos ship the core
+*and* its rom-recipes. By default the installer takes the **first** zip, which silently
+installs the wrong thing (classic GB was never installed; Game & Watch would have fetched
+the MiSTer build). Such entries carry an **`assetPattern`** (regex over asset names) that
+selects the right zip, and the bulk installer de-duplicates by **repo + pattern** so two
+cores sharing a repo each get their own download. The generator sets these automatically
+(identifier map + opengateware rule); supplement entries declare their own.
+
 ### Curated supplement (`cores-supplement.json`)
 
 Some community cores aren't in the inventory yet. `manifests/cores-supplement.json` holds a

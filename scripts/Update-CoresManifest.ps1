@@ -31,6 +31,24 @@ $biosByPlatform = @{
     'ng' = @('neogeo.zip')
 }
 
+# Releases that ship SEVERAL zip assets need a regex to pick the right one - otherwise the
+# first-zip default installs the wrong build (the GB-GBC repo lists GBC first so classic GB
+# was never installed; agg23's repos list the MiSTer build first). Keyed by inventory
+# identifier; repos matching $assetPatternByRepo apply to every entry from that repo.
+$assetPatternByIdentifier = @{
+    'Spiritualized.GB'  = '_GB_'
+    'Spiritualized.GBC' = '_GBC_'
+}
+# opengateware arcade repos ship a pocket build zip AND a rom-recipes zip (naming varies:
+# <core>_pocket-*.zip or arcade-<x>-pocket-*.zip); always pick the Pocket build regardless
+# of asset order. PowerShell -match is case-insensitive, so 'pocket' covers both.
+$resolveAssetPattern = {
+    param($identifier, $owner, $repo)
+    if ($assetPatternByIdentifier.ContainsKey($identifier)) { return $assetPatternByIdentifier[$identifier] }
+    if ($owner -ieq 'opengateware' -and $repo -like 'arcade-*') { return 'pocket' }
+    return $null
+}
+
 $seen = @{}
 $cores = foreach ($e in ($inv.data | Where-Object { $_.repository.platform -eq 'github' } | Sort-Object identifier)) {
     # Stable slug id from the identifier (schema: ^[a-z0-9_-]+$); dedupe defensively.
@@ -51,7 +69,7 @@ $cores = foreach ($e in ($inv.data | Where-Object { $_.repository.platform -eq '
     # Flag a BIOS requirement when any of the core's platforms needs one.
     $biosFiles = @($platformIds | ForEach-Object { $biosByPlatform[$_] } | Where-Object { $_ } | Select-Object -Unique)
 
-    [ordered]@{
+    $entry = [ordered]@{
         id           = $id
         identifier   = $e.identifier
         displayName  = "$($plat.name) [$($e.repository.owner)]"
@@ -63,21 +81,26 @@ $cores = foreach ($e in ($inv.data | Where-Object { $_.repository.platform -eq '
         biosFiles    = $biosFiles
         notes        = "From the openFPGA Cores Inventory. $meta".Trim()
     }
+    $ap = & $resolveAssetPattern $e.identifier $e.repository.owner $e.repository.name
+    if ($ap) { $entry.assetPattern = $ap }
+    $entry
 }
 $cores = @($cores)
 
 # Merge the curated supplement (community cores not in the inventory but verified to have a
 # downloadable openFPGA release zip). Inventory entries win on an owner/repo conflict.
 if (Test-Path -LiteralPath $SupplementFile) {
+    # Dedupe by (repo, assetPattern): two entries may legitimately share a repo when its
+    # release ships several zips (e.g. budude2's repo carries both a GB and a GBC zip).
     $haveRepos = @{}
-    foreach ($c in $cores) { $haveRepos["$($c.owner)/$($c.repo)".ToLowerInvariant()] = $true }
+    foreach ($c in $cores) { $haveRepos[("$($c.owner)/$($c.repo)".ToLowerInvariant() + '|' + [string]$c.assetPattern)] = $true }
     $supp = (Get-Content -LiteralPath $SupplementFile -Raw | ConvertFrom-Json).cores
     $added = 0
     foreach ($s in @($supp)) {
-        $key = "$($s.owner)/$($s.repo)".ToLowerInvariant()
+        $key = "$($s.owner)/$($s.repo)".ToLowerInvariant() + '|' + [string]$s.assetPattern
         if ($haveRepos.ContainsKey($key)) { continue }
         $haveRepos[$key] = $true
-        $cores += [ordered]@{
+        $entry = [ordered]@{
             id           = $s.id
             identifier   = $s.identifier
             displayName  = $s.displayName
@@ -89,6 +112,8 @@ if (Test-Path -LiteralPath $SupplementFile) {
             biosFiles    = @($s.biosFiles)
             notes        = [string]$s.notes
         }
+        if ($s.assetPattern) { $entry.assetPattern = [string]$s.assetPattern }
+        $cores += $entry
         $added++
     }
     $cores = @($cores | Sort-Object { $_.identifier })
