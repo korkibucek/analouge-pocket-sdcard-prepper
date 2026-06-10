@@ -51,6 +51,7 @@
         'Get-PocketCardSummary',
         'Get-PocketDiskSpace',
         'Get-PocketCardCleanup',
+        'Get-PocketHealthReport',
         'Invoke-PocketCardCleanup',
         'Export-PocketProfile',
         'Import-PocketProfile',

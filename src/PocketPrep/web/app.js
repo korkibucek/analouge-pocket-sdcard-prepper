@@ -114,6 +114,7 @@ function showMenu() {
     { go: 5, icon: '🎮', label: 'Upload ROMs', desc: 'Copy ROMs for any core (built-in, installed, catalog or custom).' },
     { go: 'favorites', icon: '⭐', label: 'Favourites', desc: 'Tag ROMs; surface them in a per-system Favorites folder.' },
     { go: 'activity', icon: '📝', label: 'Activity log', desc: 'See and download everything done this session.' },
+    { go: 'healthcheck', icon: '🩺', label: 'Health check', desc: 'Audit the whole card: BIOS, folder limits, core integrity, space.' },
     { go: 'profiles', icon: '💾', label: 'Setup profiles', desc: "Export this card's setup, or import one to a fresh card." },
     { go: 6, icon: '🧾', label: 'Summary', desc: 'Review what was done this session.' }
   ];
@@ -179,7 +180,28 @@ function wireEject() {
     finally { busy(false); }
   };
 }
-function go(step) { S.step = step; renderNav(); if (step === 'menu') { showMenu(); } else if (step === 'favorites') { showFavorites(); } else if (step === 'activity') { showActivity(); } else if (step === 'profiles') { showProfiles(); } else { RENDER[step](); } }
+function go(step) { S.step = step; renderNav(); if (step === 'menu') { showMenu(); } else if (step === 'favorites') { showFavorites(); } else if (step === 'activity') { showActivity(); } else if (step === 'profiles') { showProfiles(); } else if (step === 'healthcheck') { showHealthCheck(); } else { RENDER[step](); } }
+
+/* ---- Health check: one-click read-only audit of the whole card ---- */
+async function showHealthCheck() {
+  panel('<h2>🩺 Health check</h2><p>Auditing the card…</p>');
+  let r;
+  try { r = await api('/api/healthcheck'); }
+  catch (e) { panel('<h2>🩺 Health check</h2>' + errLine(e.message)); return; }
+  const icon = s => ({ ok: '✅', info: 'ℹ️', warn: '⚠️', fail: '❌' }[s] || '•');
+  const cls = s => ({ ok: 'ok', info: 'meta', warn: 'warnote', fail: 'error' }[s] || 'meta');
+  const esc = v => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const rows = (r.Checks || []).map(c => `<li>${icon(c.Status)} <strong>${esc(c.Name)}</strong>
+    <span class="${cls(c.Status)}">${esc(c.Detail)}</span>${c.Fix ? ` <span class="meta">→ ${esc(c.Fix)}</span>` : ''}</li>`).join('');
+  const overall = r.Overall === 'ok' ? '<p class="ok">✅ Card is healthy.</p>'
+    : r.FailCount > 0 ? `<p class="error">❌ ${r.FailCount} failure(s), ${r.WarnCount} warning(s) — see below.</p>`
+    : `<p class="warnote">⚠️ ${r.WarnCount} warning(s) — see below.</p>`;
+  panel(`<h2>🩺 Health check</h2>
+    ${overall}
+    <ul class="list">${rows}</ul>
+    <div class="row"><button id="hc-rerun" class="secondary">Re-run</button></div>`);
+  $('#hc-rerun').onclick = () => showHealthCheck();
+}
 
 /* ---- Setup profiles: export this card's setup; import one onto a fresh card ---- */
 function showProfiles() {
