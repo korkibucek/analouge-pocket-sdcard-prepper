@@ -7,7 +7,9 @@
       "displayName": "Game Boy",
       "manufacturer": "Nintendo",
       "platformId": "gb",
-      "supportedExtensions": [".gb"],
+      "supportedExtensions": [
+        ".gb"
+      ],
       "requiresCore": true,
       "suggestedCore": "Spiritualized.GB",
       "biosRequired": false,
@@ -19,7 +21,10 @@
       "displayName": "Game Boy Color",
       "manufacturer": "Nintendo",
       "platformId": "gbc",
-      "supportedExtensions": [".gbc", ".gb"],
+      "supportedExtensions": [
+        ".gbc",
+        ".gb"
+      ],
       "requiresCore": true,
       "suggestedCore": "Spiritualized.GBC",
       "biosRequired": false,
@@ -31,7 +36,9 @@
       "displayName": "Game Boy Advance",
       "manufacturer": "Nintendo",
       "platformId": "gba",
-      "supportedExtensions": [".gba"],
+      "supportedExtensions": [
+        ".gba"
+      ],
       "requiresCore": true,
       "suggestedCore": "Spiritualized.GBA",
       "biosRequired": false,
@@ -43,7 +50,9 @@
       "displayName": "NES / Famicom",
       "manufacturer": "Nintendo",
       "platformId": "nes",
-      "supportedExtensions": [".nes"],
+      "supportedExtensions": [
+        ".nes"
+      ],
       "requiresCore": true,
       "suggestedCore": "agg23.NES",
       "biosRequired": false,
@@ -55,7 +64,10 @@
       "displayName": "SNES / Super Famicom",
       "manufacturer": "Nintendo",
       "platformId": "snes",
-      "supportedExtensions": [".sfc", ".smc"],
+      "supportedExtensions": [
+        ".sfc",
+        ".smc"
+      ],
       "requiresCore": true,
       "suggestedCore": "agg23.SNES",
       "biosRequired": false,
@@ -67,7 +79,11 @@
       "displayName": "Mega Drive / Genesis",
       "manufacturer": "Sega",
       "platformId": "genesis",
-      "supportedExtensions": [".md", ".gen", ".bin"],
+      "supportedExtensions": [
+        ".md",
+        ".gen",
+        ".bin"
+      ],
       "requiresCore": true,
       "suggestedCore": "Spiritualized.Genesis",
       "biosRequired": false,
@@ -79,7 +95,9 @@
       "displayName": "Master System",
       "manufacturer": "Sega",
       "platformId": "sms",
-      "supportedExtensions": [".sms"],
+      "supportedExtensions": [
+        ".sms"
+      ],
       "requiresCore": true,
       "suggestedCore": "Spiritualized.SMS",
       "biosRequired": false,
@@ -91,7 +109,9 @@
       "displayName": "Game Gear",
       "manufacturer": "Sega",
       "platformId": "gg",
-      "supportedExtensions": [".gg"],
+      "supportedExtensions": [
+        ".gg"
+      ],
       "requiresCore": true,
       "suggestedCore": "Spiritualized.SMS",
       "biosRequired": false,
@@ -103,7 +123,9 @@
       "displayName": "PC Engine / TurboGrafx-16",
       "manufacturer": "NEC",
       "platformId": "pce",
-      "supportedExtensions": [".pce"],
+      "supportedExtensions": [
+        ".pce"
+      ],
       "requiresCore": true,
       "suggestedCore": "agg23.PC Engine",
       "biosRequired": false,
@@ -115,11 +137,16 @@
       "displayName": "Neo Geo",
       "manufacturer": "SNK",
       "platformId": "ng",
-      "supportedExtensions": [".zip", ".neo"],
+      "supportedExtensions": [
+        ".zip",
+        ".neo"
+      ],
       "requiresCore": true,
       "suggestedCore": "agg23.NeoGeo",
       "biosRequired": true,
-      "biosFiles": ["neogeo.zip"],
+      "biosFiles": [
+        "neogeo.zip"
+      ],
       "experimental": true,
       "notes": "EXPERIMENTAL: Neo Geo requires a system BIOS and specific romset formats that this tool does not fully manage. It can place files into Assets/ng, but BIOS is only copied if you explicitly request it. Verify your core's exact requirements manually."
     },
@@ -128,12 +155,288 @@
       "displayName": "Neo Geo Pocket Color",
       "manufacturer": "SNK",
       "platformId": "ngpc",
-      "supportedExtensions": [".ngc", ".ngp"],
+      "supportedExtensions": [
+        ".ngc",
+        ".ngp"
+      ],
       "requiresCore": true,
       "suggestedCore": "jotego NGPC (Patreon beta)",
       "biosRequired": false,
       "biosFiles": [],
       "notes": "ROMs go to Assets/ngpc/common (.ngc; .ngp also accepted for NGP back-compat). The community NGPC core is jotego's Patreon beta (https://www.patreon.com/jotego) - it is not publicly downloadable, so install the zip you obtained via 'Install a core you supply' on the cores step. If your core declares a different platform-id, its own ROM row appears automatically after install."
+    },
+    {
+      "id": "atari2600",
+      "displayName": "Atari 2600",
+      "manufacturer": "Atari",
+      "platformId": "2600",
+      "supportedExtensions": [
+        ".a26",
+        ".bin"
+      ],
+      "requiresCore": true,
+      "suggestedCore": "Spiritualized.2600",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "ROMs go to Assets/2600/common. The .bin extension is ambiguous (also used by other systems); confirm before bulk-copying a mixed folder."
+    },
+    {
+      "id": "atari7800",
+      "displayName": "Atari 7800",
+      "manufacturer": "Atari",
+      "platformId": "7800",
+      "supportedExtensions": [
+        ".a78"
+      ],
+      "requiresCore": true,
+      "suggestedCore": "Spiritualized.7800",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "ROMs go to Assets/7800/common."
+    },
+    {
+      "id": "sg1000",
+      "displayName": "SG-1000",
+      "manufacturer": "Sega",
+      "platformId": "sg1000",
+      "supportedExtensions": [
+        ".sg"
+      ],
+      "requiresCore": true,
+      "suggestedCore": "Spiritualized.SG-1000",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "ROMs go to Assets/sg1000/common."
+    },
+    {
+      "id": "coleco",
+      "displayName": "ColecoVision",
+      "manufacturer": "Coleco",
+      "platformId": "coleco",
+      "supportedExtensions": [
+        ".col"
+      ],
+      "requiresCore": true,
+      "suggestedCore": "Spiritualized.Coleco",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "ROMs go to Assets/coleco/common."
+    },
+    {
+      "id": "intellivision",
+      "displayName": "Intellivision",
+      "manufacturer": "Mattel",
+      "platformId": "intv",
+      "supportedExtensions": [
+        ".int",
+        ".bin"
+      ],
+      "requiresCore": true,
+      "suggestedCore": "Spiritualized.Intv",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "ROMs go to Assets/intv/common. The .bin extension is ambiguous (also used by other systems); confirm before bulk-copying a mixed folder."
+    },
+    {
+      "id": "odyssey2",
+      "displayName": "Odyssey 2 / Videopac",
+      "manufacturer": "Magnavox/Philips",
+      "platformId": "odyssey2",
+      "supportedExtensions": [
+        ".bin"
+      ],
+      "requiresCore": true,
+      "suggestedCore": "Spiritualized.Odyssey2",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "ROMs go to Assets/odyssey2/common. The .bin extension is ambiguous (also used by other systems); confirm before bulk-copying a mixed folder."
+    },
+    {
+      "id": "pokemini",
+      "displayName": "Pokemon Mini",
+      "manufacturer": "Nintendo",
+      "platformId": "poke_mini",
+      "supportedExtensions": [
+        ".min"
+      ],
+      "requiresCore": true,
+      "suggestedCore": "agg23.PokemonMini",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "ROMs go to Assets/poke_mini/common."
+    },
+    {
+      "id": "supervision",
+      "displayName": "Supervision",
+      "manufacturer": "Watara",
+      "platformId": "supervision",
+      "supportedExtensions": [
+        ".sv",
+        ".bin"
+      ],
+      "requiresCore": true,
+      "suggestedCore": "Spiritualized.Supervision",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "ROMs go to Assets/supervision/common. The .bin extension is ambiguous (also used by other systems); confirm before bulk-copying a mixed folder."
+    },
+    {
+      "id": "sgb",
+      "displayName": "Super Game Boy",
+      "manufacturer": "Nintendo",
+      "platformId": "sgb",
+      "supportedExtensions": [
+        ".gb",
+        ".gbc"
+      ],
+      "requiresCore": true,
+      "suggestedCore": "Spiritualized.SuperGB",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "ROMs go to Assets/sgb/common. Plays Game Boy games with Super Game Boy borders/palettes."
+    },
+    {
+      "id": "arduboy",
+      "displayName": "Arduboy",
+      "manufacturer": "Arduboy",
+      "platformId": "arduboy",
+      "supportedExtensions": [
+        ".hex",
+        ".arduboy"
+      ],
+      "requiresCore": true,
+      "suggestedCore": "agg23.Arduboy",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "ROMs go to Assets/arduboy/common."
+    },
+    {
+      "id": "channelf",
+      "displayName": "Channel F",
+      "manufacturer": "Fairchild",
+      "platformId": "channel_f",
+      "supportedExtensions": [
+        ".chf",
+        ".bin"
+      ],
+      "requiresCore": true,
+      "suggestedCore": "Spiritualized.ChannelF",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "ROMs go to Assets/channel_f/common. The .bin extension is ambiguous (also used by other systems); confirm before bulk-copying a mixed folder."
+    },
+    {
+      "id": "gamate",
+      "displayName": "Gamate",
+      "manufacturer": "Bit Corporation",
+      "platformId": "gamate",
+      "supportedExtensions": [
+        ".bin"
+      ],
+      "requiresCore": true,
+      "suggestedCore": "Spiritualized.Gamate",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "ROMs go to Assets/gamate/common. The .bin extension is ambiguous (also used by other systems); confirm before bulk-copying a mixed folder."
+    },
+    {
+      "id": "megaduck",
+      "displayName": "Mega Duck",
+      "manufacturer": "Welback",
+      "platformId": "mega_duck",
+      "supportedExtensions": [
+        ".bin"
+      ],
+      "requiresCore": true,
+      "suggestedCore": "Spiritualized.Megaduck",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "ROMs go to Assets/mega_duck/common. The .bin extension is ambiguous (also used by other systems); confirm before bulk-copying a mixed folder."
+    },
+    {
+      "id": "avision",
+      "displayName": "Adventure Vision",
+      "manufacturer": "Entex",
+      "platformId": "avision",
+      "supportedExtensions": [
+        ".bin"
+      ],
+      "requiresCore": true,
+      "suggestedCore": "Spiritualized.Adventurevision",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "ROMs go to Assets/avision/common. The .bin extension is ambiguous (also used by other systems); confirm before bulk-copying a mixed folder."
+    },
+    {
+      "id": "arcadia",
+      "displayName": "Arcadia 2001",
+      "manufacturer": "Emerson",
+      "platformId": "arcadia",
+      "supportedExtensions": [
+        ".bin"
+      ],
+      "requiresCore": true,
+      "suggestedCore": "Spiritualized.Arcadia",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "ROMs go to Assets/arcadia/common. The .bin extension is ambiguous (also used by other systems); confirm before bulk-copying a mixed folder."
+    },
+    {
+      "id": "creativision",
+      "displayName": "CreatiVision",
+      "manufacturer": "VTech",
+      "platformId": "creativision",
+      "supportedExtensions": [
+        ".bin"
+      ],
+      "requiresCore": true,
+      "suggestedCore": "Spiritualized.Creativision",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "ROMs go to Assets/creativision/common. The .bin extension is ambiguous (also used by other systems); confirm before bulk-copying a mixed folder."
+    },
+    {
+      "id": "studio2",
+      "displayName": "Studio II",
+      "manufacturer": "RCA",
+      "platformId": "studio2",
+      "supportedExtensions": [
+        ".st2",
+        ".bin"
+      ],
+      "requiresCore": true,
+      "suggestedCore": "Spiritualized.Studio2",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "ROMs go to Assets/studio2/common. The .bin extension is ambiguous (also used by other systems); confirm before bulk-copying a mixed folder."
+    },
+    {
+      "id": "videobrain",
+      "displayName": "VideoBrain",
+      "manufacturer": "VideoBrain",
+      "platformId": "videobrain",
+      "supportedExtensions": [
+        ".bin"
+      ],
+      "requiresCore": true,
+      "suggestedCore": "Spiritualized.VideoBrain",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "ROMs go to Assets/videobrain/common. The .bin extension is ambiguous (also used by other systems); confirm before bulk-copying a mixed folder."
+    },
+    {
+      "id": "gameking",
+      "displayName": "GameKing",
+      "manufacturer": "TimeTop",
+      "platformId": "game_king",
+      "supportedExtensions": [
+        ".bin"
+      ],
+      "requiresCore": true,
+      "suggestedCore": "Spiritualized.Gameking",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "ROMs go to Assets/game_king/common. The .bin extension is ambiguous (also used by other systems); confirm before bulk-copying a mixed folder."
     }
   ]
 }
