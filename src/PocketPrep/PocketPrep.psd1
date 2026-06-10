@@ -58,6 +58,7 @@
         'Get-PocketImportablePlatform',
         'Get-PocketKnownPlatform',
         'Get-PocketBiosStatus',
+        'Install-PocketBiosFile',
         'Get-PocketCoreRequiredFile',
         'New-PocketTarget',
         'Get-PocketDirectoryListing',

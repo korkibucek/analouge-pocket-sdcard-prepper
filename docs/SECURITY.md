@@ -17,7 +17,9 @@ See [safety-model.md](safety-model.md) for the full picture. In short:
   tool only *detects* whether a BIOS you provided is present and guides you to add your own.
   This detection is **data.json-driven**: it reads each installed core's declared required
   data slots, so it correctly flags missing required files for *any* core — still without
-  ever fetching them.
+  ever fetching them. The **BIOS upload** (`Install-PocketBiosFile`, `POST /api/bios/install`)
+  only *places a local file the user supplies*, and only into a slot a core or system
+  actually declares — undeclared targets are rejected, and nothing is ever fetched.
 - Core zips are checked for path-traversal (zip-slip) entries and rejected; extraction
   is constrained to the SD root.
 

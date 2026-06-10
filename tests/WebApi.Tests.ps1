@@ -227,6 +227,26 @@ Describe 'Invoke-PocketApiRoute' {
         $r.Status | Should -Be 200
         ($r.Body.cores | Where-Object Identifier -eq 'Test.NeoGeo').Missing | Should -Contain 'uni-bios.rom'
     }
+    It 'POST /api/bios/install places a user-supplied BIOS into a declared slot only' {
+        $src = Join-Path $script:root '_biosrc'; New-Item -ItemType Directory $src -Force | Out-Null
+        'bios' | Set-Content (Join-Path $src 'whatever.bin')
+        # neogeo.zip on platform ng is declared by the systems manifest.
+        $b = [pscustomobject]@{ platformId='ng'; fileName='neogeo.zip'; sourceFile=(Join-Path $src 'whatever.bin') }
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = $b } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/bios/install' -Body $b -State $s }
+        $r.Status | Should -Be 200
+        $r.Body.Installed | Should -BeTrue
+        (Test-Path (Join-Path $script:state.Root 'Assets/ng/common/neogeo.zip')) | Should -BeTrue
+        # Undeclared targets are rejected.
+        $bad = [pscustomobject]@{ platformId='gb'; fileName='fake.rom'; sourceFile=(Join-Path $src 'whatever.bin') }
+        $r2 = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = $bad } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/bios/install' -Body $b -State $s }
+        $r2.Status | Should -Be 400
+        # Missing fields are rejected.
+        $r3 = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method POST -Path '/api/bios/install' -Body ([pscustomobject]@{}) -State $s }
+        $r3.Status | Should -Be 400
+    }
     It 'GET /api/bios-status flags missing Neo Geo BIOS (never downloads it)' {
         $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
             Invoke-PocketApiRoute -Method GET -Path '/api/bios-status' -State $s }

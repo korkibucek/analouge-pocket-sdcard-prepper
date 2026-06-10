@@ -381,6 +381,30 @@ function cardBreakdownHtml(sum) {
   const biosNote = biosMissing.length
     ? `<li class="warnote">BIOS needed: ${biosMissing.map(b => `${b.DisplayName} (missing ${b.Missing.join(', ')})`).join('; ')} — supply your own; this tool never downloads BIOS.</li>`
     : '';
+  // BIOS upload: every missing declared requirement (installed-core data.json slots +
+  // manifest biosRequired systems), deduped — and nothing else, so this path can only
+  // ever fill genuinely required slots.
+  const biosTargets = [];
+  const seenBios = new Set();
+  (sum.RequiredFiles || []).forEach(c => (c.Required || []).forEach(r => {
+    if (r.Found) return;
+    const k = `${String(c.PlatformId).toLowerCase()}|${String(r.Filename).toLowerCase()}`;
+    if (!seenBios.has(k)) { seenBios.add(k); biosTargets.push({ plat: c.PlatformId, file: r.Filename, by: c.Identifier }); }
+  }));
+  (sum.Bios || []).forEach(b => (b.Missing || []).forEach(f => {
+    const k = `${String(b.PlatformId).toLowerCase()}|${String(f).toLowerCase()}`;
+    if (!seenBios.has(k)) { seenBios.add(k); biosTargets.push({ plat: b.PlatformId, file: f, by: b.DisplayName }); }
+  }));
+  const biosPanel = biosTargets.length ? `
+    <details class="card" style="margin-top:.6rem" open><summary><strong>Install BIOS / required files</strong> — ${biosTargets.length} missing</summary>
+      <p class="meta">These cores declare files they need to run. Point each at the copy <strong>you own</strong> — it's renamed to the exact expected filename and placed in the declared slot. This tool never downloads BIOS.</p>
+      ${biosTargets.map((t, i) => `<div class="row" data-bios-row="${i}">
+        <span><strong>${t.file}</strong> <span class="meta">(${t.plat} · needed by ${t.by})</span></span>
+        <input type="text" id="bios-src-${i}" placeholder="path to your ${t.file}">
+        <button data-bios="${i}" class="secondary">Install BIOS</button></div>
+        <div id="bios-out-${i}"></div>`).join('')}
+    </details>` : '';
+  S.biosTargets = biosTargets;   // for the wire-up after the panel is injected
   const anything = sum.Firmware.Present || sum.Cores.Count > 0 || sum.Roms.TotalFiles > 0;
   if (!anything && !sum.Config.Exists) return '';
   // Used card with ROMs but no saved config -> offer to onboard (generate the config).
@@ -427,6 +451,7 @@ function cardBreakdownHtml(sum) {
       ${onboardBtn}
       <button id="manageroms" class="secondary">${sum.Config.Exists ? 'Rescan / modify ROM folders →' : 'Manage ROM folders →'}</button>
     </div><div id="onboardout"></div>
+    ${biosPanel}
     ${organizer}
     ${deduper}
     ${cleaner}</div>`;
@@ -522,6 +547,22 @@ async function stepCard() {
         refreshSpace();
       } catch (e) { $('#cl-out').innerHTML = errLine(e.message); } finally { busy(false); }
     };
+
+    // BIOS upload: place a user-supplied file into the declared slot (renamed to the
+    // exact expected filename). Only declared requirements are offered/accepted.
+    document.querySelectorAll('button[data-bios]').forEach(btn => btn.onclick = async () => {
+      const i = +btn.dataset.bios, t = (S.biosTargets || [])[i];
+      const out = $('#bios-out-' + i), src = ($('#bios-src-' + i) || {}).value;
+      if (!t) return;
+      if (!src || !src.trim()) { out.innerHTML = errLine(`Enter the path to your ${t.file}.`); return; }
+      busy(true); out.innerHTML = `<p>Placing ${t.file}…</p>`;
+      try {
+        const r = await api('/api/bios/install', 'POST', { platformId: t.plat, fileName: t.file, sourceFile: src.trim() });
+        out.innerHTML = r.Installed
+          ? `<p class="ok">${r.FileName} placed at ${r.Destination}${r.Renamed ? ' (renamed from your file)' : ''}${r.DryRun ? ' [dry-run]' : ''}.</p>`
+          : `<p class="warnote">${r.Message || 'Not installed.'}</p>`;
+      } catch (e) { out.innerHTML = errLine(e.message); } finally { busy(false); }
+    });
   };
   try {
     if (S.drive && S.drive.FileSystem) {
