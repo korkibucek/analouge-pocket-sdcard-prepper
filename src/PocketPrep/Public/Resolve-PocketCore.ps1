@@ -28,6 +28,7 @@ function Resolve-PocketCore {
             Repo         = $c.repo
             Tag          = [string]$c.tag
             Sha256       = [string]$c.sha256
+            AssetPattern = [string]$c.assetPattern
             Homepage     = [string]$c.homepage
             BiosRequired = [bool]$c.biosRequired
             BiosFiles    = @($c.biosFiles)

@@ -28,7 +28,8 @@
       "homepage": "https://github.com/agg23/fpga-gameandwatch",
       "biosRequired": false,
       "biosFiles": [],
-      "notes": "Curated community core. LCD Game & Watch handhelds (needs MAME-style artwork/romsets you provide)."
+      "notes": "Curated community core. LCD Game & Watch handhelds (needs MAME-style artwork/romsets you provide).",
+      "assetPattern": "Pocket"
     },
     {
       "id": "agg23-nes",
@@ -110,7 +111,8 @@
       "homepage": "https://github.com/agg23/fpga-tamagotchi",
       "biosRequired": false,
       "biosFiles": [],
-      "notes": "Curated community core. Tamagotchi P1."
+      "notes": "Curated community core. Tamagotchi P1.",
+      "assetPattern": "Pocket"
     },
     {
       "id": "boogermann-bankpanic",
@@ -124,7 +126,8 @@
       "homepage": "https://github.com/opengateware/arcade-bankp",
       "biosRequired": false,
       "biosFiles": [],
-      "notes": "From the openFPGA Cores Inventory. Arcade Bank Panic by Sanritsu / Sega (1984)"
+      "notes": "From the openFPGA Cores Inventory. Arcade Bank Panic by Sanritsu / Sega (1984)",
+      "assetPattern": "pocket"
     },
     {
       "id": "boogermann-congo",
@@ -138,7 +141,8 @@
       "homepage": "https://github.com/opengateware/arcade-congo",
       "biosRequired": false,
       "biosFiles": [],
-      "notes": "From the openFPGA Cores Inventory. Arcade Congo Bongo by Sega/Gremlin (1983)"
+      "notes": "From the openFPGA Cores Inventory. Arcade Congo Bongo by Sega/Gremlin (1983)",
+      "assetPattern": "pocket"
     },
     {
       "id": "boogermann-digdug",
@@ -152,7 +156,8 @@
       "homepage": "https://github.com/opengateware/arcade-digdug",
       "biosRequired": false,
       "biosFiles": [],
-      "notes": "From the openFPGA Cores Inventory. Arcade Dig Dug by Namco (1982)"
+      "notes": "From the openFPGA Cores Inventory. Arcade Dig Dug by Namco (1982)",
+      "assetPattern": "pocket"
     },
     {
       "id": "boogermann-galaga",
@@ -166,7 +171,8 @@
       "homepage": "https://github.com/opengateware/arcade-galaga",
       "biosRequired": false,
       "biosFiles": [],
-      "notes": "From the openFPGA Cores Inventory. Arcade Galaga by Namco (1981)"
+      "notes": "From the openFPGA Cores Inventory. Arcade Galaga by Namco (1981)",
+      "assetPattern": "pocket"
     },
     {
       "id": "boogermann-gberet",
@@ -180,7 +186,8 @@
       "homepage": "https://github.com/opengateware/arcade-gberet",
       "biosRequired": false,
       "biosFiles": [],
-      "notes": "From the openFPGA Cores Inventory. Arcade Green Beret by Konami (1985)"
+      "notes": "From the openFPGA Cores Inventory. Arcade Green Beret by Konami (1985)",
+      "assetPattern": "pocket"
     },
     {
       "id": "boogermann-pooyan",
@@ -194,7 +201,8 @@
       "homepage": "https://github.com/opengateware/arcade-pooyan",
       "biosRequired": false,
       "biosFiles": [],
-      "notes": "From the openFPGA Cores Inventory. Arcade Pooyan by Konami (1982)"
+      "notes": "From the openFPGA Cores Inventory. Arcade Pooyan by Konami (1982)",
+      "assetPattern": "pocket"
     },
     {
       "id": "boogermann-supervision",
@@ -222,7 +230,23 @@
       "homepage": "https://github.com/opengateware/arcade-xevious",
       "biosRequired": false,
       "biosFiles": [],
-      "notes": "From the openFPGA Cores Inventory. Arcade Xevious by Namco (1983)"
+      "notes": "From the openFPGA Cores Inventory. Arcade Xevious by Namco (1983)",
+      "assetPattern": "pocket"
+    },
+    {
+      "id": "budude2-gb",
+      "identifier": "budude2.GB",
+      "displayName": "Game Boy (classic) [budude2]",
+      "platformIds": [
+        "gb"
+      ],
+      "owner": "budude2",
+      "repo": "openfpga-GBC",
+      "homepage": "https://github.com/budude2/openfpga-GBC",
+      "biosRequired": false,
+      "biosFiles": [],
+      "notes": "Curated community core. Classic (DMG) Game Boy core; ships as the second zip of the budude2 GBC repo's release.",
+      "assetPattern": "-gb-"
     },
     {
       "id": "budude2-gbc",
@@ -236,7 +260,8 @@
       "homepage": "https://github.com/budude2/openfpga-GBC",
       "biosRequired": false,
       "biosFiles": [],
-      "notes": "Curated community core. Alternative Game Boy Color core."
+      "notes": "Curated community core. Alternative Game Boy Color core.",
+      "assetPattern": "-gbc-"
     },
     {
       "id": "ericlewis-asteroids",
@@ -574,7 +599,8 @@
       "homepage": "https://github.com/spiritualized1997/openFPGA-GB-GBC",
       "biosRequired": false,
       "biosFiles": [],
-      "notes": "From the openFPGA Cores Inventory. Handheld Game Boy by Nintendo (1989)"
+      "notes": "From the openFPGA Cores Inventory. Handheld Game Boy by Nintendo (1989)",
+      "assetPattern": "_GB_"
     },
     {
       "id": "spiritualized-gba",
@@ -602,7 +628,8 @@
       "homepage": "https://github.com/spiritualized1997/openFPGA-GB-GBC",
       "biosRequired": false,
       "biosFiles": [],
-      "notes": "From the openFPGA Cores Inventory. Handheld Game Boy Color by Nintendo (1998)"
+      "notes": "From the openFPGA Cores Inventory. Handheld Game Boy Color by Nintendo (1998)",
+      "assetPattern": "_GBC_"
     },
     {
       "id": "spiritualized-genesis",

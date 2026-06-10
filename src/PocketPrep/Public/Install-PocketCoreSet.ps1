@@ -43,11 +43,13 @@ function Install-PocketCoreSet {
     $allCores = Resolve-PocketCore -Manifest (Get-PocketCoreManifest -Path $CoresManifest)
     $selected = if ($Id) { @($allCores | Where-Object { $Id -contains $_.Id }) } else { @($allCores) }
 
-    # Install each unique GitHub repo once: a repo's release zip ships ALL the cores it
-    # provides, so several inventory entries that share a repo (e.g. GB + GBC) are one
-    # download. We don't require a specific Cores/<identifier>/ folder for the bulk path
-    # (folder names don't always match the inventory identifier).
-    $cores = @($selected | Group-Object { ($_.Owner + '/' + $_.Repo).ToLowerInvariant() } |
+    # Install each unique (repo, release asset) once: one zip ships every core it contains,
+    # so entries sharing a repo AND asset are one download - but entries with DIFFERENT
+    # assetPatterns are separate zips (e.g. the GB-GBC repo ships a GB zip and a GBC zip)
+    # and must each be installed, or one of them is silently dropped. We don't require a
+    # specific Cores/<identifier>/ folder for the bulk path (folder names don't always
+    # match the inventory identifier).
+    $cores = @($selected | Group-Object { (($_.Owner + '/' + $_.Repo).ToLowerInvariant()) + '|' + [string]$_.AssetPattern } |
         ForEach-Object { $_.Group | Select-Object -First 1 })
 
     $results = [System.Collections.Generic.List[object]]::new()

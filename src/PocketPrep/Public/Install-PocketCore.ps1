@@ -82,8 +82,11 @@ function Install-PocketCore {
     try {
         if ($PSCmdlet.ParameterSetName -eq 'Download') {
             $effectiveTag = if ($Tag) { $Tag } elseif ($Core.PSObject.Properties['Tag'] -and $Core.Tag) { [string]$Core.Tag } else { $null }
-            & $log "Resolving core release for $($Core.Owner)/$($Core.Repo)$(if ($effectiveTag) { " tag $effectiveTag" })" 'INFO'
-            $rel = Get-PocketLatestRelease -Owner $Core.Owner -Repo $Core.Repo -Tag $effectiveTag
+            # Some releases ship several zips (GB+GBC in one repo; Pocket+MiSTer builds);
+            # the manifest's assetPattern selects the right one.
+            $pattern = if ($Core.PSObject.Properties['AssetPattern'] -and $Core.AssetPattern) { [string]$Core.AssetPattern } else { $null }
+            & $log "Resolving core release for $($Core.Owner)/$($Core.Repo)$(if ($effectiveTag) { " tag $effectiveTag" })$(if ($pattern) { " asset ~ $pattern" })" 'INFO'
+            $rel = Get-PocketLatestRelease -Owner $Core.Owner -Repo $Core.Repo -Tag $effectiveTag -AssetPattern $pattern
             $resolvedVersion = $rel.Version
             if (-not $rel.ZipUrl) { throw "No .zip asset found in release '$resolvedVersion' for $($Core.Owner)/$($Core.Repo)." }
             $assetUrl  = $rel.ZipUrl
