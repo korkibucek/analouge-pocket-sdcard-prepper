@@ -266,6 +266,17 @@ function Invoke-PocketApiRoute {
                 # card. Detect & guide only - never downloads BIOS/ROMs.
                 return @{ Status = 200; Body = @{ cores = @(Get-PocketCoreRequiredFile -Root $State.Root) } }
             }
+            '^POST /api/bios/install$' {
+                # Place a USER-SUPPLIED BIOS into the slot a core/system declares. Only
+                # declared requirements are accepted; the tool never downloads BIOS.
+                foreach ($f in 'platformId', 'fileName', 'sourceFile') {
+                    if (-not $Body.$f) { return @{ Status = 400; Body = @{ error = "Missing $f." } } }
+                }
+                $res = Install-PocketBiosFile -Root $State.Root -PlatformId ([string]$Body.platformId) `
+                    -FileName ([string]$Body.fileName) -SourceFile ([string]$Body.sourceFile) `
+                    -SystemsManifest $State.SystemsManifest -Overwrite:([bool]$Body.overwrite) -DryRun:([bool]$State.DryRun)
+                return @{ Status = 200; Body = $res }
+            }
             '^GET /api/bios-status$' {
                 # Read-only: which BIOS-dependent systems (e.g. Neo Geo) have their BIOS
                 # present. This tool never downloads copyrighted BIOS - it only detects/guides.

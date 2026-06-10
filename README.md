@@ -284,13 +284,19 @@ short token appended to keep them unique — so they stay within the FAT/exFAT 2
 hard limit and the Pocket's practical preference for short names. This is also idempotent and
 move/rename only.
 
-### "What do I still need?" — required-file detection
+### "What do I still need?" — required-file detection & BIOS upload
 
 After cores are installed, the card breakdown flags any **required files a core is missing**
 — read straight from each core's `data.json` (its required data slots), so it's correct for
 *any* core, not just a hard-coded list. This is how you find out, e.g., that a Neo Geo or PC
-Engine CD core needs a BIOS you must supply. The tool **never downloads BIOS/ROMs** — it
-detects what's present and tells you the exact filename and where to put it.
+Engine CD core needs a BIOS you must supply.
+
+Each missing file is also an **upload slot**: point **Install BIOS** at the copy *you own*
+and the tool places it in the exact declared location, **renamed to the exact filename the
+core expects** (your `unibios.rom` becomes `uni-bios_4_0.rom` where required), including
+core-specific slots. Only files a core or system actually declares can be placed this way —
+so the feature covers exactly the relevant cores and nothing else. The tool **never
+downloads BIOS/ROMs**; it only places files you supply.
 
 ### Platform images
 

@@ -46,12 +46,19 @@ function Get-PocketCoreRequiredFile {
                 }
                 if ($found) { break }
             }
-            $expect = if ($platformIds.Count) { Join-Path (Join-Path (Join-Path (Join-Path $Root 'Assets') $platformIds[0]) 'common') $fname } else { $fname }
+            # Expected location for a missing file: core-specific slots live in the core's
+            # own folder (Assets/<plat>/<identifier>/), everything else in common/.
+            $expect = if ($platformIds.Count) {
+                $assets0 = Join-Path (Join-Path $Root 'Assets') $platformIds[0]
+                if ($slot.core_specific_file) { Join-Path (Join-Path $assets0 $core.Identifier) $fname }
+                else { Join-Path (Join-Path $assets0 'common') $fname }
+            } else { $fname }
             [pscustomobject]@{
-                Name     = [string]$slot.name
-                Filename = $fname
-                Found    = $found
-                Location = if ($found) { $location } else { $expect }
+                Name         = [string]$slot.name
+                Filename     = $fname
+                Found        = $found
+                CoreSpecific = [bool]$slot.core_specific_file
+                Location     = if ($found) { $location } else { $expect }
             }
         }
         $required = @($required)
