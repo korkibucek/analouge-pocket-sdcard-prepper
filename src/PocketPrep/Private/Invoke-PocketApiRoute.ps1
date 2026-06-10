@@ -342,6 +342,15 @@ function Invoke-PocketApiRoute {
                 $cores = Resolve-PocketCore -Manifest (Get-PocketCoreManifest -Path $State.CoresManifest)
                 return @{ Status = 200; Body = @{ cores = @($cores) } }
             }
+            '^POST /api/cores/install-local$' {
+                # Install a user-supplied core zip that is NOT in the catalog (e.g. jotego's
+                # Patreon-distributed NGPC beta). Same safety as every install: openFPGA
+                # structure validation, zip-slip protection, non-destructive merge.
+                if (-not $Body.localZip) { return @{ Status = 400; Body = @{ error = 'Missing localZip.' } } }
+                $res = Install-PocketCore -Root $State.Root -LocalZip ([string]$Body.localZip) `
+                    -Overwrite:([bool]$Body.overwrite) -DryRun:([bool]$State.DryRun)
+                return @{ Status = 200; Body = $res }
+            }
             '^POST /api/cores/image-pack$' {
                 # Install platform menu images into Platforms/_images from a GitHub release
                 # (owner/repo) or a local zip. User supplies the source.

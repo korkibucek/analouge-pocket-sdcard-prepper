@@ -371,6 +371,47 @@ Describe 'Invoke-PocketApiRoute' {
             (Test-Path (Join-Path $script:state.Root 'Platforms/_images/gb.bin')) | Should -BeTrue
         } finally { Remove-Item $stage, $zip -Recurse -Force -ErrorAction SilentlyContinue }
     }
+    It 'POST /api/cores/install-local installs a user-supplied (non-catalog) core zip' {
+        # Fabricate a valid openFPGA core zip like a jotego Patreon beta the user supplies.
+        $stage = Join-Path ([System.IO.Path]::GetTempPath()) ("byo_" + [System.IO.Path]::GetRandomFileName())
+        New-Item -ItemType Directory -Path (Join-Path $stage 'Cores/jotego.NGPC') -Force | Out-Null
+        New-Item -ItemType Directory -Path (Join-Path $stage 'Platforms') -Force | Out-Null
+        @{ core = @{ metadata = @{ shortname='NGPC'; author='jotego'; version='0.1'; platform_ids=@('ngpc') } } } |
+            ConvertTo-Json -Depth 6 | Set-Content (Join-Path $stage 'Cores/jotego.NGPC/core.json')
+        '{}' | Set-Content (Join-Path $stage 'Platforms/ngpc.json')
+        $zip = Join-Path ([System.IO.Path]::GetTempPath()) ("byoz_" + [System.IO.Path]::GetRandomFileName() + '.zip')
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        [System.IO.Compression.ZipFile]::CreateFromDirectory($stage, $zip)
+        try {
+            $r = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = [pscustomobject]@{ localZip = $zip } } { param($s,$b)
+                Invoke-PocketApiRoute -Method POST -Path '/api/cores/install-local' -Body $b -State $s }
+            $r.Status | Should -Be 200
+            $r.Body.PlacedCount | Should -BeGreaterOrEqual 2
+            (Test-Path (Join-Path $script:state.Root 'Cores/jotego.NGPC/core.json')) | Should -BeTrue
+            # The installed core's platform now shows up for ROM upload.
+            $p = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+                Invoke-PocketApiRoute -Method GET -Path '/api/rom/all-platforms' -State $s }
+            @($p.Body.platforms.PlatformId) | Should -Contain 'ngpc'
+        } finally { Remove-Item $stage, $zip -Recurse -Force -ErrorAction SilentlyContinue }
+    }
+    It 'POST /api/cores/install-local rejects a missing zip and a non-core zip' {
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method POST -Path '/api/cores/install-local' -Body ([pscustomobject]@{}) -State $s }
+        $r.Status | Should -Be 400
+        # A zip with no openFPGA structure must be refused.
+        $stage = Join-Path ([System.IO.Path]::GetTempPath()) ("byob_" + [System.IO.Path]::GetRandomFileName())
+        New-Item -ItemType Directory -Path $stage -Force | Out-Null
+        'x' | Set-Content (Join-Path $stage 'random.txt')
+        $zip = Join-Path ([System.IO.Path]::GetTempPath()) ("byobz_" + [System.IO.Path]::GetRandomFileName() + '.zip')
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        [System.IO.Compression.ZipFile]::CreateFromDirectory($stage, $zip)
+        try {
+            $bad = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = [pscustomobject]@{ localZip = $zip } } { param($s,$b)
+                Invoke-PocketApiRoute -Method POST -Path '/api/cores/install-local' -Body $b -State $s }
+            $bad.Status | Should -Be 400
+            $bad.Body.error | Should -Match 'openFPGA'
+        } finally { Remove-Item $stage, $zip -Recurse -Force -ErrorAction SilentlyContinue }
+    }
     It 'GET /api/cores/integrity flags a core missing required files' {
         $cd = Join-Path $script:root 'Cores/broken.Core'; New-Item -ItemType Directory $cd -Force | Out-Null
         @{ core = @{ metadata = @{ shortname='B'; author='x'; version='1'; platform_ids=@('gb') } } } | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $cd 'core.json')
