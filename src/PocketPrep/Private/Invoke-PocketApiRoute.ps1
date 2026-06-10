@@ -282,6 +282,10 @@ function Invoke-PocketApiRoute {
                 # present. This tool never downloads copyrighted BIOS - it only detects/guides.
                 return @{ Status = 200; Body = @{ bios = @(Get-PocketBiosStatus -Root $State.Root -SystemsManifest $State.SystemsManifest) } }
             }
+            '^GET /api/healthcheck$' {
+                # One-click read-only audit of the whole card.
+                return @{ Status = 200; Body = (Get-PocketHealthReport -Root $State.Root -SystemsManifest $State.SystemsManifest -CoresManifest $State.CoresManifest) }
+            }
             '^GET /api/cleanup$' {
                 return @{ Status = 200; Body = (Get-PocketCardCleanup -Root $State.Root -CoresManifest $State.CoresManifest) }
             }

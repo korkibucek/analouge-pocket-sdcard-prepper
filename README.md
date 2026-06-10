@@ -314,6 +314,15 @@ ROMs or BIOS**), and **import** it onto a fresh card or after a reformat to rein
 cores and restore the config/favourites (optionally copying the ROMs from your source folders
 in the same step). Handy for replicating a known-good setup across cards.
 
+### Health check
+
+**🩺 Health check** (in the menu) audits the whole card in one click and reports
+pass/info/warn/fail per category — firmware present, **core integrity**, **BIOS/required
+files** (only for platforms you actually use), **per-folder game limits** (every directory
+counted separately against the ~1300 ceiling), overlong filenames, ROMs whose platform has
+no installed core, unmanaged cores, free space, and leftover folders. Every finding names
+the in-app fix (Repair, Install BIOS, Library Organizer, …). Strictly read-only.
+
 ### Maintenance & cleanup
 
 A **Maintenance & cleanup** panel scans the card and reports leftovers — **unmanaged cores**

@@ -273,6 +273,14 @@ Describe 'Invoke-PocketApiRoute' {
             Invoke-PocketApiRoute -Method GET -Path '/api/favorites' -State $s }
         ($r.Body.Platforms | Where-Object PlatformId -eq 'gb').Names | Should -Contain 'Tetris.gb'
     }
+    It 'GET /api/healthcheck returns an overall status with per-check details' {
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method GET -Path '/api/healthcheck' -State $s }
+        $r.Status | Should -Be 200
+        $r.Body.Overall | Should -BeIn @('ok', 'info', 'warn', 'fail')
+        @($r.Body.Checks).Count | Should -BeGreaterOrEqual 8
+        ($r.Body.Checks | Where-Object Name -eq 'Firmware').Status | Should -Be 'warn'   # empty test root
+    }
     It 'GET/POST /api/cleanup reports leftovers and removes only empty/temp dirs' {
         New-Item -ItemType Directory -Path (Join-Path $script:root 'Assets/gb/common/EmptyBucket') -Force | Out-Null
         'rom' | Set-Content (Join-Path $script:root 'Assets/gb/common/keep.gb')
