@@ -636,6 +636,14 @@ async function stepCores() {
        <button id="updall" class="secondary">Update all</button>
        <button id="integ" class="secondary">Check integrity</button>
        <span id="updout" class="meta"></span></p>
+    <details class="card"><summary><strong>Install a core you supply</strong> — e.g. jotego's Neo Geo Pocket Color beta</summary>
+      <p class="meta">Some cores aren't publicly downloadable — notably <strong>jotego's beta cores</strong> (Neo Geo Pocket Color, CPS, …), distributed to supporters via
+        <a href="https://www.patreon.com/jotego" target="_blank" rel="noopener">jotego's Patreon</a>. Get the core zip there, then install it here:
+        it's validated (openFPGA structure, zip-slip-safe) and merged non-destructively like any other core. After install, its system appears in the ROM step automatically.</p>
+      <label class="row">Core zip: <input type="text" id="byo-zip" placeholder="path to the core .zip you obtained"></label>
+      <label class="row"><input type="checkbox" id="byo-ow"> overwrite existing files (update an installed copy)</label>
+      <div class="row"><button id="byo-install">Install supplied core</button></div>
+      <div id="byo-out"></div></details>
     <details class="card"><summary><strong>Platform images</strong> — system artwork for the openFPGA menu (Platforms/_images)</summary>
       <p class="meta">Installs a platform image pack from a GitHub release you choose, or a local zip. The tool bundles none and picks no default — supply the source (check its licence). Only <code>Platforms/_images</code> is written.</p>
       <label class="row">GitHub owner: <input type="text" id="ip-owner" placeholder="e.g. someuser"></label>
@@ -723,6 +731,15 @@ async function stepCores() {
     } catch (e) { $('#updout').innerHTML = errLine(e.message); } finally { busy(false); }
   };
   // Platform image pack install (user-supplied source).
+  // Bring-your-own core (e.g. jotego's Patreon-distributed NGPC beta).
+  $('#byo-install').onclick = async () => {
+    const zip = $('#byo-zip').value.trim();
+    if (!zip) { $('#byo-out').innerHTML = errLine('Enter the path to the core .zip you obtained.'); return; }
+    busy(true); $('#byo-out').innerHTML = inProgress('Validating & installing your core');
+    try { const r = await api('/api/cores/install-local', 'POST', { localZip: zip, overwrite: $('#byo-ow').checked });
+      $('#byo-out').innerHTML = `<p class="ok">Core installed: ${r.PlacedCount} file(s) placed, ${r.SkippedCount} skipped${r.DryRun ? ' [dry-run]' : ''}. Its system now appears in the ROM step (and any required BIOS will be flagged on the card overview).</p>`;
+    } catch (e) { $('#byo-out').innerHTML = errLine(e.message); } finally { busy(false); }
+  };
   $('#ip-install').onclick = async () => {
     const zip = $('#ip-zip').value.trim(), owner = $('#ip-owner').value.trim(), repo = $('#ip-repo').value.trim();
     const body = zip ? { mode: 'offline', localZip: zip } : { owner, repo };

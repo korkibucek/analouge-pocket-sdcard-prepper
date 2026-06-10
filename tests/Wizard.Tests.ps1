@@ -2,6 +2,9 @@ BeforeAll {
     $script:repo = Split-Path -Parent $PSScriptRoot
     $script:wizard = Join-Path $script:repo 'src/Start-PocketPrep.ps1'
     $script:gbExamples = Join-Path $script:repo 'examples/fake-sd-source/GameBoy'
+    # Answer sequences depend on how many systems the wizard offers - read it from the
+    # manifest so adding a system doesn't silently break these tests.
+    $script:sysCount = @((Get-Content (Join-Path $script:repo 'manifests/systems.json') -Raw | ConvertFrom-Json).systems).Count
 
     # Runs the real wizard script as a subprocess with scripted answers on stdin,
     # against a fake SD root. Returns the captured stdout+stderr.
@@ -28,8 +31,8 @@ Describe 'Start-PocketPrep wizard (subprocess, fake SD root)' {
     AfterEach { Remove-Item $script:root -Recurse -Force -ErrorAction SilentlyContinue }
 
     It 'completes the happy path (dry-run) skipping firmware, cores and all systems' {
-        # firmware:n, install-cores:n, then 10 systems:n
-        $answers = @('n', 'n') + (1..10 | ForEach-Object { 'n' })
+        # firmware:n, install-cores:n, then every system:n
+        $answers = @('n', 'n') + (1..$script:sysCount | ForEach-Object { 'n' })
         $r = Invoke-Wizard -Answers $answers -WizardArgs @('-TestMode', '-Root', $script:root, '-DryRun')
         $r.Output | Should -Match 'Summary'
         $r.Output | Should -Match 'Folders created: 9'
@@ -37,8 +40,8 @@ Describe 'Start-PocketPrep wizard (subprocess, fake SD root)' {
     }
 
     It 'imports Game Boy ROMs end-to-end and reports them in the summary' {
-        # firmware:n, cores:n, gb:y, source, recurse:n, copy:y, then 9 systems:n, save-log:n
-        $answers = @('n', 'n', 'y', $script:gbExamples, 'n', 'y') + (1..9 | ForEach-Object { 'n' }) + @('n')
+        # firmware:n, cores:n, gb:y, source, recurse:n, copy:y, then remaining systems:n, save-log:n
+        $answers = @('n', 'n', 'y', $script:gbExamples, 'n', 'y') + (1..($script:sysCount - 1) | ForEach-Object { 'n' }) + @('n')
         $r = Invoke-Wizard -Answers $answers -WizardArgs @('-TestMode', '-Root', $script:root)
         $r.Output | Should -Match 'gb: 2 copied'
         (Test-Path (Join-Path $script:root 'Assets/gb/common/demo-game.gb')) | Should -BeTrue
@@ -51,8 +54,8 @@ Describe 'Start-PocketPrep wizard (subprocess, fake SD root)' {
         'a' | Set-Content (Join-Path $src 'one.gb')
         try {
             # Run 1: import GB from $src and save the folder list to the card.
-            # firmware:n, cores:n, gb:y, source, recurse:n, copy:y, 9 systems:n, save-log:n
-            $a1 = @('n', 'n', 'y', $src, 'n', 'y') + (1..9 | ForEach-Object { 'n' }) + @('n')
+            # firmware:n, cores:n, gb:y, source, recurse:n, copy:y, remaining systems:n, save-log:n
+            $a1 = @('n', 'n', 'y', $src, 'n', 'y') + (1..($script:sysCount - 1) | ForEach-Object { 'n' }) + @('n')
             Invoke-Wizard -Answers $a1 -WizardArgs @('-TestMode', '-Root', $script:root) | Out-Null
             (Test-Path (Join-Path $script:root 'pocketprep/rom-sources.json')) | Should -BeTrue
 
@@ -76,8 +79,8 @@ Describe 'Start-PocketPrep wizard (subprocess, fake SD root)' {
         $drivesJson = Join-Path ([System.IO.Path]::GetTempPath()) ("drv_" + [System.IO.Path]::GetRandomFileName() + '.json')
         @(@{ DriveLetter='X'; RootPath=$script:root; Label='POCKET'; FileSystem='exFAT'; SizeBytes=64424509440; FreeBytes=64000000000; IsRemovable=$true; BusType='usb'; MediaType='' }) |
             ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $drivesJson
-        # answers: select drive 0, wipe? y, token=POCKET, continue y, firmware n, cores n, 10 systems n, save-log n
-        $answers = @('0', 'y', 'POCKET', 'y', 'n', 'n') + (1..10 | ForEach-Object { 'n' }) + @('n')
+        # answers: select drive 0, wipe? y, token=POCKET, continue y, firmware n, cores n, every system n, save-log n
+        $answers = @('0', 'y', 'POCKET', 'y', 'n', 'n') + (1..$script:sysCount | ForEach-Object { 'n' }) + @('n')
         $r = Invoke-Wizard -Answers $answers -WizardArgs @('-Root', $script:root, '-CleanFirst', '-DriveDataPath', $drivesJson)
         $r.Output | Should -Match 'Dry-run preview'
         $r.Output | Should -Match 'Removed'
