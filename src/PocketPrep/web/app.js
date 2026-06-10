@@ -749,6 +749,7 @@ async function stepRoms() {
     <div class="card" id="romrow${i}"><strong>${s.DisplayName}</strong> <span class="meta">[${s.Id}] ${(s.SupportedExtensions || ['*']).join(' ')}</span>
       ${extraIds.has(s.Id) ? '<span class="tag rm">installed core</span>' : ''}
       ${s.Custom ? '<span class="tag rm">custom</span>' : ''}
+      ${s.Arcade ? '<span class="tag fixed">arcade — needs built romset</span>' : ''}
       ${s.Experimental ? `<span class="tag fixed">experimental</span>${s.Notes ? `<p class="warnote">${s.Notes}</p>` : ''}` : ''}
       <div class="row"><input type="text" id="src${i}" placeholder="source ROM folder" value="${sv ? esc(sv.Path) : ''}">
         <button data-browse="${i}" class="secondary">Browse…</button>
@@ -760,7 +761,7 @@ async function stepRoms() {
   const rows = systems.map((s, i) => romRowHtml(s, i, saved[s.Id])).join('');
   const shown = new Set(systems.map(s => String(s.Id).toLowerCase()));
   const pickOpts = allPlatforms.filter(p => !shown.has(String(p.Id).toLowerCase()))
-    .map(p => `<option value="${esc(p.Id)}">${esc(p.DisplayName)}</option>`).join('');
+    .map(p => `<option value="${esc(p.Id)}">${esc(p.DisplayName)}${p.Arcade ? ' [arcade: needs built romset]' : ''}</option>`).join('');
   const rescanBtn = (cfg.Exists && (cfg.Sources || []).length)
     ? `<button id="rescan" class="secondary">Rescan ${cfg.Sources.length} saved folder(s)</button>` : '';
   panel(`<h2>6. ROM import</h2>
@@ -855,7 +856,7 @@ async function stepRoms() {
     if (systems.some(s => String(s.Id).toLowerCase() === id.toLowerCase())) { $('#cfgout').innerHTML = errLine(`"${id}" is already listed above.`); return; }
     const meta = allPlatforms.find(p => String(p.Id).toLowerCase() === id.toLowerCase());
     const sys = meta
-      ? { Id: meta.Id, PlatformId: meta.PlatformId, DisplayName: meta.DisplayName, SupportedExtensions: meta.SupportedExtensions || ['*'], Experimental: true, Notes: meta.Notes, Custom: false }
+      ? { Id: meta.Id, PlatformId: meta.PlatformId, DisplayName: meta.DisplayName, SupportedExtensions: meta.SupportedExtensions || ['*'], Experimental: true, Notes: meta.Notes, Custom: false, Arcade: !!meta.Arcade }
       : { Id: id, PlatformId: id, DisplayName: id, SupportedExtensions: ['*'], Experimental: true, Notes: `Custom platform — files are copied to Assets/${id}/common.`, Custom: true };
     const i = systems.length; systems.push(sys);
     $('#rom-rows').insertAdjacentHTML('beforeend', romRowHtml(sys, i, null));

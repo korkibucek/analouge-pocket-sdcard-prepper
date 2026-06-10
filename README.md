@@ -241,6 +241,12 @@ the row is copied to `Assets/<platformId>/common` — point it at a folder conta
 system's ROMs. (The web UI exposes the full picker; the CLI wizard covers the built-in
 systems and any installed core's platforms.)
 
+> **Arcade cores are different.** An arcade core (Green Beret, Galaga, Asteroids, …) will
+> **not** load a raw ROM/zip: each game needs an **instance `.json`** plus a **built `.rom`**
+> in `Assets/<platformId>/common`, assembled from the core's *rom-recipes* release asset and
+> a MAME romset **you own**. The picker tags these platforms `arcade — needs built romset`
+> and shows the guidance; this tool never builds or downloads arcade ROMs.
+
 ### Card breakdown after you pick a drive
 
 As soon as you select the card, the tool scans it and shows what's already there —
