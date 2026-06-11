@@ -282,6 +282,26 @@ function Invoke-PocketApiRoute {
                 # present. This tool never downloads copyrighted BIOS - it only detects/guides.
                 return @{ Status = 200; Body = @{ bios = @(Get-PocketBiosStatus -Root $State.Root -SystemsManifest $State.SystemsManifest) } }
             }
+            '^POST /api/images/sync$' {
+                # Scrape box art for the games actually on the card (per-game, capped, cached).
+                if (-not $Body.platformId) { return @{ Status = 400; Body = @{ error = 'Missing platformId.' } } }
+                if (-not ($State.ImageSources -and (Test-Path -LiteralPath $State.ImageSources))) {
+                    return @{ Status = 400; Body = @{ error = 'No image-sources manifest available.' } }
+                }
+                $res = Sync-PocketGameImage -Root $State.Root -PlatformId ([string]$Body.platformId) `
+                    -ImageSources $State.ImageSources -DryRun:([bool]$State.DryRun)
+                return @{ Status = 200; Body = $res }
+            }
+            '^POST /api/images/get$' {
+                # Return one cached image as a data URL (the static server only serves the
+                # bundled web folder, never the card).
+                if (-not $Body.platformId -or -not $Body.name) { return @{ Status = 400; Body = @{ error = 'Missing platformId or name.' } } }
+                $leaf = [System.IO.Path]::GetFileName([string]$Body.name)   # no traversal
+                $img = Join-Path (Join-Path (Join-Path (Join-Path $State.Root 'pocketprep') 'images') ([string]$Body.platformId)) "$leaf.png"
+                if (-not (Test-Path -LiteralPath $img -PathType Leaf)) { return @{ Status = 200; Body = @{ found = $false } } }
+                $b64 = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes($img))
+                return @{ Status = 200; Body = @{ found = $true; dataUrl = "data:image/png;base64,$b64" } }
+            }
             '^GET /api/healthcheck$' {
                 # One-click read-only audit of the whole card.
                 return @{ Status = 200; Body = (Get-PocketHealthReport -Root $State.Root -SystemsManifest $State.SystemsManifest -CoresManifest $State.CoresManifest) }

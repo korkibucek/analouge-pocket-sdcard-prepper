@@ -273,6 +273,24 @@ Describe 'Invoke-PocketApiRoute' {
             Invoke-PocketApiRoute -Method GET -Path '/api/favorites' -State $s }
         ($r.Body.Platforms | Where-Object PlatformId -eq 'gb').Names | Should -Contain 'Tetris.gb'
     }
+    It 'POST /api/images/get serves a cached image as a data URL (traversal-safe) and sync validates input' {
+        $imgDir = Join-Path $script:root 'pocketprep/images/gb'
+        New-Item -ItemType Directory -Path $imgDir -Force | Out-Null
+        [System.IO.File]::WriteAllBytes((Join-Path $imgDir 'Tetris.png'), [byte[]](137, 80, 78, 71))
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = [pscustomobject]@{ platformId='gb'; name='Tetris' } } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/images/get' -Body $b -State $s }
+        $r.Status | Should -Be 200
+        $r.Body.found | Should -BeTrue
+        $r.Body.dataUrl | Should -Match '^data:image/png;base64,'
+        # Unknown image -> found:false; traversal attempts are reduced to a leaf name.
+        $r2 = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = [pscustomobject]@{ platformId='gb'; name='../../secret' } } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/images/get' -Body $b -State $s }
+        $r2.Body.found | Should -BeFalse
+        # Sync without a platformId is rejected.
+        $r3 = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
+            Invoke-PocketApiRoute -Method POST -Path '/api/images/sync' -Body ([pscustomobject]@{}) -State $s }
+        $r3.Status | Should -Be 400
+    }
     It 'GET /api/healthcheck returns an overall status with per-check details' {
         $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
             Invoke-PocketApiRoute -Method GET -Path '/api/healthcheck' -State $s }
