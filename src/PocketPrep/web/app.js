@@ -330,6 +330,21 @@ async function showFavorites() {
       : '<em>No favourites tagged for this system yet.</em>';
     $('#fav-count').textContent = `${selected.size} favourite(s)`;
   };
+  // Cached-art-only thumbnails (#191): read pocketprep/images/ via /api/images/get —
+  // never scrape from this view (the 📚 Library is where fetching happens). A render
+  // token discards stale loads when the user retypes the filter mid-fetch.
+  let thumbSeq = 0;
+  const loadThumbs = async (shown, seq) => {
+    for (let i = 0; i < Math.min(shown.length, 40); i++) {
+      const base = shown[i].replace(/\.[^.]+$/, '');
+      try {
+        const r = await api('/api/images/get', 'POST', { platformId: curPlat(), name: base });
+        if (seq !== thumbSeq) return;
+        const el = $('#fav-img-' + i);
+        if (el && r.found) el.innerHTML = `<img src="${r.dataUrl}" alt="">`;
+      } catch { /* no cached art — keep the empty placeholder */ }
+    }
+  };
   const renderList = () => {
     const filt = ($('#fav-filter').value || '').toLowerCase();
     const onlyFav = !!($('#fav-only') || {}).checked;
@@ -339,7 +354,7 @@ async function showFavorites() {
     matches.sort((a, b) => (isFav(b) - isFav(a)) || a.toLowerCase().localeCompare(b.toLowerCase()));
     const shown = matches.slice(0, 1000);
     $('#fav-list').innerHTML = shown.length
-      ? shown.map(n => `<label class="row"><input type="checkbox" class="fav-pick" data-n="${esc(n)}" ${isFav(n) ? 'checked' : ''}> ${isFav(n) ? '★ ' : ''}${n}</label>`).join('')
+      ? shown.map((n, i) => `<label class="row"><input type="checkbox" class="fav-pick" data-n="${esc(n)}" ${isFav(n) ? 'checked' : ''}> <span class="fav-thumb" id="fav-img-${i}"></span>${isFav(n) ? '★ ' : ''}${n}</label>`).join('')
       : '<p class="meta">(no matching ROMs)</p>';
     document.querySelectorAll('.fav-pick').forEach(c => c.onchange = () => {
       const n = c.dataset.n; const k = n.toLowerCase();
@@ -347,6 +362,7 @@ async function showFavorites() {
       updateCurrent();
     });
     updateCurrent();
+    loadThumbs(shown.map(n => n), ++thumbSeq);
   };
   const loadPlat = async () => {
     selected = new Map((favMap[curPlat()] || []).map(n => [n.toLowerCase(), n]));
