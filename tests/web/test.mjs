@@ -116,5 +116,30 @@ const ejectBtn = doc2.getElementById('ejectBtn');
 assert.ok(ejectBtn && !ejectBtn.hidden, 'the global Eject & quit button should be visible once a target is set');
 assert.ok(ejectBtn.classList.contains('danger'), 'the Eject & quit button should be styled as dangerous');
 
+// 7. BIOS reference panel: the card step lists EVERY expected filename per system/core
+//    (with purpose labels), present and missing alike, with upload inputs only on missing.
+API2['/api/card-summary'] = {
+  Firmware: { Present: true, Version: '2.5', FileName: 'pocket_firmware_2_5.bin' },
+  Cores: { Count: 1 }, Roms: { TotalFiles: 0, Systems: [] }, Config: { Exists: true, SourceCount: 1 },
+  Bios: [],
+  RequiredFiles: [{
+    Identifier: 'Test.NeoGeo', PlatformId: 'ng', Satisfied: false, Missing: ['uni-bios_4_0.rom'],
+    Required: [
+      { Name: 'BIOS', Filename: 'uni-bios_4_0.rom', Found: false, Location: '/x/Assets/ng/common/uni-bios_4_0.rom' },
+      { Name: 'LO', Filename: '000-lo.lo', Found: true, Location: '/x/Assets/ng/common/000-lo.lo' },
+    ],
+  }],
+};
+API2['/api/empty'] = { IsEmpty: true, EntryCount: 0, Entries: [] };
+dom2.window.eval('go(1)');
+await new Promise((r) => setTimeout(r, 400));
+const cardHtml = panel2.innerHTML;
+assert.ok(cardHtml.includes('uni-bios_4_0.rom'), 'BIOS panel should name the missing expected file');
+assert.ok(cardHtml.includes('000-lo.lo'), 'BIOS panel should also list files that are already present');
+assert.ok(/expects 2 file/.test(panel2.textContent), 'BIOS panel should state how many files the core expects');
+assert.ok(/BIOS/.test(cardHtml) && /LO/.test(cardHtml), 'BIOS panel should show the slot purpose labels');
+assert.ok(panel2.querySelector('button[data-bios]'), 'missing files should offer an Install BIOS button');
+assert.ok(panel2.querySelectorAll('button[data-bios]').length === 1, 'present files should NOT offer an upload button');
+
 console.log(`OK: web UI bootstrapped, called [${[...new Set(calls)].join(', ')}], rendered the target step; action menu renders on target-ready boot; a11y hooks present.`);
 process.exit(0);
