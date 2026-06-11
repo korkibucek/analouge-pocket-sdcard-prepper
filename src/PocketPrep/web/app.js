@@ -31,19 +31,22 @@ const busy = (on) => {
 };
 function announce(msg) { const el = $('#sr-status'); if (el) el.textContent = msg; }
 
-// Folder picker: opens a modal that browses the local filesystem (via the server) and
-// resolves to the chosen folder path, or null if cancelled.
-function pickFolder(startPath) {
+// Folder/file picker: opens a modal that browses the local filesystem (via the server)
+// and resolves to the chosen path, or null if cancelled. With a filePattern (e.g.
+// '*.zip') matching files are listed and pickable — choosing one resolves immediately
+// (#195) — otherwise it's the classic "Use this folder" picker.
+function pickFolder(startPath, filePattern) {
   return new Promise((resolve) => {
+    const fileMode = !!filePattern;
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
-    overlay.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-label="Choose a folder">
-      <h3>Choose a folder</h3>
+    overlay.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-label="${fileMode ? 'Choose a file' : 'Choose a folder'}">
+      <h3>${fileMode ? `Choose a file <span class="meta">(${filePattern})</span>` : 'Choose a folder'}</h3>
       <p id="fb-path" class="meta"></p>
       <div id="fb-roots" class="row"></div>
       <ul id="fb-list" class="list" style="max-height:50vh;overflow:auto"></ul>
       <div class="row"><button id="fb-up" class="secondary">▲ Up</button>
-        <button id="fb-use">Use this folder</button>
+        ${fileMode ? '' : '<button id="fb-use">Use this folder</button>'}
         <button id="fb-cancel" class="secondary">Cancel</button></div>
     </div>`;
     document.body.appendChild(overlay);
@@ -52,24 +55,39 @@ function pickFolder(startPath) {
 
     async function load(path) {
       let d;
-      try { d = await api('/api/browse', 'POST', { path }); }
+      try { d = await api('/api/browse', 'POST', fileMode ? { path, filePattern } : { path }); }
       catch (e) { $('#fb-path').innerHTML = errLine(e.message); return; }
       cur = d.Path;
       $('#fb-path').textContent = cur;
       $('#fb-roots').innerHTML = (d.Roots || []).map(r => `<button class="secondary fb-root" data-p="${encodeURIComponent(r.Path)}">${r.Name}</button>`).join(' ');
-      $('#fb-list').innerHTML = (d.Directories || []).length
-        ? d.Directories.map(x => `<li><button class="fb-dir" data-p="${encodeURIComponent(x.Path)}">📁 ${x.Name}</button></li>`).join('')
-        : '<li class="meta">(no sub-folders)</li>';
+      const dirRows = (d.Directories || []).map(x => `<li><button class="fb-dir" data-p="${encodeURIComponent(x.Path)}">📁 ${x.Name}</button></li>`);
+      const fileRows = fileMode ? (d.Files || []).map(x => `<li><button class="fb-file" data-p="${encodeURIComponent(x.Path)}">📄 ${x.Name} <span class="meta">(${(x.SizeBytes / 1048576).toFixed(1)} MB)</span></button></li>`) : [];
+      $('#fb-list').innerHTML = dirRows.concat(fileRows).join('')
+        || `<li class="meta">${fileMode ? `(no sub-folders or ${filePattern} files here)` : '(no sub-folders)'}</li>`;
       overlay.querySelectorAll('.fb-dir, .fb-root').forEach(b => b.onclick = () => load(decodeURIComponent(b.dataset.p)));
+      overlay.querySelectorAll('.fb-file').forEach(b => b.onclick = () => close(decodeURIComponent(b.dataset.p)));
       $('#fb-up').disabled = !d.Parent;
       $('#fb-up').onclick = () => d.Parent && load(d.Parent);
     }
-    $('#fb-use').onclick = () => close(cur);
+    if (!fileMode) $('#fb-use').onclick = () => close(cur);
     $('#fb-cancel').onclick = () => close(null);
     overlay.onclick = (e) => { if (e.target === overlay) close(null); };
     load(cur);
   });
 }
+// Any "supply a file" input gets a Browse… button via this one delegated handler:
+// <button class="fb-pick" data-for="<input id>" data-pattern="*.zip">. The picked
+// path lands in the input, exactly as if typed.
+document.addEventListener('click', async (e) => {
+  const b = e.target && e.target.closest ? e.target.closest('button.fb-pick') : null;
+  if (!b) return;
+  const input = document.getElementById(b.dataset.for);
+  if (!input) return;
+  const start = (input.value || '').replace(/[\\/][^\\/]*$/, '');
+  const p = await pickFolder(start, b.dataset.pattern || '*');
+  if (p) input.value = p;
+});
+const browseBtn = (forId, pattern) => `<button type="button" class="secondary fb-pick" data-for="${forId}" data-pattern="${pattern}" title="Browse for the file instead of typing the path">📂 Browse…</button>`;
 function panel(html) {
   const p = $('#panel');
   p.innerHTML = html;
@@ -503,6 +521,7 @@ function cardBreakdownHtml(sum) {
     biosTargets.push({ plat: f.plat, file: f.file, by: g.title });
     return `<div class="row" data-bios-row="${i}">✗ <code>${f.file}</code>${f.label ? ` <span class="meta">${f.label}</span>` : ''}
       <input type="text" id="bios-src-${i}" placeholder="path to your ${f.file}">
+      ${browseBtn(`bios-src-${i}`, '*')}
       <button data-bios="${i}" class="secondary">Install BIOS</button></div>
       <div id="bios-out-${i}"></div>`;
   };
@@ -753,6 +772,7 @@ async function stepFirmware() {
     <button id="dl">Download &amp; install</button>
     <div class="card"><label class="row">Or install a file you already downloaded:
       <input type="text" id="lf" placeholder="path to pocket_firmware_*.bin"></label>
+      ${browseBtn('lf', '*.bin')}
       <button id="off" class="secondary">Install local file</button></div>
     <button id="skip" class="secondary">Skip firmware →</button>
     <div id="fout"></div>`);
@@ -797,6 +817,7 @@ async function stepCores() {
       <div class="row">
         <button data-i="${i}" data-mode="download" data-ow="${have ? 1 : 0}">${have ? 'Reinstall / update' : 'Download & install'}</button>
         <input type="text" id="cz${i}" placeholder="or path to ${c.Identifier} .zip">
+        ${browseBtn(`cz${i}`, '*.zip')}
         <button data-i="${i}" data-mode="offline" data-ow="${have ? 1 : 0}" class="secondary">Install local zip</button>
         <button data-repair="${esc(c.Id)}" class="secondary" title="Re-download & reinstall this core's files (ROMs and saves are untouched)">Repair</button>
       </div><div id="cout${i}"></div></div>`;
@@ -821,7 +842,7 @@ async function stepCores() {
       <p class="meta">Some cores aren't publicly downloadable — notably <strong>jotego's beta cores</strong> (Neo Geo Pocket Color, CPS, …), distributed to supporters via
         <a href="https://www.patreon.com/jotego" target="_blank" rel="noopener">jotego's Patreon</a>. Get the core zip there, then install it here:
         it's validated (openFPGA structure, zip-slip-safe) and merged non-destructively like any other core. After install, its system appears in the ROM step automatically.</p>
-      <label class="row">Core zip: <input type="text" id="byo-zip" placeholder="path to the core .zip you obtained"></label>
+      <label class="row">Core zip: <input type="text" id="byo-zip" placeholder="path to the core .zip you obtained"> ${browseBtn('byo-zip', '*.zip')}</label>
       <label class="row"><input type="checkbox" id="byo-ow"> overwrite existing files (update an installed copy)</label>
       <div class="row"><button id="byo-install">Install supplied core</button></div>
       <div id="byo-out"></div></details>
@@ -829,7 +850,7 @@ async function stepCores() {
       <p class="meta">Installs a platform image pack from a GitHub release you choose, or a local zip. The tool bundles none and picks no default — supply the source (check its licence). Only <code>Platforms/_images</code> is written.</p>
       <label class="row">GitHub owner: <input type="text" id="ip-owner" placeholder="e.g. someuser"></label>
       <label class="row">Repo: <input type="text" id="ip-repo" placeholder="image-pack repo"></label>
-      <label class="row">…or local zip: <input type="text" id="ip-zip" placeholder="path to image-pack .zip"></label>
+      <label class="row">…or local zip: <input type="text" id="ip-zip" placeholder="path to image-pack .zip"> ${browseBtn('ip-zip', '*.zip')}</label>
       <label class="row"><input type="checkbox" id="ip-ow"> overwrite existing images</label>
       <div class="row"><button id="ip-install">Install platform images</button></div>
       <div id="ip-out"></div></details>

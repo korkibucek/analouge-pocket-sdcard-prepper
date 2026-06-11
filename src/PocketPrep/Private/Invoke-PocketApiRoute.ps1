@@ -124,10 +124,12 @@ function Invoke-PocketApiRoute {
                 return @{ Status = 200; Body = (New-PocketFolderStructure -Root $State.Root -DryRun:([bool]$State.DryRun)) }
             }
             '^POST /api/browse$' {
-                # Folder picker (read-only directory listing). POST so the client can send
-                # the target path in the body.
+                # Folder/file picker (read-only directory listing). POST so the client can
+                # send the target path in the body. An optional filePattern (e.g. '*.zip')
+                # also lists matching files so supply-your-own inputs are pickable (#195).
                 $p = if ($Body -and $Body.path) { [string]$Body.path } else { '' }
-                return @{ Status = 200; Body = (Get-PocketDirectoryListing -Path $p) }
+                $fp = if ($Body -and $Body.filePattern) { [string]$Body.filePattern } else { '' }
+                return @{ Status = 200; Body = (Get-PocketDirectoryListing -Path $p -FilePattern $fp) }
             }
             '^GET /api/systems$' {
                 return @{ Status = 200; Body = @{ systems = @(Get-PocketSystem -Path $State.SystemsManifest) } }
