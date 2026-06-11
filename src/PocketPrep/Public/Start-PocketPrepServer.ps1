@@ -55,6 +55,7 @@ function Start-PocketPrepServer {
     if (-not $FirmwareManifest) { $FirmwareManifest = Join-Path $repoRoot 'manifests/firmware.json' }
     if (-not $SystemsManifest)  { $SystemsManifest  = Join-Path $repoRoot 'manifests/systems.json' }
     if (-not $CoresManifest)    { $CoresManifest    = Join-Path $repoRoot 'manifests/cores.json' }
+    $ImageSources = Join-Path $repoRoot 'manifests/image-sources.json'
 
     if ($TestMode -and -not $Root) { $Root = Join-Path ([System.IO.Path]::GetTempPath()) 'PocketSDTest' }
     if ($TestMode -and -not (Test-Path -LiteralPath $Root)) { New-Item -ItemType Directory -Path $Root -Force | Out-Null }
@@ -72,6 +73,7 @@ function Start-PocketPrepServer {
     $state = @{
         Root = $Root; IsTestMode = [bool]$TestMode; DryRun = [bool]$DryRun; TargetReady = $targetReady
         FirmwareManifest = $FirmwareManifest; SystemsManifest = $SystemsManifest; CoresManifest = $CoresManifest
+        ImageSources = $ImageSources
         IncludeFixed = [bool]$IncludeFixed; DriveProvider = $DriveProvider
     }
 

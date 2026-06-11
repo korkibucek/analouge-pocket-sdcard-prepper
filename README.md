@@ -314,6 +314,17 @@ ROMs or BIOS**), and **import** it onto a fresh card or after a reformat to rein
 cores and restore the config/favourites (optionally copying the ROMs from your source folders
 in the same step). Handy for replicating a known-good setup across cards.
 
+### Game library with box art
+
+**📚 Game library** (in the menu) shows your games as a grid with **box art, scraped
+automatically** — you never supply images. Art comes from the community
+[libretro-thumbnails](https://github.com/libretro-thumbnails) collection on GitHub, matched
+by each ROM's own (No-Intro) filename with case-insensitive and tag-stripped fallbacks, and
+is fetched **only for games actually on your card** (whole sets are never mirrored). Images
+cache to `pocketprep/images/<platform>/`, the repo index is fetched once per system, each
+run is capped (re-run to continue), and 29 systems are mapped out of the box
+(`manifests/image-sources.json`). Set `GITHUB_TOKEN` to raise the index-fetch rate limit.
+
 ### Health check
 
 **🩺 Health check** (in the menu) audits the whole card in one click and reports

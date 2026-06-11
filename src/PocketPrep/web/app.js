@@ -112,6 +112,7 @@ function showMenu() {
     { go: 3, icon: '📁', label: 'Folder structure', desc: 'Create the openFPGA folder structure on the card.' },
     { go: 4, icon: '🧩', label: 'Cores: install / update', desc: 'Install the whole core set or update installed cores.' },
     { go: 5, icon: '🎮', label: 'Upload ROMs', desc: 'Copy ROMs for any core (built-in, installed, catalog or custom).' },
+    { go: 'library', icon: '📚', label: 'Game library', desc: 'Browse your games with box art (auto-scraped, no setup).' },
     { go: 'favorites', icon: '⭐', label: 'Favourites', desc: 'Tag ROMs; surface them in a per-system Favorites folder.' },
     { go: 'activity', icon: '📝', label: 'Activity log', desc: 'See and download everything done this session.' },
     { go: 'healthcheck', icon: '🩺', label: 'Health check', desc: 'Audit the whole card: BIOS, folder limits, core integrity, space.' },
@@ -180,7 +181,62 @@ function wireEject() {
     finally { busy(false); }
   };
 }
-function go(step) { S.step = step; renderNav(); if (step === 'menu') { showMenu(); } else if (step === 'favorites') { showFavorites(); } else if (step === 'activity') { showActivity(); } else if (step === 'profiles') { showProfiles(); } else if (step === 'healthcheck') { showHealthCheck(); } else { RENDER[step](); } }
+function go(step) { S.step = step; renderNav(); if (step === 'menu') { showMenu(); } else if (step === 'favorites') { showFavorites(); } else if (step === 'activity') { showActivity(); } else if (step === 'profiles') { showProfiles(); } else if (step === 'healthcheck') { showHealthCheck(); } else if (step === 'library') { showLibrary(); } else { RENDER[step](); } }
+
+/* ---- Game library: browse games with auto-scraped box art ---- */
+async function showLibrary() {
+  panel('<h2>📚 Game library</h2><p>Loading…</p>');
+  let sum;
+  try { sum = await api('/api/card-summary'); }
+  catch (e) { panel('<h2>📚 Game library</h2>' + errLine(e.message)); return; }
+  const systems = sum.Roms.Systems || [];
+  if (!systems.length) { panel('<h2>📚 Game library</h2><p class="warnote">No ROMs on the card yet — upload some first (🎮 Upload ROMs).</p>'); return; }
+  const esc = v => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  panel(`<h2>📚 Game library</h2>
+    <p class="meta">Box art is scraped automatically (libretro-thumbnails on GitHub) for the games on your card — never whole sets, nothing to supply yourself.</p>
+    <label class="row">System: <select id="lib-plat">${systems.map(s => `<option value="${esc(s.PlatformId)}">${esc(s.DisplayName)} (${s.FileCount})</option>`).join('')}</select>
+      <button id="lib-fetch" class="secondary">Fetch missing box art</button></label>
+    <div id="lib-status" class="meta"></div>
+    <label class="row">Filter: <input type="text" id="lib-filter" placeholder="type to filter"></label>
+    <div id="lib-grid" class="lib-grid"></div>`);
+  let names = [];
+  const curPlat = () => $('#lib-plat').value;
+  const renderGrid = async () => {
+    const filt = ($('#lib-filter').value || '').toLowerCase();
+    const shown = names.filter(n => !filt || n.toLowerCase().includes(filt)).slice(0, 60);
+    $('#lib-grid').innerHTML = shown.length
+      ? shown.map((n, i) => { const base = n.replace(/\.[^.]+$/, ''); return `<div class="lib-card"><div class="lib-img" id="lib-img-${i}">🎮</div><div class="lib-name">${esc(base)}</div></div>`; }).join('')
+      : '<p class="meta">(no matching games)</p>';
+    // Lazy-load cached art for the visible cards.
+    for (let i = 0; i < shown.length; i++) {
+      const base = shown[i].replace(/\.[^.]+$/, '');
+      try {
+        const r = await api('/api/images/get', 'POST', { platformId: curPlat(), name: base });
+        const el = $('#lib-img-' + i);
+        if (el && r.found) el.innerHTML = `<img src="${r.dataUrl}" alt="${esc(base)} box art">`;
+      } catch { /* leave placeholder */ }
+    }
+  };
+  const loadPlat = async () => {
+    $('#lib-grid').innerHTML = '<p>Loading games…</p>';
+    try { names = (await api('/api/rom/list', 'POST', { platformId: curPlat() })).names || []; }
+    catch (e) { $('#lib-grid').innerHTML = errLine(e.message); return; }
+    renderGrid();
+  };
+  $('#lib-plat').onchange = loadPlat;
+  $('#lib-filter').oninput = () => renderGrid();
+  $('#lib-fetch').onclick = async () => {
+    busy(true); $('#lib-status').innerHTML = inProgress('Scraping box art for your games (index once, then per-game)');
+    try {
+      const r = await api('/api/images/sync', 'POST', { platformId: curPlat() });
+      $('#lib-status').innerHTML = r.Supported
+        ? `<span class="ok">Art: ${r.Fetched} fetched, ${r.AlreadyCached} cached, ${r.MissingCount} no match${r.Remaining ? `, ${r.Remaining} over this run's cap — run again` : ''}${r.DryRun ? ' [dry-run]' : ''}.</span>`
+        : `<span class="warnote">No art source mapped for this platform yet.</span>`;
+      renderGrid();
+    } catch (e) { $('#lib-status').innerHTML = errLine(e.message); } finally { busy(false); }
+  };
+  loadPlat();
+}
 
 /* ---- Health check: one-click read-only audit of the whole card ---- */
 async function showHealthCheck() {
