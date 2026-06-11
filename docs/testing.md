@@ -43,7 +43,7 @@ This installs Pester 5 automatically if missing (CurrentUser scope).
 | `SaveBackup.Tests.ps1` / `SaveStatePrune.Tests.ps1` | Saves backup/restore; guarded save-state prune (policy required, mandatory backup zip, dry-run) |
 | `KnownPlatform.Tests.ps1` / `ImportablePlatform.Tests.ps1` | Every-core platform union; installed-core platforms |
 | `DiskSpace.Tests.ps1` / `FreeSpace.Tests.ps1` / `Dismount.Tests.ps1` | Free/total space + preflight; flush + best-effort eject |
-| `DirectoryListing.Tests.ps1` | Read-only folder picker |
+| `DirectoryListing.Tests.ps1` | Read-only folder/file picker (`-FilePattern` for supply-your-own inputs) |
 | `Http.Tests.ps1` | Transient-error detection, bounded retry, size-capped download |
 | `ImagePack.Tests.ps1` | Platform image pack install (`Platforms/_images`) |
 | `ErrorPaths.Tests.ps1` | Download/IO failure handling surfaces actionable messages |
