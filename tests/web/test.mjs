@@ -95,7 +95,13 @@ const dom2 = new JSDOM(html, {
   runScripts: 'dangerously',
   url: 'http://127.0.0.1:8770/',
   beforeParse(win) {
-    win.fetch = (url) => { calls2.push(String(url).split('?')[0]); return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(API2[String(url).split('?')[0]] ?? {}) }); };
+    // Map values may be functions of the request init, so POST stubs can vary by body.
+    win.fetch = (url, init) => {
+      const path = String(url).split('?')[0]; calls2.push(path);
+      const v = API2[path];
+      const body = typeof v === 'function' ? v(init) : (v ?? {});
+      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(body) });
+    };
     win.POCKETPREP_TOKEN = 'TESTTOKEN';
   },
 });
@@ -141,5 +147,29 @@ assert.ok(/BIOS/.test(cardHtml) && /LO/.test(cardHtml), 'BIOS panel should show 
 assert.ok(panel2.querySelector('button[data-bios]'), 'missing files should offer an Install BIOS button');
 assert.ok(panel2.querySelectorAll('button[data-bios]').length === 1, 'present files should NOT offer an upload button');
 
-console.log(`OK: web UI bootstrapped, called [${[...new Set(calls)].join(', ')}], rendered the target step; action menu renders on target-ready boot; a11y hooks present.`);
+// 8. Favourites picker thumbnails (#191): rows show cached box art via /api/images/get
+//    (cached-only — the picker must never trigger a scrape via /api/images/sync).
+const PNG_1PX = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+API2['/api/card-summary'] = {
+  Firmware: { Present: true, Version: '2.5' }, Cores: { Count: 1 }, Config: { Exists: true, SourceCount: 1 }, Bios: [],
+  Roms: { TotalFiles: 2, Systems: [{ PlatformId: 'gb', DisplayName: 'Game Boy', FileCount: 2 }] },
+};
+API2['/api/favorites'] = { Platforms: [{ PlatformId: 'gb', Names: ['Tetris.gb'] }] };
+API2['/api/rom/list'] = { names: ['Tetris.gb', 'Zelda.gb'] };
+API2['/api/images/get'] = (init) => {
+  const req = JSON.parse((init && init.body) || '{}');
+  return req.name === 'Tetris' ? { found: true, dataUrl: PNG_1PX } : { found: false };
+};
+calls2.length = 0;
+dom2.window.eval('go("favorites")');
+await new Promise((r) => setTimeout(r, 400));
+const thumbs = panel2.querySelectorAll('.fav-thumb');
+assert.ok(thumbs.length === 2, `each favourites row should carry a thumbnail slot (got ${thumbs.length})`);
+// Tetris is favourited, so it sorts to the top row — and it's the one with cached art.
+assert.ok(thumbs[0].querySelector('img') && thumbs[0].querySelector('img').src.startsWith('data:image/png'), 'cached art should render as the row thumbnail');
+assert.ok(!thumbs[1].querySelector('img'), 'a game without cached art keeps the empty placeholder');
+assert.ok(calls2.includes('/api/images/get'), 'thumbnails should come from /api/images/get');
+assert.ok(!calls2.includes('/api/images/sync'), 'the favourites picker must never scrape');
+
+console.log(`OK: web UI bootstrapped, called [${[...new Set(calls)].join(', ')}], rendered the target step; action menu renders on target-ready boot; favourites thumbnails render from cache; a11y hooks present.`);
 process.exit(0);
