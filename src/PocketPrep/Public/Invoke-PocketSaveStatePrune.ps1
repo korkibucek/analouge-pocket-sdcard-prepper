@@ -105,7 +105,9 @@ function Invoke-PocketSaveStatePrune {
         return $empty
     }
 
-    $rel = { param($f) $f.FullName.Substring($statesFull.Length).TrimStart([char]'\', [char]'/') }
+    # Relative paths are normalised to forward slashes so results (and zip entry
+    # names, per the zip spec) are identical on every OS.
+    $rel = { param($f) $f.FullName.Substring($statesFull.Length).TrimStart([char]'\', [char]'/').Replace('\', '/') }
 
     $backupZip = $null
     if (-not $DryRun) {
