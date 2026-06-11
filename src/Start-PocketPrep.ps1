@@ -146,15 +146,20 @@ if ($cardSummary.Firmware.Present -or $cardSummary.Cores.Count -gt 0 -or $cardSu
     Write-Host "  ROMs     : $($cardSummary.Roms.TotalFiles) total - $romBreak"
     Write-Host "  ROM config: $(if ($cardSummary.Config.Exists) { "$($cardSummary.Config.SourceCount) saved folder(s) - you'll be offered a rescan" } else { 'none saved yet' })"
     # Required files declared by installed cores (data.json) but missing - the authoritative
-    # "what do I still need" signal; covers BIOS-needing cores generally.
+    # "what do I still need" signal. List EVERY expected filename with its purpose label
+    # (where multi-file / per-region context lives), not just the missing ones.
     $reqMissing = @($cardSummary.RequiredFiles | Where-Object { -not $_.Satisfied })
     $reqCovered = @($reqMissing | ForEach-Object { ([string]$_.PlatformId).ToLowerInvariant() })
     foreach ($c in $reqMissing) {
-        Write-Host "  Required files: core '$($c.Identifier)' is missing $($c.Missing -join ', ') - place your own under Assets/$($c.PlatformId)/common. This tool never downloads BIOS/ROMs." -ForegroundColor Yellow
+        $expects = (@($c.Required) | ForEach-Object {
+            "$(if ($_.Name) { "$($_.Name)=" })$($_.Filename) [$(if ($_.Found) { 'OK' } else { 'MISSING' })]" }) -join ', '
+        Write-Host "  Required files: core '$($c.Identifier)' expects $(@($c.Required).Count) file(s): $expects - names must match exactly; place your own under Assets/$($c.PlatformId)/common. This tool never downloads BIOS/ROMs." -ForegroundColor Yellow
     }
     $biosMissing = @($cardSummary.Bios | Where-Object { (-not $_.Satisfied) -and ($reqCovered -notcontains ([string]$_.PlatformId).ToLowerInvariant()) })
     foreach ($b in $biosMissing) {
-        Write-Host "  BIOS needed: $($b.DisplayName) is missing $($b.Missing -join ', ') - place your own BIOS in $($b.Location). This tool never downloads BIOS." -ForegroundColor Yellow
+        $expects = (@($b.Required) | ForEach-Object {
+            "$_ [$(if (@($b.Present) -contains $_) { 'OK' } else { 'MISSING' })]" }) -join ', '
+        Write-Host "  BIOS needed: $($b.DisplayName) expects: $expects - names must match exactly; place your own BIOS in $($b.Location). This tool never downloads BIOS." -ForegroundColor Yellow
     }
 }
 

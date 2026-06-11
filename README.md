@@ -291,6 +291,12 @@ After cores are installed, the card breakdown flags any **required files a core 
 *any* core, not just a hard-coded list. This is how you find out, e.g., that a Neo Geo or PC
 Engine CD core needs a BIOS you must supply.
 
+The **BIOS / required files** panel is a full reference: for every declaring system/core it
+lists **every expected filename** — present and missing alike — with the slot's **purpose
+label** from the core's own `data.json` (so multi-file sets are explicit: e.g. PC Engine CD
+shows `PCE Boot Rom → bios_3_0_usa.pce` *and* `MPU Bios → pce_mpu_bios.bin`; Neo Geo shows
+its full `BIOS`/`LO`/`SFIX` set). Names must match exactly, and the panel says so.
+
 Each missing file is also an **upload slot**: point **Install BIOS** at the copy *you own*
 and the tool places it in the exact declared location, **renamed to the exact filename the
 core expects** (your `unibios.rom` becomes `uni-bios_4_0.rom` where required), including

@@ -459,28 +459,42 @@ function cardBreakdownHtml(sum) {
   const biosNote = biosMissing.length
     ? `<li class="warnote">BIOS needed: ${biosMissing.map(b => `${b.DisplayName} (missing ${b.Missing.join(', ')})`).join('; ')} — supply your own; this tool never downloads BIOS.</li>`
     : '';
-  // BIOS upload: every missing declared requirement (installed-core data.json slots +
-  // manifest biosRequired systems), deduped — and nothing else, so this path can only
-  // ever fill genuinely required slots.
-  const biosTargets = [];
-  const seenBios = new Set();
-  (sum.RequiredFiles || []).forEach(c => (c.Required || []).forEach(r => {
-    if (r.Found) return;
-    const k = `${String(c.PlatformId).toLowerCase()}|${String(r.Filename).toLowerCase()}`;
-    if (!seenBios.has(k)) { seenBios.add(k); biosTargets.push({ plat: c.PlatformId, file: r.Filename, by: c.Identifier }); }
-  }));
-  (sum.Bios || []).forEach(b => (b.Missing || []).forEach(f => {
-    const k = `${String(b.PlatformId).toLowerCase()}|${String(f).toLowerCase()}`;
-    if (!seenBios.has(k)) { seenBios.add(k); biosTargets.push({ plat: b.PlatformId, file: f, by: b.DisplayName }); }
-  }));
-  const biosPanel = biosTargets.length ? `
-    <details class="card" style="margin-top:.6rem" open><summary><strong>Install BIOS / required files</strong> — ${biosTargets.length} missing</summary>
-      <p class="meta">These cores declare files they need to run. Point each at the copy <strong>you own</strong> — it's renamed to the exact expected filename and placed in the declared slot. This tool never downloads BIOS.</p>
-      ${biosTargets.map((t, i) => `<div class="row" data-bios-row="${i}">
-        <span><strong>${t.file}</strong> <span class="meta">(${t.plat} · needed by ${t.by})</span></span>
-        <input type="text" id="bios-src-${i}" placeholder="path to your ${t.file}">
-        <button data-bios="${i}" class="secondary">Install BIOS</button></div>
-        <div id="bios-out-${i}"></div>`).join('')}
+  // BIOS / required files: an always-visible reference of EVERY filename each system/core
+  // expects (with the slot's purpose label, where multi-file/region context lives), plus an
+  // upload input on missing rows. Targets come only from declared requirements (installed
+  // cores' data.json slots + manifest biosRequired systems), so uploads can only ever fill
+  // genuinely required slots.
+  const biosGroups = [];
+  (sum.RequiredFiles || []).forEach(c => {
+    const files = (c.Required || []).map(r => ({ file: r.Filename, label: r.Name || '', found: !!r.Found, dest: r.Location, plat: c.PlatformId }));
+    if (files.length) biosGroups.push({ title: `core ${c.Identifier}`, plat: c.PlatformId, files });
+  });
+  const coveredBiosPlats = new Set(biosGroups.map(g => String(g.plat).toLowerCase()));
+  (sum.Bios || []).forEach(b => {
+    if (coveredBiosPlats.has(String(b.PlatformId).toLowerCase())) return;
+    const present = new Set((b.Present || []).map(x => String(x).toLowerCase()));
+    const files = (b.Required || []).map(f => ({ file: f, label: '', found: present.has(String(f).toLowerCase()), dest: `${b.Location}/${f}`, plat: b.PlatformId }));
+    if (files.length) biosGroups.push({ title: b.DisplayName, plat: b.PlatformId, files });
+  });
+  const biosTargets = [];   // missing files only, for the upload wire-up (S.biosTargets)
+  const totalBiosFiles = biosGroups.reduce((n, g) => n + g.files.length, 0);
+  const missingBiosFiles = biosGroups.reduce((n, g) => n + g.files.filter(f => !f.found).length, 0);
+  const biosRow = (f, g) => {
+    if (f.found) {
+      return `<div class="row">✅ <code>${f.file}</code>${f.label ? ` <span class="meta">${f.label}</span>` : ''} <span class="meta">— present at ${f.dest}</span></div>`;
+    }
+    const i = biosTargets.length;
+    biosTargets.push({ plat: f.plat, file: f.file, by: g.title });
+    return `<div class="row" data-bios-row="${i}">✗ <code>${f.file}</code>${f.label ? ` <span class="meta">${f.label}</span>` : ''}
+      <input type="text" id="bios-src-${i}" placeholder="path to your ${f.file}">
+      <button data-bios="${i}" class="secondary">Install BIOS</button></div>
+      <div id="bios-out-${i}"></div>`;
+  };
+  const biosPanel = biosGroups.length ? `
+    <details class="card" style="margin-top:.6rem" ${missingBiosFiles ? 'open' : ''}><summary><strong>BIOS / required files</strong> — ${totalBiosFiles - missingBiosFiles} of ${totalBiosFiles} present</summary>
+      <p class="meta">Every file each system expects, with its purpose. <strong>Names must match exactly</strong> — your copy is renamed on install. Systems that need several files (e.g. separate per-region boot ROMs, or Neo Geo's multi-file set) list them all. This tool never downloads BIOS — point each missing row at the copy <strong>you own</strong>.</p>
+      ${biosGroups.map(g => `<div class="card"><strong>${g.title}</strong> <span class="meta">[${g.plat}] expects ${g.files.length} file(s)</span>
+        ${g.files.map(f => biosRow(f, g)).join('')}</div>`).join('')}
     </details>` : '';
   S.biosTargets = biosTargets;   // for the wire-up after the panel is injected
   const anything = sum.Firmware.Present || sum.Cores.Count > 0 || sum.Roms.TotalFiles > 0;
