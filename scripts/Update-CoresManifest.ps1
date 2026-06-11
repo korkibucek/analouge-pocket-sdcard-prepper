@@ -28,7 +28,8 @@ $inv = Invoke-RestMethod -Uri $InventoryUrl -Headers @{ 'User-Agent' = 'PocketPr
 # Platforms whose core needs a copyrighted system BIOS the user must supply (NEVER
 # downloaded by this tool). Keyed by platformId -> required BIOS file name(s).
 $biosByPlatform = @{
-    'ng' = @('neogeo.zip')
+    # Mazamars312.NeoGeo data.json: required slots BIOS / LO / SFIX (verified #200).
+    'ng' = @('uni-bios_4_0.rom', '000-lo.lo', 'sfix.sfix')
 }
 
 # Releases that ship SEVERAL zip assets need a regex to pick the right one - otherwise the

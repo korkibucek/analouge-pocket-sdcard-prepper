@@ -218,26 +218,31 @@ async function showLibrary() {
     <label class="row">Filter: <input type="text" id="lib-filter" placeholder="type to filter"></label>
     <div id="lib-grid" class="lib-grid"></div>`);
   let names = [];
+  let titles = {};          // folder-format systems: folder name -> instance-json title
+  let folderFmt = false;
   const curPlat = () => $('#lib-plat').value;
+  // Cache key on the card: file basename for file ROMs, the folder name for folder games.
+  const cacheBase = n => folderFmt ? n : n.replace(/\.[^.]+$/, '');
+  const labelFor = n => folderFmt ? (titles[n] || n) : n.replace(/\.[^.]+$/, '');
   const renderGrid = async () => {
     const filt = ($('#lib-filter').value || '').toLowerCase();
-    const shown = names.filter(n => !filt || n.toLowerCase().includes(filt)).slice(0, 60);
+    const shown = names.filter(n => !filt || n.toLowerCase().includes(filt) || labelFor(n).toLowerCase().includes(filt)).slice(0, 60);
     $('#lib-grid').innerHTML = shown.length
-      ? shown.map((n, i) => { const base = n.replace(/\.[^.]+$/, ''); return `<div class="lib-card"><div class="lib-img" id="lib-img-${i}">🎮</div><div class="lib-name">${esc(base)}</div></div>`; }).join('')
+      ? shown.map((n, i) => `<div class="lib-card"><div class="lib-img" id="lib-img-${i}">🎮</div><div class="lib-name">${esc(labelFor(n))}</div></div>`).join('')
       : '<p class="meta">(no matching games)</p>';
     // Lazy-load cached art for the visible cards.
     for (let i = 0; i < shown.length; i++) {
-      const base = shown[i].replace(/\.[^.]+$/, '');
       try {
-        const r = await api('/api/images/get', 'POST', { platformId: curPlat(), name: base });
+        const r = await api('/api/images/get', 'POST', { platformId: curPlat(), name: cacheBase(shown[i]) });
         const el = $('#lib-img-' + i);
-        if (el && r.found) el.innerHTML = `<img src="${r.dataUrl}" alt="${esc(base)} box art">`;
+        if (el && r.found) el.innerHTML = `<img src="${r.dataUrl}" alt="${esc(labelFor(shown[i]))} box art">`;
       } catch { /* leave placeholder */ }
     }
   };
   const loadPlat = async () => {
     $('#lib-grid').innerHTML = '<p>Loading games…</p>';
-    try { names = (await api('/api/rom/list', 'POST', { platformId: curPlat() })).names || []; }
+    try { const r = await api('/api/rom/list', 'POST', { platformId: curPlat() });
+      names = r.names || []; titles = r.titles || {}; folderFmt = r.romFormat === 'folder'; }
     catch (e) { $('#lib-grid').innerHTML = errLine(e.message); return; }
     renderGrid();
   };
@@ -320,7 +325,10 @@ async function showFavorites() {
   let sum, favs;
   try { sum = await api('/api/card-summary'); favs = await api('/api/favorites'); }
   catch (e) { panel('<h2>⭐ Favourites</h2>' + errLine(e.message)); return; }
-  const systems = sum.Roms.Systems || [];
+  // Folder-format systems (e.g. Neo Geo) launch from core-shipped instance jsons, not
+  // by browsing common — a !Favorites copy would never appear in the menu, so they're
+  // excluded rather than offering a favourite that can't work.
+  const systems = (sum.Roms.Systems || []).filter(s => s.RomFormat !== 'folder');
   if (!systems.length) { panel('<h2>⭐ Favourites</h2><p class="warnote">No ROMs on the card yet — upload some first (🎮 Upload ROMs).</p>'); return; }
   // favMap: platformId -> array of original favourite names (preserved even when filtered out).
   const favMap = {}; (favs.Platforms || []).forEach(p => { favMap[p.PlatformId] = (p.Names || []).slice(); });
@@ -976,13 +984,16 @@ async function stepRoms() {
   try { allPlatforms = (await api('/api/rom/all-platforms')).platforms || []; } catch { /* none */ }
   const esc = v => (v || '').replace(/"/g, '&quot;');
 
+  const folderFmt = s => s.RomFormat === 'folder';
   const romRowHtml = (s, i, sv) => `
-    <div class="card" id="romrow${i}"><strong>${s.DisplayName}</strong> <span class="meta">[${s.Id}] ${(s.SupportedExtensions || ['*']).join(' ')}</span>
+    <div class="card" id="romrow${i}"><strong>${s.DisplayName}</strong> <span class="meta">[${s.Id}] ${folderFmt(s) ? 'game folders' : (s.SupportedExtensions || ['*']).join(' ')}</span>
       ${extraIds.has(s.Id) ? '<span class="tag rm">installed core</span>' : ''}
       ${s.Custom ? '<span class="tag rm">custom</span>' : ''}
       ${s.Arcade ? '<span class="tag fixed">arcade — needs built romset</span>' : ''}
+      ${folderFmt(s) ? '<span class="tag fixed">folder-based games</span>' : ''}
       ${s.Experimental ? `<span class="tag fixed">experimental</span>${s.Notes ? `<p class="warnote">${s.Notes}</p>` : ''}` : ''}
-      <div class="row"><input type="text" id="src${i}" placeholder="source ROM folder" value="${sv ? esc(sv.Path) : ''}">
+      ${folderFmt(s) ? `<p class="meta">Each game is a <strong>folder</strong> — point this row at the folder that <em>contains</em> your game folders; each is copied whole to Assets/${esc(s.PlatformId)}/common/&lt;game&gt;/.</p>` : ''}
+      <div class="row"><input type="text" id="src${i}" placeholder="${folderFmt(s) ? 'folder containing your game folders' : 'source ROM folder'}" value="${sv ? esc(sv.Path) : ''}">
         <button data-browse="${i}" class="secondary">Browse…</button>
         <label class="row"><input type="checkbox" id="rec${i}" ${sv && sv.Recurse ? 'checked' : ''}> subfolders</label>
         <button data-i="${i}" data-act="plan" class="secondary">Count</button>
@@ -1073,7 +1084,10 @@ async function stepRoms() {
         const space = p.FitsInDestination === false ? `<p class="error">Not enough free space on the card (${(p.DestinationFreeBytes / 1048576).toFixed(1)} MB free) for ${(p.TotalBytes / 1048576).toFixed(1)} MB of ROMs.</p>` : '';
         const probs = (p.ProblemCount > 0) ? `<p class="warnote">${p.ProblemCount} file(s) will be skipped (can't go on the card): ${p.Problems.slice(0, 5).map(x => `${x.RelativePath} (${x.Reason})`).join('; ')}${p.ProblemCount > 5 ? '…' : ''}</p>` : '';
         const dups = (p.DuplicateCount > 0) ? `<p class="warnote">${p.DuplicateCount} duplicate(s) will be copied once: ${p.Duplicates.slice(0, 5).map(x => `${x.RelativePath} (${x.Reason})`).join('; ')}${p.DuplicateCount > 5 ? '…' : ''}</p>` : '';
-        out.innerHTML = `<p>${p.FileCount} match (${(p.TotalBytes / 1048576).toFixed(1)} MB); ${p.SkippedNonMatching} other files ignored.</p>${space}${dups}${probs}${warn}`;
+        const what = p.RomFormat === 'folder'
+          ? `${p.GameCount} game folder(s) (${p.FileCount} files, ${(p.TotalBytes / 1048576).toFixed(1)} MB)`
+          : `${p.FileCount} match (${(p.TotalBytes / 1048576).toFixed(1)} MB); ${p.SkippedNonMatching} other files ignored`;
+        out.innerHTML = `<p>${what}.</p>${space}${dups}${probs}${warn}`;
       } else {
         // Batched copy: transfer the library a slice at a time so the request stays short
         // and a determinate progress bar can advance between batches.

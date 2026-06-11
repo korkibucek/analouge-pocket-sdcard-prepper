@@ -151,8 +151,14 @@ function Invoke-PocketApiRoute {
                 if (-not $platId) { return @{ Status = 400; Body = @{ error = 'Missing platformId.' } } }
                 $cap = if ($Body.maxPerFolder) { [int]$Body.maxPerFolder } else { 1000 }
                 $excl = @()
+                $sys = $null
                 try { $sys = @(Get-PocketSystem -Path $State.SystemsManifest) | Where-Object { $_.PlatformId -eq $platId } | Select-Object -First 1
                       if ($sys) { $excl = @($sys.BiosFiles) } } catch { $excl = @() }
+                if ($sys -and $sys.RomFormat -eq 'folder') {
+                    # Folder-format games (#200, e.g. Neo Geo) load files from their own game
+                    # folder - re-bucketing those files would break every game. Refuse.
+                    return @{ Status = 400; Body = @{ error = "$($sys.DisplayName) games are folder-based and must keep their game folders - the Library Organizer does not apply." } }
+                }
                 $maxLen = if ($Body.maxFileNameLength) { [int]$Body.maxFileNameLength } else { 100 }
                 $plan = New-PocketRomOrganizePlan -Root $State.Root -PlatformId $platId -MaxPerFolder $cap -ExcludeFiles $excl `
                     -ShortenNames:([bool]$Body.shortenNames) -MaxFileNameLength $maxLen
@@ -163,8 +169,14 @@ function Invoke-PocketApiRoute {
                 if (-not $platId) { return @{ Status = 400; Body = @{ error = 'Missing platformId.' } } }
                 $cap = if ($Body.maxPerFolder) { [int]$Body.maxPerFolder } else { 1000 }
                 $excl = @()
+                $sys = $null
                 try { $sys = @(Get-PocketSystem -Path $State.SystemsManifest) | Where-Object { $_.PlatformId -eq $platId } | Select-Object -First 1
                       if ($sys) { $excl = @($sys.BiosFiles) } } catch { $excl = @() }
+                if ($sys -and $sys.RomFormat -eq 'folder') {
+                    # Folder-format games (#200, e.g. Neo Geo) load files from their own game
+                    # folder - re-bucketing those files would break every game. Refuse.
+                    return @{ Status = 400; Body = @{ error = "$($sys.DisplayName) games are folder-based and must keep their game folders - the Library Organizer does not apply." } }
+                }
                 $maxLen = if ($Body.maxFileNameLength) { [int]$Body.maxFileNameLength } else { 100 }
                 $plan = New-PocketRomOrganizePlan -Root $State.Root -PlatformId $platId -MaxPerFolder $cap -ExcludeFiles $excl `
                     -ShortenNames:([bool]$Body.shortenNames) -MaxFileNameLength $maxLen
@@ -173,18 +185,39 @@ function Invoke-PocketApiRoute {
             }
             '^POST /api/rom/list$' {
                 # ROM leaf names under a platform's common folder (excluding the Favorites
-                # folder) - feeds the favourites selector.
+                # folder) - feeds the favourites selector and the game library. For
+                # folder-format systems (#200, e.g. Neo Geo) a "ROM" is a game DIRECTORY;
+                # titles maps each folder to the human name from the core's instance jsons.
                 $platId = [string]$Body.platformId
                 if (-not $platId) { return @{ Status = 400; Body = @{ error = 'Missing platformId.' } } }
+                $sysHit = $null
+                try {
+                    $sysHit = @(Get-PocketSystem -Path $State.SystemsManifest) |
+                        Where-Object { $_.PlatformId -eq $platId -and $_.RomFormat -eq 'folder' } | Select-Object -First 1
+                } catch { $null = $_ }
                 $common = Join-Path (Join-Path (Join-Path $State.Root 'Assets') $platId) 'common'
-                $names = @()
+                $names = @(); $titles = @{}
                 if (Test-Path -LiteralPath $common -PathType Container) {
                     $commonFull = (Resolve-Path -LiteralPath $common).Path
-                    $names = @(Get-ChildItem -LiteralPath $common -File -Recurse -ErrorAction SilentlyContinue |
-                        Where-Object { -not (Test-PocketReservedRomPath -Common $commonFull -FullPath $_.FullName) } |
-                        ForEach-Object { $_.Name } | Sort-Object -Unique)
+                    if ($sysHit) {
+                        $names = @(Get-ChildItem -LiteralPath $common -Directory -ErrorAction SilentlyContinue |
+                            Where-Object {
+                                (-not (Test-PocketReservedRomPath -Common $commonFull -FullPath $_.FullName)) -and
+                                (@(Get-ChildItem -LiteralPath $_.FullName -File -ErrorAction SilentlyContinue).Count -gt 0)
+                            } | ForEach-Object { $_.Name } | Sort-Object -Unique)
+                        foreach ($g in @(Get-PocketInstanceGame -Root $State.Root -PlatformId $platId)) {
+                            if ($names -contains $g.DataPath) { $titles[$g.DataPath] = $g.Title }
+                        }
+                    } else {
+                        $names = @(Get-ChildItem -LiteralPath $common -File -Recurse -ErrorAction SilentlyContinue |
+                            Where-Object { -not (Test-PocketReservedRomPath -Common $commonFull -FullPath $_.FullName) } |
+                            ForEach-Object { $_.Name } | Sort-Object -Unique)
+                    }
                 }
-                return @{ Status = 200; Body = @{ platformId = $platId; names = @($names); total = @($names).Count } }
+                return @{ Status = 200; Body = @{
+                    platformId = $platId; names = @($names); total = @($names).Count
+                    romFormat = if ($sysHit) { 'folder' } else { 'file' }; titles = $titles
+                } }
             }
             '^GET /api/favorites$' {
                 return @{ Status = 200; Body = (Get-PocketFavorite -Root $State.Root) }
@@ -291,7 +324,7 @@ function Invoke-PocketApiRoute {
                     return @{ Status = 400; Body = @{ error = 'No image-sources manifest available.' } }
                 }
                 $res = Sync-PocketGameImage -Root $State.Root -PlatformId ([string]$Body.platformId) `
-                    -ImageSources $State.ImageSources -DryRun:([bool]$State.DryRun)
+                    -ImageSources $State.ImageSources -SystemsManifest $State.SystemsManifest -DryRun:([bool]$State.DryRun)
                 return @{ Status = 200; Body = $res }
             }
             '^POST /api/images/get$' {

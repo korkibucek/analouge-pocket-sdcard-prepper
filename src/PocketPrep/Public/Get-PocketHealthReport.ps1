@@ -80,7 +80,7 @@ function Get-PocketHealthReport {
 
     # 3. Required files / BIOS (data.json-declared union manifest-declared, de-duped).
     # Manifest-declared BIOS only matters when the platform is actually IN USE (ROMs on the
-    # card) - a card with no Neo Geo content shouldn't warn about neogeo.zip.
+    # card) - a card with no Neo Geo content shouldn't warn about uni-bios_4_0.rom.
     $reqMissing = @($summary.RequiredFiles | Where-Object { -not $_.Satisfied })
     $coveredPlats = @($reqMissing | ForEach-Object { ([string]$_.PlatformId).ToLowerInvariant() })
     $platsInUse = @($summary.Roms.Systems | ForEach-Object { ([string]$_.PlatformId).ToLowerInvariant() })
@@ -141,6 +141,32 @@ function Get-PocketHealthReport {
         & $add 'Leftover folders' 'info' "$($cleanup.RemovableDirCount) empty/temp folder(s) can be removed." 'Use Maintenance & cleanup on the card overview.'
     } else {
         & $add 'Leftover folders' 'ok' 'No empty or temp folders.'
+    }
+
+    # 10. Folder-format games (#200, e.g. Neo Geo): a game folder only appears in the
+    # Pocket's menu if a core-shipped instance json points at it (data_path). Folders
+    # matching no instance json will never launch - usually a misnamed conversion.
+    $folderSystems = @()
+    try { $folderSystems = @(Get-PocketSystem -Path $SystemsManifest | Where-Object { $_.RomFormat -eq 'folder' }) } catch { $null = $_ }
+    foreach ($fsys in $folderSystems) {
+        $common = Join-Path (Join-Path (Join-Path $Root 'Assets') $fsys.PlatformId) 'common'
+        if (-not (Test-Path -LiteralPath $common -PathType Container)) { continue }
+        $commonFull = (Resolve-Path -LiteralPath $common).Path
+        $gameDirs = @(Get-ChildItem -LiteralPath $common -Directory -ErrorAction SilentlyContinue |
+            Where-Object { -not (Test-PocketReservedRomPath -Common $commonFull -FullPath $_.FullName) })
+        if ($gameDirs.Count -eq 0) { continue }
+        $known = @{}
+        foreach ($g in @(Get-PocketInstanceGame -Root $Root -PlatformId $fsys.PlatformId)) { $known[$g.DataPath.ToLowerInvariant()] = $true }
+        if ($known.Count -eq 0) {
+            & $add "$($fsys.DisplayName) game folders" 'warn' "$($gameDirs.Count) game folder(s) present but no core instance jsons found - install the $($fsys.SuggestedCore) core so its game launch files exist." 'Install the core on the Cores step.'
+            continue
+        }
+        $orphanDirs = @($gameDirs | Where-Object { -not $known.ContainsKey($_.Name.ToLowerInvariant()) })
+        if ($orphanDirs.Count -gt 0) {
+            & $add "$($fsys.DisplayName) game folders" 'warn' ("$($orphanDirs.Count) folder(s) match no game the core knows (won't appear in the menu): " + (($orphanDirs | Select-Object -First 8 | ForEach-Object Name) -join ', ') + $(if ($orphanDirs.Count -gt 8) { ', ...' } else { '' }) + '. The folder name must equal the instance json''s data_path (e.g. mslug4).') 'Rename the folder to the core''s expected short name.'
+        } else {
+            & $add "$($fsys.DisplayName) game folders" 'ok' "All $($gameDirs.Count) game folder(s) match a core launch json."
+        }
     }
 
     # 8. Free space.

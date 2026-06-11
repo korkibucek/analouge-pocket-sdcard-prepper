@@ -23,14 +23,14 @@ function Install-PocketBiosFile {
     The platform whose requirement is being satisfied (e.g. 'ng').
 
 .PARAMETER FileName
-    The declared required filename (e.g. 'neogeo.zip', 'uni-bios_4_0.rom').
+    The declared required filename (e.g. 'uni-bios_4_0.rom', '000-lo.lo', 'sfix.sfix').
 
 .PARAMETER SourceFile
     Path to the BIOS file the user owns. It is copied (and renamed to FileName).
 
 .PARAMETER SystemsManifest
     Optional path to manifests/systems.json, so manifest-declared BIOS (e.g. Neo Geo's
-    neogeo.zip) can be installed even before the core itself is on the card.
+    uni-bios_4_0.rom) can be installed even before the core itself is on the card.
 
 .PARAMETER Overwrite
     Replace an existing file at the destination.
