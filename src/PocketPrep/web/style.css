@@ -1,60 +1,110 @@
-:root { color-scheme: light dark; --accent:#2d7d46; --warn:#b06b00; --err:#b00020; --ok:#2d7d46; --line:#0000001f; }
+/* Retro handheld theme (#196). Game Boy-inspired chrome: ink shell, LCD-green header
+   with a faint scanline overlay, chunky pressable buttons, pixel-corner cards.
+   Semantic colours are unchanged from the audited palette (accent #2d7d46,
+   warn #b06b00, err #b00020 — WCAG AA on white; see docs/testing.md) so status
+   styling and contrast guarantees carry over. No external fonts: the pixel flavour
+   comes from the system monospace stack + spacing/shadow, never a network fetch. */
+:root {
+  color-scheme: light dark;
+  --accent:#2d7d46; --warn:#b06b00; --err:#b00020; --ok:#2d7d46; --line:#0000001f;
+  /* Theme chrome (non-semantic): DMG ink + LCD greens. */
+  --ink:#1b231a;            /* shell charcoal-green */
+  --ink-2:#2a3527;          /* raised shell */
+  --lcd:#9bbc59;            /* header LCD glow */
+  --lcd-dim:#7d9c44;
+  --paper:#f4f6ee;          /* page background: faint LCD paper tint */
+  --btn-shadow:#1e5530;     /* "press depth" under accent buttons */
+  --pixel-font: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --paper:#161b14; --line:#ffffff2e; }
+}
 * { box-sizing: border-box; }
-body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; line-height: 1.5; }
-header { background: var(--accent); color: #fff; padding: 1rem 1.25rem; }
-header h1 { margin: 0 0 .25rem; font-size: 1.25rem; }
+body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; line-height: 1.5; background: var(--paper); }
+
+/* Header = the handheld's top shell: ink casing, LCD strip, soft scanlines. */
+header {
+  background:
+    repeating-linear-gradient(0deg, #ffffff00 0 3px, #00000014 3px 4px),  /* scanlines */
+    linear-gradient(180deg, var(--ink-2), var(--ink));
+  color:#fff; padding: 1rem 1.25rem; border-bottom: 4px solid var(--lcd-dim);
+}
+header h1 {
+  margin: 0 0 .25rem; font-size: 1.15rem;
+  font-family: var(--pixel-font); text-transform: uppercase; letter-spacing: .12em;
+  color: var(--lcd); text-shadow: 2px 2px 0 #00000080;   /* hard offset = pixel vibe */
+}
 header .warn { margin: 0; font-size: .82rem; opacity: .95; }
-header .ctx { margin:.4rem 0 0; font-size:.82rem; font-weight:600; }
-nav#steps { display:flex; flex-wrap:wrap; gap:.35rem; padding:.6rem 1.25rem; border-bottom:1px solid var(--line); background:#0000000a; }
-nav#steps span { font-size:.78rem; padding:.15rem .55rem; border-radius:999px; background:#00000014; color:#666; }
-nav#steps span.active { background: var(--accent); color:#fff; }
-nav#steps span.done { background:#2d7d4633; color: var(--accent); }
+header .ctx { margin:.4rem 0 0; font-size:.82rem; font-weight:600; color:#d8e6b8; }
+
+/* Step chips: cartridge-label pills with chunky borders. */
+nav#steps { display:flex; flex-wrap:wrap; gap:.35rem; padding:.6rem 1.25rem; border-bottom:1px solid var(--line); background:#00000012; }
+nav#steps span { font-size:.78rem; padding:.15rem .55rem; border-radius:4px; border:2px solid transparent; background:#00000014; color:#555; font-family: var(--pixel-font); letter-spacing:.03em; }
+@media (prefers-color-scheme: dark) { nav#steps span { background:#ffffff14; color:#bbb; } }
+nav#steps span.active { background: var(--accent); border-color:#1e5530; color:#fff; }
+nav#steps span.done { background:#2d7d4633; border-color:#2d7d4655; color: var(--accent); }
 nav#steps span[data-go] { cursor:pointer; }
 nav#steps span[data-go]:hover { background:#2d7d4633; color: var(--accent); }
 nav#steps span.active[data-go]:hover { color:#fff; }
-/* Action hub buttons: full-width, left-aligned cards. */
+
+/* Action hub buttons: full-width, left-aligned cartridge cards. */
 ul#menu-list { gap:.6rem; }
-button.menu-act { display:block; width:100%; text-align:left; background:#0000000a; color:inherit; border:1px solid var(--line); padding:.8rem 1rem; border-radius:8px; font-size:1rem; line-height:1.45; cursor:pointer; }
-button.menu-act:hover { background:#2d7d4622; border-color: var(--accent); }
+button.menu-act { display:block; width:100%; text-align:left; background:#00000008; color:inherit; border:2px solid var(--line); padding:.8rem 1rem; border-radius:6px; font-size:1rem; line-height:1.45; cursor:pointer; box-shadow:3px 3px 0 #00000022; }
+button.menu-act:hover { background:#2d7d4622; border-color: var(--accent); transform: translate(-1px,-1px); box-shadow:4px 4px 0 #2d7d4633; }
 button.menu-act .meta { color:#777; font-size:.85rem; }
+@media (prefers-color-scheme: dark) { button.menu-act { background:#ffffff0a; } button.menu-act .meta { color:#9a9a9a; } }
+
 main { padding: 1.25rem; max-width: 880px; margin: 0 auto; min-height: 40vh; }
-.panel h2 { margin-top:0; }
+.panel h2 { margin-top:0; font-family: var(--pixel-font); letter-spacing:.04em; }
 footer { max-width:880px; margin:0 auto; padding: 0 1.25rem 2rem; display:flex; gap:.6rem; align-items:center; }
-button { background: var(--accent); color:#fff; border:0; padding:.55rem 1rem; border-radius:6px; cursor:pointer; font-size:.95rem; }
-button.secondary { background:#888; }
-button.danger { background: var(--err); }
+
+/* Buttons: chunky D-pad feel — hard drop shadow that "presses" on :active. */
+button { background: var(--accent); color:#fff; border:0; padding:.55rem 1rem; border-radius:6px; cursor:pointer; font-size:.95rem; box-shadow:0 3px 0 var(--btn-shadow); }
+button:active:not(:disabled) { transform: translateY(2px); box-shadow:0 1px 0 var(--btn-shadow); }
+button.secondary { background:#6e6e6e; box-shadow:0 3px 0 #474747; }
+button.secondary:active:not(:disabled) { box-shadow:0 1px 0 #474747; }
+button.danger { background: var(--err); box-shadow:0 3px 0 #6e0014; }
 button.danger:hover { background:#8a0019; }
-/* Game library grid (auto-scraped box art). */
-.lib-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:.7rem; margin-top:.6rem; }
-.lib-card { border:1px solid var(--line); border-radius:8px; padding:.5rem; text-align:center; }
-.lib-img { height:120px; display:flex; align-items:center; justify-content:center; font-size:2rem; background:#00000008; border-radius:6px; overflow:hidden; }
-.lib-img img { max-width:100%; max-height:100%; object-fit:contain; }
-.lib-name { font-size:.75rem; margin-top:.35rem; word-break:break-word; }
-/* Favourites picker: compact cached-art thumbnail per row (#191). */
-.fav-thumb { width:28px; height:28px; flex:0 0 28px; display:inline-flex; align-items:center; justify-content:center; background:#00000008; border-radius:4px; overflow:hidden; }
-.fav-thumb img { max-width:100%; max-height:100%; object-fit:contain; }
+button.danger:active:not(:disabled) { box-shadow:0 1px 0 #6e0014; }
+@media (prefers-reduced-motion: reduce) {
+  button:active:not(:disabled), button.menu-act:hover { transform:none; }
+}
+
 button:disabled { opacity:.5; cursor:not-allowed; }
 .busy { color:#888; font-style:italic; }
 .error { color: var(--err); font-weight:600; }
 .ok { color: var(--ok); font-weight:600; }
 .warnote { color: var(--warn); }
+
+/* Game library grid (auto-scraped box art). */
+.lib-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:.7rem; margin-top:.6rem; }
+.lib-card { border:2px solid var(--line); border-radius:6px; padding:.5rem; text-align:center; box-shadow:3px 3px 0 #00000018; }
+.lib-img { height:120px; display:flex; align-items:center; justify-content:center; font-size:2rem; background:#00000008; border-radius:4px; overflow:hidden; }
+.lib-img img { max-width:100%; max-height:100%; object-fit:contain; image-rendering:auto; }
+.lib-name { font-size:.75rem; margin-top:.35rem; word-break:break-word; }
+/* Favourites picker: compact cached-art thumbnail per row (#191). */
+.fav-thumb { width:28px; height:28px; flex:0 0 28px; display:inline-flex; align-items:center; justify-content:center; background:#00000008; border-radius:4px; overflow:hidden; }
+.fav-thumb img { max-width:100%; max-height:100%; object-fit:contain; }
+
 ul.list { list-style:none; padding:0; margin:0; display:grid; gap:.5rem; }
-ul.list li { border:1px solid var(--line); border-radius:8px; padding:.7rem .9rem; display:flex; align-items:center; gap:.7rem; }
+ul.list li { border:2px solid var(--line); border-radius:6px; padding:.7rem .9rem; display:flex; align-items:center; gap:.7rem; }
 ul.list li .meta { font-size:.82rem; color:#777; }
+@media (prefers-color-scheme: dark) { ul.list li .meta { color:#9a9a9a; } }
 label.row { display:flex; align-items:center; gap:.5rem; margin:.4rem 0; flex-wrap:wrap; }
-input[type=text] { padding:.45rem .55rem; border:1px solid var(--line); border-radius:6px; min-width:18rem; font-size:.9rem; }
-pre { background: #00000010; padding: 1rem; border-radius: 8px; overflow:auto; white-space:pre-wrap; }
-.tag { font-size:.72rem; background:#00000014; padding:.05rem .4rem; border-radius:4px; }
+input[type=text] { padding:.45rem .55rem; border:2px solid var(--line); border-radius:6px; min-width:18rem; font-size:.9rem; background:transparent; color:inherit; }
+pre { background: #00000010; padding: 1rem; border-radius: 6px; overflow:auto; white-space:pre-wrap; font-family: var(--pixel-font); }
+.tag { font-size:.72rem; background:#00000014; padding:.05rem .4rem; border-radius:4px; font-family: var(--pixel-font); }
 .tag.rm { background:#2d7d4622; color:var(--accent); }
 .tag.fixed { background:#b0002022; color:var(--err); }
-.card { border:1px solid var(--line); border-radius:8px; padding:.8rem; margin:.5rem 0; }
+.card { border:2px solid var(--line); border-radius:6px; padding:.8rem; margin:.5rem 0; background:#ffffff66; box-shadow:3px 3px 0 #00000014; }
+@media (prefers-color-scheme: dark) { .card { background:#ffffff08; } }
 .visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
 /* Always-visible keyboard focus indicator (don't rely on colour alone). */
 :focus-visible { outline:3px solid #1a5fb4; outline-offset:2px; }
 #panel:focus { outline:none; }  /* programmatic focus target shouldn't show a ring */
 .modal-overlay { position:fixed; inset:0; background:#0008; display:flex; align-items:center; justify-content:center; padding:1rem; z-index:100; }
-.modal { background:Canvas; color:CanvasText; border:1px solid var(--line); border-radius:10px; padding:1rem 1.25rem; max-width:560px; width:100%; box-shadow:0 8px 30px #0006; }
-.modal h3 { margin:0 0 .5rem; }
-.modal ul.list button { background:none; color:inherit; border:0; padding:.35rem .4rem; text-align:left; width:100%; cursor:pointer; border-radius:6px; }
+.modal { background:Canvas; color:CanvasText; border:2px solid var(--line); border-radius:8px; padding:1rem 1.25rem; max-width:560px; width:100%; box-shadow:6px 6px 0 #0006; }
+.modal h3 { margin:0 0 .5rem; font-family: var(--pixel-font); letter-spacing:.04em; }
+.modal ul.list button { background:none; color:inherit; border:0; padding:.35rem .4rem; text-align:left; width:100%; cursor:pointer; border-radius:4px; box-shadow:none; }
 .modal ul.list button:hover { background:#0000000f; }
 #fb-roots .fb-root { font-size:.8rem; padding:.25rem .55rem; }
