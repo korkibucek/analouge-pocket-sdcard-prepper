@@ -260,6 +260,19 @@ systems and any installed core's platforms.)
 > whether any playable `.json` + `.rom` pairs are on the card). Build the romset with an
 > openFPGA arcade packager outside this tool; it never builds or downloads arcade ROMs.
 
+> **Neo Geo is folder-based.** The Mazamars312 Neo Geo core doesn't load loose ROM files
+> either: each game is a **folder in DarkSoft format** (`srom`, `prom`, `crom0`, `m1rom`,
+> `vroma0`, …) under `Assets/ng/common/<game>/`, and the **core itself ships a launch
+> `.json` per supported game** — the folder name must match that json's `data_path` (e.g.
+> `mslug4`). The Neo Geo ROM row imports **whole game folders**: point it at the folder
+> *containing* your converted game folders (convert a romset you own with a DarkSoft-format
+> converter outside this tool) and each is copied whole, size-verified. Three support files
+> are also required in `Assets/ng/common`: `uni-bios_4_0.rom`, `000-lo.lo` and `sfix.sfix`
+> — upload them from the card overview's BIOS panel. The **health check** verifies every
+> game folder matches a game the core knows (a misnamed folder never appears in the menu),
+> the **library** shows these games under their real titles with box art, and the Library
+> Organizer refuses to touch folder-based platforms (re-bucketing would break every game).
+
 ### Card breakdown after you pick a drive
 
 As soon as you select the card, the tool scans it and shows what's already there —
@@ -448,7 +461,7 @@ Highlights (full list in [docs/KNOWN-LIMITATIONS.md](docs/KNOWN-LIMITATIONS.md))
 - Core installation covers the full community inventory (install one or all; large download — set `GITHUB_TOKEN`).
 - Live drive detection works on Windows/Linux/macOS but is hardware-verified via manual UAT, not CI.
 - Platform-ids may need per-core adjustment (see above).
-- Neo Geo / arcade / CD systems are experimental (BIOS/romset handling not fully managed).
+- Arcade / CD systems are experimental (romset/BIOS handling not fully managed). Neo Geo is fully managed (folder-format import, BIOS upload, health check) but you must convert your romset to DarkSoft format yourself.
 - Windows builds are unsigned by design (verify with SHA256SUMS; expect SmartScreen/Unblock — see the first-run guide).
 
 ## Documentation

@@ -401,7 +401,9 @@
       "homepage": "https://github.com/Mazamars312/Analogue_Pocket_Neogeo",
       "biosRequired": true,
       "biosFiles": [
-        "neogeo.zip"
+        "uni-bios_4_0.rom",
+        "000-lo.lo",
+        "sfix.sfix"
       ],
       "notes": "From the openFPGA Cores Inventory. Console Neo Geo by SNK (1990)"
     },

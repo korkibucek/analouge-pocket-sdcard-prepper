@@ -50,10 +50,12 @@ Describe 'Install-PocketBiosFile' {
         $bare = Join-Path ([System.IO.Path]::GetTempPath()) ("bib_" + [System.IO.Path]::GetRandomFileName())
         New-Item -ItemType Directory -Path $bare -Force | Out-Null
         try {
-            $r = Install-PocketBiosFile -Root $bare -PlatformId 'ng' -FileName 'neogeo.zip' `
-                -SourceFile (Join-Path $script:src 'my-weirdly-named-bios.bin') -SystemsManifest $script:sm
-            $r.Installed | Should -BeTrue
-            (Test-Path (Join-Path $bare 'Assets/ng/common/neogeo.zip')) | Should -BeTrue
+            foreach ($f in 'uni-bios_4_0.rom', '000-lo.lo', 'sfix.sfix') {
+                $r = Install-PocketBiosFile -Root $bare -PlatformId 'ng' -FileName $f `
+                    -SourceFile (Join-Path $script:src 'my-weirdly-named-bios.bin') -SystemsManifest $script:sm
+                $r.Installed | Should -BeTrue
+            }
+            (Test-Path (Join-Path $bare 'Assets/ng/common/uni-bios_4_0.rom')) | Should -BeTrue
             (Get-PocketBiosStatus -Root $bare -SystemsManifest $script:sm -SystemId 'neogeo').Satisfied | Should -BeTrue
         } finally { Remove-Item $bare -Recurse -Force -ErrorAction SilentlyContinue }
     }

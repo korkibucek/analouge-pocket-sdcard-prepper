@@ -15,16 +15,20 @@ Describe 'Get-PocketBiosStatus' {
         $ng = Get-PocketBiosStatus -Root $script:root -SystemsManifest $script:systemsManifest -SystemId 'neogeo'
         @($ng).Count | Should -Be 1
         $ng.Satisfied | Should -BeFalse
-        $ng.Missing | Should -Contain 'neogeo.zip'
+        $ng.Missing | Should -Contain 'uni-bios_4_0.rom'
+        $ng.Missing | Should -Contain '000-lo.lo'
+        $ng.Missing | Should -Contain 'sfix.sfix'
     }
 
     It 'reports satisfied once the BIOS file is placed (case-insensitive)' {
         $common = Join-Path $script:root 'Assets/ng/common'
         New-Item -ItemType Directory -Path $common -Force | Out-Null
-        'bios' | Set-Content (Join-Path $common 'NeoGeo.zip')   # different case
+        'bios' | Set-Content (Join-Path $common 'UNI-BIOS_4_0.ROM')   # different case
+        'lo'   | Set-Content (Join-Path $common '000-LO.LO')
+        'sfix' | Set-Content (Join-Path $common 'SFIX.SFIX')
         $ng = Get-PocketBiosStatus -Root $script:root -SystemsManifest $script:systemsManifest -SystemId 'neogeo'
         $ng.Satisfied | Should -BeTrue
-        $ng.Present | Should -Contain 'neogeo.zip'
+        $ng.Present | Should -Contain 'uni-bios_4_0.rom'
     }
 
     It 'only lists systems that require a BIOS' {

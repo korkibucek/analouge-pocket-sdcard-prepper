@@ -76,16 +76,28 @@ function Get-PocketCardSummary {
         foreach ($pdir in Get-ChildItem -LiteralPath $assetsDir -Directory -ErrorAction SilentlyContinue) {
             $common = Join-Path $pdir.FullName 'common'
             if (-not (Test-Path -LiteralPath $common -PathType Container)) { continue }
-            # Don't count the tool-managed favourites folder (symlinks/copies) as extra ROMs.
-            $count = @(Get-ChildItem -LiteralPath $common -File -Recurse -ErrorAction SilentlyContinue |
-                Where-Object { -not (Test-PocketReservedRomPath -Common $common -FullPath $_.FullName) }).Count
-            if ($count -eq 0) { continue }
             $sys = $platformLabels[$pdir.Name]
+            $isFolderFormat = $sys -and ([string]$sys.RomFormat -eq 'folder')
+            if ($isFolderFormat) {
+                # Folder-format systems (#200, e.g. Neo Geo): one GAME per sub-directory of
+                # common; loose files there are support files (BIOS etc.), not ROMs.
+                $count = @(Get-ChildItem -LiteralPath $common -Directory -ErrorAction SilentlyContinue |
+                    Where-Object {
+                        (-not (Test-PocketReservedRomPath -Common $common -FullPath $_.FullName)) -and
+                        (@(Get-ChildItem -LiteralPath $_.FullName -File -ErrorAction SilentlyContinue).Count -gt 0)
+                    }).Count
+            } else {
+                # Don't count the tool-managed favourites folder (symlinks/copies) as extra ROMs.
+                $count = @(Get-ChildItem -LiteralPath $common -File -Recurse -ErrorAction SilentlyContinue |
+                    Where-Object { -not (Test-PocketReservedRomPath -Common $common -FullPath $_.FullName) }).Count
+            }
+            if ($count -eq 0) { continue }
             [pscustomobject]@{
                 PlatformId  = $pdir.Name
                 SystemId    = if ($sys) { $sys.Id } else { $null }
                 DisplayName = if ($sys) { $sys.DisplayName } else { $pdir.Name }
                 FileCount   = $count
+                RomFormat   = if ($isFolderFormat) { 'folder' } else { 'file' }
             }
         }
     }

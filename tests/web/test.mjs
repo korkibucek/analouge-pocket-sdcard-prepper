@@ -152,7 +152,12 @@ assert.ok(panel2.querySelectorAll('button[data-bios]').length === 1, 'present fi
 const PNG_1PX = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 API2['/api/card-summary'] = {
   Firmware: { Present: true, Version: '2.5' }, Cores: { Count: 1 }, Config: { Exists: true, SourceCount: 1 }, Bios: [],
-  Roms: { TotalFiles: 2, Systems: [{ PlatformId: 'gb', DisplayName: 'Game Boy', FileCount: 2 }] },
+  Roms: { TotalFiles: 2, Systems: [
+    { PlatformId: 'gb', DisplayName: 'Game Boy', FileCount: 2, RomFormat: 'file' },
+    // Folder-format systems (Neo Geo) launch via core instance jsons, not from common —
+    // the favourites picker must exclude them (#200).
+    { PlatformId: 'ng', DisplayName: 'Neo Geo', FileCount: 3, RomFormat: 'folder' },
+  ] },
 };
 API2['/api/favorites'] = { Platforms: [{ PlatformId: 'gb', Names: ['Tetris.gb'] }] };
 API2['/api/rom/list'] = { names: ['Tetris.gb', 'Zelda.gb'] };
@@ -163,6 +168,8 @@ API2['/api/images/get'] = (init) => {
 calls2.length = 0;
 dom2.window.eval('go("favorites")');
 await new Promise((r) => setTimeout(r, 400));
+const favPlatOpts = [...doc2.querySelectorAll('#fav-plat option')].map(o => o.value);
+assert.ok(favPlatOpts.includes('gb') && !favPlatOpts.includes('ng'), 'folder-format systems (Neo Geo) must be excluded from the favourites picker');
 const thumbs = panel2.querySelectorAll('.fav-thumb');
 assert.ok(thumbs.length === 2, `each favourites row should carry a thumbnail slot (got ${thumbs.length})`);
 // Tetris is favourited, so it sorts to the top row — and it's the one with cached art.

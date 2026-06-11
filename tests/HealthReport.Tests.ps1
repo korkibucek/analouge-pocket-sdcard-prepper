@@ -51,11 +51,14 @@ Describe 'Get-PocketHealthReport' {
         $common = Join-Path $script:root 'Assets/ng/common'
         New-Item -ItemType Directory -Path $common -Force | Out-Null
         'r' | Set-Content (Join-Path $common (('L' * 120) + '.zip'))
+        # ng is folder-format: it only counts as "in use" with a game folder present.
+        New-Item -ItemType Directory -Path (Join-Path $common 'mslug4') -Force | Out-Null
+        'x' | Set-Content (Join-Path $common 'mslug4/prom')
         $r = Get-PocketHealthReport -Root $script:root -SystemsManifest $script:sm -CoresManifest $script:cm
         (Get-Check $r 'Filename length').Status | Should -Be 'warn'
         $bios = Get-Check $r 'BIOS / required files'
         $bios.Status | Should -Be 'warn'
-        $bios.Detail | Should -Match 'neogeo.zip'   # manifest-declared Neo Geo BIOS missing
+        $bios.Detail | Should -Match 'uni-bios_4_0\.rom'   # manifest-declared Neo Geo BIOS missing
     }
 
     It 'warns about ROMs whose platform has no installed core' {

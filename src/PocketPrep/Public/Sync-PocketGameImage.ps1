@@ -52,6 +52,11 @@ function Sync-PocketGameImage {
         [Parameter(Mandatory, Position = 2)]
         [string] $ImageSources,
 
+        # Optional systems manifest: folder-format platforms (#200, e.g. Neo Geo) list
+        # game DIRECTORIES and search by the core's instance-json title instead of the
+        # folder's short name (mslug4 would never match a libretro thumbnail).
+        [string] $SystemsManifest,
+
         [int] $MaxNew = 200,
 
         [switch] $RefreshIndex,
@@ -105,26 +110,47 @@ function Sync-PocketGameImage {
         if ($b -and -not $baseLookup.ContainsKey($b)) { $baseLookup[$b] = $name }
     }
 
-    # 2. Games on the card (reserved tool folders excluded).
+    # 2. Games on the card (reserved tool folders excluded). Each entry pairs the cache
+    # file name with the name used to search the thumbnail index (identical for normal
+    # file ROMs; folder-format games cache by folder but search by instance-json title).
+    $folderSystem = $null
+    if ($SystemsManifest -and (Test-Path -LiteralPath $SystemsManifest -PathType Leaf)) {
+        try {
+            $folderSystem = @(Get-PocketSystem -Path $SystemsManifest) |
+                Where-Object { $_.PlatformId -eq $PlatformId -and $_.RomFormat -eq 'folder' } | Select-Object -First 1
+        } catch { $null = $_ }
+    }
     $common = Join-Path (Join-Path (Join-Path $Root 'Assets') $PlatformId) 'common'
     $games = @()
     if (Test-Path -LiteralPath $common -PathType Container) {
         $commonFull = (Resolve-Path -LiteralPath $common).Path
-        $games = @(Get-ChildItem -LiteralPath $common -File -Recurse -ErrorAction SilentlyContinue |
-            Where-Object { -not (Test-PocketReservedRomPath -Common $commonFull -FullPath $_.FullName) } |
-            ForEach-Object { [System.IO.Path]::GetFileNameWithoutExtension($_.Name) } | Select-Object -Unique)
+        if ($folderSystem) {
+            $titleByPath = @{}
+            foreach ($g in @(Get-PocketInstanceGame -Root $Root -PlatformId $PlatformId)) { $titleByPath[$g.DataPath] = $g.Title }
+            $games = @(Get-ChildItem -LiteralPath $common -Directory -ErrorAction SilentlyContinue |
+                Where-Object {
+                    (-not (Test-PocketReservedRomPath -Common $commonFull -FullPath $_.FullName)) -and
+                    (@(Get-ChildItem -LiteralPath $_.FullName -File -ErrorAction SilentlyContinue).Count -gt 0)
+                } |
+                ForEach-Object { [pscustomobject]@{ CacheName = $_.Name; Search = ($titleByPath[$_.Name] ?? $_.Name) } })
+        } else {
+            $games = @(Get-ChildItem -LiteralPath $common -File -Recurse -ErrorAction SilentlyContinue |
+                Where-Object { -not (Test-PocketReservedRomPath -Common $commonFull -FullPath $_.FullName) } |
+                ForEach-Object { [System.IO.Path]::GetFileNameWithoutExtension($_.Name) } | Select-Object -Unique |
+                ForEach-Object { [pscustomobject]@{ CacheName = $_; Search = $_ } })
+        }
     }
 
     # 3. Match + fetch (capped), skipping already-cached images.
     $cached = 0; $fetched = 0; $remaining = 0
     $missing = [System.Collections.Generic.List[string]]::new()
     foreach ($game in $games) {
-        $dest = Join-Path $imgDir "$game.png"
+        $dest = Join-Path $imgDir "$($game.CacheName).png"
         if (Test-Path -LiteralPath $dest -PathType Leaf) { $cached++; continue }
-        $san = (& $sanitize $game)
+        $san = (& $sanitize $game.Search)
         $hit = $exactLookup[$san.ToLowerInvariant()]
         if (-not $hit) { $hit = $baseLookup[(& $stripTags $san)] }
-        if (-not $hit) { $missing.Add($game); continue }
+        if (-not $hit) { $missing.Add($game.CacheName); continue }
         if ($fetched -ge $MaxNew) { $remaining++; continue }
         if ($DryRun) { $fetched++; continue }
         try {

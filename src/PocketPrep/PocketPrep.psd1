@@ -53,6 +53,7 @@
         'Get-PocketDiskSpace',
         'Get-PocketCardCleanup',
         'Get-PocketHealthReport',
+        'Get-PocketInstanceGame',
         'Invoke-PocketCardCleanup',
         'Invoke-PocketSaveStatePrune',
         'Export-PocketProfile',

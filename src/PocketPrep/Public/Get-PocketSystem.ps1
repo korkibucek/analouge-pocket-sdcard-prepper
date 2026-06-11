@@ -39,7 +39,19 @@ function Get-PocketSystem {
 
     $seen = @{}
     $systems = foreach ($s in $json.systems) {
+        $romFormat = if ([string]$s.romFormat) { ([string]$s.romFormat).ToLowerInvariant() } else { 'file' }
+        if ($romFormat -notin @('file', 'folder')) {
+            throw "Systems manifest '$Path' system '$($s.id)' has invalid romFormat '$($s.romFormat)' (expected 'file' or 'folder')."
+        }
         foreach ($field in 'id', 'displayName', 'platformId', 'supportedExtensions') {
+            # Folder-format systems (whole-directory games, e.g. Neo Geo DarkSoft sets)
+            # match games by directory, so an empty extension list is legal there.
+            if ($field -eq 'supportedExtensions' -and $romFormat -eq 'folder') {
+                if (-not $s.PSObject.Properties[$field]) {
+                    throw "Systems manifest '$Path' has an entry missing required field '$field'."
+                }
+                continue
+            }
             if (-not $s.PSObject.Properties[$field] -or -not $s.$field) {
                 throw "Systems manifest '$Path' has an entry missing required field '$field'."
             }
@@ -63,6 +75,7 @@ function Get-PocketSystem {
             Manufacturer           = [string]$s.manufacturer
             PlatformId             = $s.platformId
             SupportedExtensions    = $exts
+            RomFormat              = $romFormat
             RequiresCore           = [bool]$s.requiresCore
             SuggestedCore          = [string]$s.suggestedCore
             BiosRequired           = [bool]$s.biosRequired

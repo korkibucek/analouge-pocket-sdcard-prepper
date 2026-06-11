@@ -17,9 +17,12 @@
           "platformId": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$",
             "description": "Folder under Assets/. Defined by the openFPGA core, not standardised by Analogue." },
           "supportedExtensions": {
-            "type": "array", "minItems": 1,
-            "items": { "type": "string", "pattern": "^\\.[A-Za-z0-9]+$" }
+            "type": "array",
+            "items": { "type": "string", "pattern": "^\\.[A-Za-z0-9]+$" },
+            "description": "File extensions matched by ROM copy. May be empty only when romFormat is 'folder'."
           },
+          "romFormat": { "type": "string", "enum": ["file", "folder"],
+            "description": "'file' (default): ROMs are individual files matched by extension. 'folder': each game is a directory copied whole (e.g. Neo Geo DarkSoft sets)." },
           "requiresCore": { "type": "boolean" },
           "suggestedCore": { "type": "string" },
           "biosRequired": { "type": "boolean" },

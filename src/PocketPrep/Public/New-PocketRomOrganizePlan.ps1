@@ -26,7 +26,7 @@ function New-PocketRomOrganizePlan {
     safe value; below the ~1300 community ceiling).
 
 .PARAMETER ExcludeFiles
-    Leaf names to leave in place (e.g. a system BIOS like neogeo.zip that the core expects at
+    Leaf names to leave in place (e.g. a system BIOS like uni-bios_4_0.rom that the core expects at
     the common root). Case-insensitive.
 #>
     [CmdletBinding()]
