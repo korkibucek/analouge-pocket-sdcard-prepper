@@ -54,6 +54,7 @@
         'Get-PocketCardCleanup',
         'Get-PocketHealthReport',
         'Invoke-PocketCardCleanup',
+        'Invoke-PocketSaveStatePrune',
         'Export-PocketProfile',
         'Import-PocketProfile',
         'Import-PocketUsedCard',

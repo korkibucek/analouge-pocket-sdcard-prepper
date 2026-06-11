@@ -349,6 +349,12 @@ folders**, the tool's own temp folders, and a save-state count. Removal is **saf
 clears just **empty** and **temp** folders and **never** a ROM, save, or core. Orphan ROM
 folders are reported but never deleted.
 
+The panel also offers **save-state pruning** (keep the newest N per game and/or only states
+older than D days). It's deliberately fenced: it touches only `Memories/Save States`, every
+pruned file is **always zipped to `pocketprep/save-backups/` first** (no off-switch, so it's
+recoverable), Preview is a forced dry-run, and the real prune sits behind a danger-styled
+button + confirmation.
+
 ### De-duplicate by region (1G1R-style)
 
 Got the same game as **USA, Europe and Japan**? Set your **region priority** (e.g.

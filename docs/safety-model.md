@@ -78,9 +78,27 @@ outcome is "files copied to the wrong folder"** — never data loss.
 Decision order: no drive letter → unsafe; system drive → unsafe (non-overridable);
 non-removable → needs override (and flagged if large); otherwise safe.
 
-## The one destructive feature: `Clear-PocketCard` (opt-in)
+## Destructive feature 2: `Invoke-PocketSaveStatePrune` (opt-in, always backed up)
 
-`Clear-PocketCard` is the **only** function that deletes user data. It exists so a used
+Trims old/excess save states under `Memories/Save States` by an explicit policy
+(`-KeepPerGame` and/or `-OlderThanDays`; with **no policy it refuses to run**). Its guards:
+
+1. **Scope.** It touches only files under `Memories/Save States` — never `Saves`, ROMs,
+   cores, or anything else under `Memories`.
+2. **Mandatory backup.** Every file is zipped to `pocketprep/save-backups/` **before**
+   deletion, with no off-switch — a prune is always recoverable by extracting the zip.
+3. **Dry-run + confirm gate.** `-DryRun` previews the exact files; the web API
+   (`POST /api/savestates/prune`) **forces a dry-run unless the caller sends
+   `confirm: true`**, and the UI puts the real run behind a danger-styled button and a
+   confirmation dialog (Preview first).
+4. **Conservative grouping.** `-KeepPerGame` groups states by name with a single trailing
+   numeric counter stripped; files without a counter are their own group and are never
+   deleted by that policy.
+5. **Logged.** Every deletion is logged at WARN.
+
+## Destructive feature 1: `Clear-PocketCard` (opt-in)
+
+`Clear-PocketCard` deletes user data wholesale. It exists so a used
 card can be re-prepped, and it is gated so the worst realistic outcome requires the user
 to actively defeat several safeguards:
 

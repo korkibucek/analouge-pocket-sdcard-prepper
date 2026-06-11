@@ -291,6 +291,27 @@ Describe 'Invoke-PocketApiRoute' {
             Invoke-PocketApiRoute -Method POST -Path '/api/images/sync' -Body ([pscustomobject]@{}) -State $s }
         $r3.Status | Should -Be 400
     }
+    It 'POST /api/savestates/prune forces a dry-run without confirm; deletes (after backup) with it' {
+        $dir = Join-Path $script:root 'Memories/Save States/gb'
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+        1..3 | ForEach-Object { "s$_" | Set-Content (Join-Path $dir "Zelda-$_.sta") }
+        # No confirm -> ALWAYS a dry-run preview, nothing deleted.
+        $b = [pscustomobject]@{ keepPerGame = 1 }
+        $p = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = $b } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/savestates/prune' -Body $b -State $s }
+        $p.Status | Should -Be 200
+        $p.Body.DryRun | Should -BeTrue
+        @(Get-ChildItem $dir -File).Count | Should -Be 3
+        # With confirm -> backed up, then deleted.
+        $b2 = [pscustomobject]@{ keepPerGame = 1; confirm = $true }
+        $r = InModuleScope PocketPrep -Parameters @{ s = $script:state; b = $b2 } { param($s,$b)
+            Invoke-PocketApiRoute -Method POST -Path '/api/savestates/prune' -Body $b -State $s }
+        $r.Body.DryRun | Should -BeFalse
+        $r.Body.DeleteCount | Should -Be 2
+        $r.Body.BackupZip | Should -Not -BeNullOrEmpty
+        (Test-Path $r.Body.BackupZip) | Should -BeTrue
+        @(Get-ChildItem $dir -File).Count | Should -Be 1
+    }
     It 'GET /api/healthcheck returns an overall status with per-check details' {
         $r = InModuleScope PocketPrep -Parameters @{ s = $script:state } { param($s)
             Invoke-PocketApiRoute -Method GET -Path '/api/healthcheck' -State $s }

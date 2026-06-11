@@ -529,6 +529,12 @@ function cardBreakdownHtml(sum) {
       <p class="meta">Scans for unmanaged cores, orphan asset folders, empty folders and the tool's own temp files. Removal only ever clears <strong>empty</strong> and temp folders — never a ROM, save or core.</p>
       <div class="row"><button id="cl-scan" class="secondary">Scan</button><button id="cl-run">Remove empty &amp; temp folders</button></div>
       <div id="cl-out"></div>
+      <div class="card"><strong>Prune save states</strong> <span class="tag fixed">deletes data — backed up first</span>
+        <p class="meta">Trims old/excess save states under <code>Memories/Save States</code> by your policy. Every pruned file is <strong>always zipped to <code>pocketprep/save-backups/</code> first</strong>, so it's recoverable. Nothing else is ever touched.</p>
+        <label class="row">Keep newest <input type="number" id="ssp-keep" value="3" min="0" style="min-width:5rem"> per game</label>
+        <label class="row">Only states older than <input type="number" id="ssp-days" value="0" min="0" style="min-width:5rem"> days (0 = any age)</label>
+        <div class="row"><button id="ssp-preview" class="secondary">Preview</button><button id="ssp-run" class="danger">Prune (backup + delete)</button></div>
+        <div id="ssp-out"></div></div>
     </details>`;
   return `<div class="card"><strong>Already on this card</strong>
     <ul class="list" style="margin-top:.4rem">
@@ -638,6 +644,32 @@ async function stepCard() {
         $('#cl-out').innerHTML = `<p class="ok">Removed ${r.RemovedCount} empty/temp folder(s)${r.DryRun ? ' [dry-run]' : ''}. No ROMs, saves or cores were touched.</p>` + renderCleanup(r);
         refreshSpace();
       } catch (e) { $('#cl-out').innerHTML = errLine(e.message); } finally { busy(false); }
+    };
+
+    // Save-state pruning: preview is a forced dry-run; the real prune needs an explicit
+    // confirm AND is always backed up to a zip first (engine-enforced).
+    const sspBody = (confirm) => ({
+      keepPerGame: Math.max(0, parseInt(($('#ssp-keep') || {}).value, 10) || 0),
+      olderThanDays: Math.max(0, parseInt(($('#ssp-days') || {}).value, 10) || 0),
+      confirm,
+    });
+    if ($('#ssp-preview')) $('#ssp-preview').onclick = async () => {
+      busy(true); $('#ssp-out').innerHTML = '<p>Previewing…</p>';
+      try { const r = await api('/api/savestates/prune', 'POST', sspBody(false));
+        $('#ssp-out').innerHTML = r.DeleteCount
+          ? `<p class="warnote">Would delete ${r.DeleteCount} of ${r.Examined} save state(s): ${r.Deleted.slice(0, 10).join('; ')}${r.DeleteCount > 10 ? '…' : ''}</p>`
+          : `<p class="ok">Nothing matches this policy (${r.Examined} state(s) examined).</p>`;
+      } catch (e) { $('#ssp-out').innerHTML = errLine(e.message); } finally { busy(false); }
+    };
+    if ($('#ssp-run')) $('#ssp-run').onclick = async () => {
+      if (!window.confirm('Prune save states?\n\nMatching states are zipped to pocketprep/save-backups/ first, then DELETED from Memories/Save States. Restore by extracting the zip.')) return;
+      busy(true); $('#ssp-out').innerHTML = '<p>Backing up &amp; pruning…</p>';
+      try { const r = await api('/api/savestates/prune', 'POST', sspBody(true));
+        $('#ssp-out').innerHTML = r.DeleteCount
+          ? `<p class="ok">Pruned ${r.DeleteCount} save state(s)${r.DryRun ? ' [dry-run]' : ''}. Backup: ${r.BackupZip || '(dry-run, none)'}.</p>`
+          : `<p class="ok">Nothing matched this policy (${r.Examined} examined) — nothing deleted.</p>`;
+        refreshSpace();
+      } catch (e) { $('#ssp-out').innerHTML = errLine(e.message); } finally { busy(false); }
     };
 
     // BIOS upload: place a user-supplied file into the declared slot (renamed to the

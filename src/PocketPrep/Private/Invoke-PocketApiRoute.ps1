@@ -302,6 +302,17 @@ function Invoke-PocketApiRoute {
                 $b64 = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes($img))
                 return @{ Status = 200; Body = @{ found = $true; dataUrl = "data:image/png;base64,$b64" } }
             }
+            '^POST /api/savestates/prune$' {
+                # Guarded destructive op: WITHOUT confirm=true this route ALWAYS runs a
+                # dry-run preview. With confirm, every deleted file is first backed up into
+                # a zip under pocketprep/save-backups/ (mandatory, engine-enforced).
+                $keep = [int]($Body.keepPerGame ?? 0)
+                $days = [int]($Body.olderThanDays ?? 0)
+                $confirmed = [bool]$Body.confirm
+                $res = Invoke-PocketSaveStatePrune -Root $State.Root -KeepPerGame $keep -OlderThanDays $days `
+                    -DryRun:((-not $confirmed) -or [bool]$State.DryRun)
+                return @{ Status = 200; Body = $res }
+            }
             '^GET /api/healthcheck$' {
                 # One-click read-only audit of the whole card.
                 return @{ Status = 200; Body = (Get-PocketHealthReport -Root $State.Root -SystemsManifest $State.SystemsManifest -CoresManifest $State.CoresManifest) }
