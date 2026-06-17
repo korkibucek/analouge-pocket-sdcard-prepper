@@ -178,5 +178,57 @@ assert.ok(!thumbs[1].querySelector('img'), 'a game without cached art keeps the 
 assert.ok(calls2.includes('/api/images/get'), 'thumbnails should come from /api/images/get');
 assert.ok(!calls2.includes('/api/images/sync'), 'the favourites picker must never scrape');
 
-console.log(`OK: web UI bootstrapped, called [${[...new Set(calls)].join(', ')}], rendered the target step; action menu renders on target-ready boot; favourites thumbnails render from cache; a11y hooks present.`);
+// 9. Memory cleaner (#204): list save states; auto-select = keep newest per game;
+//    backup hits /api/savestates/backup; delete only fires with confirm.
+API2['/api/savestates'] = {
+  Total: 4, TotalBytes: 4096,
+  Items: [
+    { Game: 'Sonic', Name: 'Sonic.sta', RelativePath: 'gb/c/Sonic.sta', SizeBytes: 1024, LastWriteUtc: '2026-06-01T10:00:00.0000000Z', IsLatestForGame: false },
+    { Game: 'Sonic', Name: 'Sonic #2.sta', RelativePath: 'gb/c/Sonic #2.sta', SizeBytes: 1024, LastWriteUtc: '2026-06-05T10:00:00.0000000Z', IsLatestForGame: false },
+    { Game: 'Sonic', Name: 'Sonic #3.sta', RelativePath: 'gb/c/Sonic #3.sta', SizeBytes: 1024, LastWriteUtc: '2026-06-09T10:00:00.0000000Z', IsLatestForGame: true },
+    { Game: 'Tetris', Name: 'Tetris.sta', RelativePath: 'gb/c/Tetris.sta', SizeBytes: 1024, LastWriteUtc: '2026-06-03T10:00:00.0000000Z', IsLatestForGame: true },
+  ],
+  Games: [
+    { Game: 'Sonic', Count: 3, Items: [
+      { Game: 'Sonic', Name: 'Sonic #3.sta', RelativePath: 'gb/c/Sonic #3.sta', SizeBytes: 1024, LastWriteUtc: '2026-06-09T10:00:00.0000000Z', IsLatestForGame: true },
+      { Game: 'Sonic', Name: 'Sonic #2.sta', RelativePath: 'gb/c/Sonic #2.sta', SizeBytes: 1024, LastWriteUtc: '2026-06-05T10:00:00.0000000Z', IsLatestForGame: false },
+      { Game: 'Sonic', Name: 'Sonic.sta', RelativePath: 'gb/c/Sonic.sta', SizeBytes: 1024, LastWriteUtc: '2026-06-01T10:00:00.0000000Z', IsLatestForGame: false },
+    ] },
+    { Game: 'Tetris', Count: 1, Items: [
+      { Game: 'Tetris', Name: 'Tetris.sta', RelativePath: 'gb/c/Tetris.sta', SizeBytes: 1024, LastWriteUtc: '2026-06-03T10:00:00.0000000Z', IsLatestForGame: true },
+    ] },
+  ],
+};
+let backupPaths = null, deleteBody = null;
+API2['/api/savestates/backup'] = (init) => { backupPaths = JSON.parse((init && init.body) || '{}').paths; return { fileName: 'pocket-memories-x.zip', count: 2, dataUrl: 'data:application/zip;base64,UEsFBgAAAAAAAAAAAAAAAAAAAAAAAA==' }; };
+API2['/api/savestates/delete'] = (init) => { deleteBody = JSON.parse((init && init.body) || '{}'); return { Examined: deleteBody.paths.length, DeleteCount: deleteBody.paths.length, Deleted: deleteBody.paths, Skipped: [], BackupZip: 'pocketprep/save-backups/save-states-x.zip', DryRun: false }; };
+// Auto-confirm dialogs and neutralise the download anchor's navigation in jsdom.
+dom2.window.confirm = () => true;
+dom2.window.HTMLAnchorElement.prototype.click = function () {};
+calls2.length = 0;
+dom2.window.eval('go("memories")');
+await new Promise((r) => setTimeout(r, 300));
+assert.ok(/Memory cleaner/i.test(panel2.textContent), 'memory cleaner panel should render');
+assert.strictEqual(panel2.querySelectorAll('.mc-pick').length, 4, 'every save state should get a checkbox');
+assert.strictEqual(panel2.querySelectorAll('.tag.rm').length, 2, 'the newest state of each game should be tagged');
+// Auto-select keeps newest per game → 2 of 4 checked (the two older Sonic states).
+dom2.window.document.getElementById('mc-auto').click();
+await new Promise((r) => setTimeout(r, 50));
+const checked = [...panel2.querySelectorAll('.mc-pick')].filter(c => c.checked).map(c => c.dataset.p);
+assert.strictEqual(checked.length, 2, 'keep-newest-per-game should select all but the newest of each game');
+assert.ok(checked.includes('gb/c/Sonic.sta') && checked.includes('gb/c/Sonic #2.sta') && !checked.includes('gb/c/Sonic #3.sta') && !checked.includes('gb/c/Tetris.sta'), 'auto-select math: only the non-newest states');
+// Backup downloads the current selection without deleting.
+dom2.window.document.getElementById('mc-backup').click();
+await new Promise((r) => setTimeout(r, 50));
+assert.ok(calls2.includes('/api/savestates/backup'), 'backup should call /api/savestates/backup');
+assert.strictEqual(backupPaths.length, 2, 'backup should send the selected paths');
+assert.ok(!calls2.includes('/api/savestates/delete'), 'backup must not delete');
+// Delete fires only on the explicit Delete button, and with confirm:true.
+dom2.window.document.getElementById('mc-delete').click();
+await new Promise((r) => setTimeout(r, 50));
+assert.ok(calls2.includes('/api/savestates/delete'), 'delete should call /api/savestates/delete');
+assert.strictEqual(deleteBody.confirm, true, 'delete must be confirm-gated');
+assert.strictEqual(deleteBody.paths.length, 2, 'delete should send exactly the selected paths');
+
+console.log(`OK: web UI bootstrapped, called [${[...new Set(calls)].join(', ')}], rendered the target step; action menu renders on target-ready boot; favourites thumbnails render from cache; memory cleaner select/backup/delete wired; a11y hooks present.`);
 process.exit(0);

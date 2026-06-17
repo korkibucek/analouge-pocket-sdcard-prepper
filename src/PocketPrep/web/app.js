@@ -133,6 +133,7 @@ function showMenu() {
     { go: 'library', icon: '📚', label: 'Game library', desc: 'Browse your games with box art (auto-scraped, no setup).' },
     { go: 'favorites', icon: '⭐', label: 'Favourites', desc: 'Tag ROMs; surface them in a per-system Favorites folder.' },
     { go: 'activity', icon: '📝', label: 'Activity log', desc: 'See and download everything done this session.' },
+    { go: 'memories', icon: '🧠', label: 'Memory cleaner', desc: 'Review save states; delete ones you pick (or keep newest per game). Backs up first.' },
     { go: 'healthcheck', icon: '🩺', label: 'Health check', desc: 'Audit the whole card: BIOS, folder limits, core integrity, space.' },
     { go: 'profiles', icon: '💾', label: 'Setup profiles', desc: "Export this card's setup, or import one to a fresh card." },
     { go: 6, icon: '🧾', label: 'Summary', desc: 'Review what was done this session.' }
@@ -199,7 +200,94 @@ function wireEject() {
     finally { busy(false); }
   };
 }
-function go(step) { S.step = step; renderNav(); if (step === 'menu') { showMenu(); } else if (step === 'favorites') { showFavorites(); } else if (step === 'activity') { showActivity(); } else if (step === 'profiles') { showProfiles(); } else if (step === 'healthcheck') { showHealthCheck(); } else if (step === 'library') { showLibrary(); } else { RENDER[step](); } }
+function go(step) { S.step = step; renderNav(); if (step === 'menu') { showMenu(); } else if (step === 'favorites') { showFavorites(); } else if (step === 'activity') { showActivity(); } else if (step === 'profiles') { showProfiles(); } else if (step === 'healthcheck') { showHealthCheck(); } else if (step === 'library') { showLibrary(); } else if (step === 'memories') { showMemoryCleaner(); } else { RENDER[step](); } }
+
+/* ---- Memory cleaner: review save states, delete a hand-picked selection (or keep
+   newest per game), with a local-machine backup. Deletes always back up to the card
+   first (engine-enforced); this view never deletes without an explicit confirm. ---- */
+async function showMemoryCleaner() {
+  panel('<h2>🧠 Memory cleaner</h2><p>Loading save states…</p>');
+  let inv;
+  try { inv = await api('/api/savestates'); }
+  catch (e) { panel('<h2>🧠 Memory cleaner</h2>' + errLine(e.message)); return; }
+  if (!inv.Total) { panel('<h2>🧠 Memory cleaner</h2><p class="warnote">No save states found under Memories/Save States — nothing to clean.</p>'); return; }
+  const esc = v => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  const mb = b => (b / 1048576).toFixed(b < 104857 ? 2 : 1) + ' MB';
+  // selected: set of RelativePath chosen for DELETION.
+  const sel = new Set();
+  panel(`<h2>🧠 Memory cleaner</h2>
+    <p class="meta">Tick the save states ("Memories") you want to <strong>delete</strong>. Whatever you delete is first zipped to <code>pocketprep/save-backups/</code> on the card, and you can also download a backup to this computer below. Nothing is deleted until you press <strong>Delete selected</strong> and confirm.</p>
+    <div class="row">
+      <button id="mc-auto" class="secondary" title="Select every save state except the newest one for each game">Auto-select: keep newest per game</button>
+      <button id="mc-clear" class="secondary">Clear selection</button>
+      <button id="mc-backup" class="secondary" title="Download a .zip of the selected memories (or all, if none selected) to this computer">⬇ Download backup to this computer</button>
+      <button id="mc-delete" class="danger">Delete selected</button>
+    </div>
+    <p id="mc-summary" class="meta"></p>
+    <div id="mc-out"></div>
+    <div id="mc-list" class="list" style="max-height:55vh;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:.5rem"></div>`);
+
+  const games = inv.Games || [];
+  const updateSummary = () => {
+    let delBytes = 0, delCount = 0;
+    (inv.Items || []).forEach(it => { if (sel.has(it.RelativePath)) { delCount++; delBytes += it.SizeBytes; } });
+    const keep = inv.Total - delCount;
+    $('#mc-summary').innerHTML = delCount
+      ? `<strong class="warnote">${delCount} to delete (${mb(delBytes)})</strong> · ${keep} kept of ${inv.Total}`
+      : `Nothing selected · ${inv.Total} save state(s), ${mb(inv.TotalBytes)} total`;
+    $('#mc-delete').disabled = delCount === 0;
+  };
+  const render = () => {
+    $('#mc-list').innerHTML = games.map(g => {
+      const rows = g.Items.map(it => {
+        const del = sel.has(it.RelativePath);
+        const when = (it.LastWriteUtc || '').replace('T', ' ').replace(/:\d\d\.\d+Z$/, '');
+        return `<label class="row" style="${del ? 'background:#b0002011;border-radius:6px' : ''}">
+          <input type="checkbox" class="mc-pick" data-p="${esc(it.RelativePath)}" ${del ? 'checked' : ''}>
+          <span>${del ? '✗' : '✓'}</span> ${esc(it.Name)}
+          ${it.IsLatestForGame ? '<span class="tag rm">newest</span>' : ''}
+          <span class="meta">${when} · ${mb(it.SizeBytes)}</span></label>`;
+      }).join('');
+      return `<div class="card"><strong>${esc(g.Game)}</strong> <span class="meta">${g.Count} state(s)</span>${rows}</div>`;
+    }).join('');
+    document.querySelectorAll('.mc-pick').forEach(c => c.onchange = () => {
+      if (c.checked) sel.add(c.dataset.p); else sel.delete(c.dataset.p);
+      render(); updateSummary();
+    });
+    updateSummary();
+  };
+  $('#mc-auto').onclick = () => {
+    // Bulk "keep newest per game": select every state EXCEPT each game's newest.
+    if (!window.confirm('Auto-select every save state EXCEPT the newest one for each game?\n\nThis only ticks the checkboxes — review them, then press Delete selected to actually remove them.')) return;
+    sel.clear();
+    (inv.Items || []).forEach(it => { if (!it.IsLatestForGame) sel.add(it.RelativePath); });
+    render();
+  };
+  $('#mc-clear').onclick = () => { sel.clear(); render(); };
+  $('#mc-backup').onclick = async () => {
+    const paths = [...sel];
+    busy(true); $('#mc-out').innerHTML = inProgress(`Building backup zip of ${paths.length || inv.Total} memory file(s)`);
+    try {
+      const r = await api('/api/savestates/backup', 'POST', { paths });
+      const a = document.createElement('a'); a.href = r.dataUrl; a.download = r.fileName;
+      document.body.appendChild(a); a.click(); a.remove();
+      $('#mc-out').innerHTML = `<p class="ok">Backed up ${r.count} memory file(s) to your downloads (${esc(r.fileName)}). Nothing was deleted.</p>`;
+    } catch (e) { $('#mc-out').innerHTML = errLine(e.message); } finally { busy(false); }
+  };
+  $('#mc-delete').onclick = async () => {
+    const paths = [...sel];
+    if (!paths.length) return;
+    if (!window.confirm(`Delete ${paths.length} save state(s)?\n\nThey are zipped to pocketprep/save-backups/ on the card first, then removed from Memories/Save States. Restore by extracting that zip.`)) return;
+    busy(true); $('#mc-out').innerHTML = '<p>Backing up &amp; deleting…</p>';
+    try {
+      const r = await api('/api/savestates/delete', 'POST', { paths, confirm: true });
+      $('#mc-out').innerHTML = `<p class="ok">Deleted ${r.DeleteCount} save state(s)${r.DryRun ? ' [dry-run]' : ''}. Card backup: ${esc(r.BackupZip || '(dry-run, none)')}.${(r.Skipped || []).length ? ` ${r.Skipped.length} skipped.` : ''}</p>`;
+      refreshSpace();
+      showMemoryCleaner();   // reload the (now smaller) inventory
+    } catch (e) { $('#mc-out').innerHTML = errLine(e.message); } finally { busy(false); }
+  };
+  render();
+}
 
 /* ---- Game library: browse games with auto-scraped box art ---- */
 async function showLibrary() {

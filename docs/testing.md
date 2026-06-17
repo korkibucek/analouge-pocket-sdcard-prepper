@@ -41,6 +41,7 @@ This installs Pester 5 automatically if missing (CurrentUser scope).
 | `ArcadeRecipes.Tests.ps1` | rom-recipes fetch + arcade romset readiness (instance `.json` / built `.rom`) |
 | `CardCleanup.Tests.ps1` / `Clean.Tests.ps1` | Empty-folder/probe-only cleanup (report-don't-delete for unmanaged); `Clear-PocketCard` guards (token, removable-only, dry-run) |
 | `SaveBackup.Tests.ps1` / `SaveStatePrune.Tests.ps1` | Saves backup/restore; guarded save-state prune (policy required, mandatory backup zip, dry-run) |
+| `MemoryCleaner.Tests.ps1` | Memory cleaner: inventory (grouped, newest-per-game), hand-pick delete (traversal-guarded, mandatory backup, round-trip), local-machine backup export, all three API routes (confirm-gate) |
 | `FolderRom.Tests.ps1` | Folder-format games (Neo Geo DarkSoft): whole-folder plan/copy, single-game source, no cross-game dedupe, instance-json game map, summary/rom-list/health integration, organizer guard |
 | `KnownPlatform.Tests.ps1` / `ImportablePlatform.Tests.ps1` | Every-core platform union; installed-core platforms |
 | `DiskSpace.Tests.ps1` / `FreeSpace.Tests.ps1` / `Dismount.Tests.ps1` | Free/total space + preflight; flush + best-effort eject |
@@ -53,7 +54,7 @@ This installs Pester 5 automatically if missing (CurrentUser scope).
 | `TestMode.Tests.ps1` | End-to-end against a fake SD root |
 | `tests/web/test.mjs` | Web UI bootstrap, action menu, BIOS reference rendering, a11y hooks (jsdom) |
 
-350+ Pester tests plus the jsdom web test, green on Windows/Linux/macOS CI.
+360+ Pester tests plus the jsdom web test, green on Windows/Linux/macOS CI.
 
 ## Web UI test (jsdom)
 

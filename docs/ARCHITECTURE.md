@@ -85,7 +85,7 @@ Layer separation:
 | Arcade helpers | `Save-PocketRomRecipe` (rom-recipes asset → `pocketprep/rom-recipes/`; metadata only), `Test-PocketArcadeRomset` (instance `.json` + built `.rom` readiness) |
 | Game images | `Sync-PocketGameImage` (per-game box art from libretro-thumbnails, cached under `pocketprep/images/`; `manifests/image-sources.json`) |
 | Folders | `New-PocketFolderStructure` |
-| Saves / removal | `Backup-PocketSaves`, `Restore-PocketSaves`, `Clear-PocketCard` (guarded), `Invoke-PocketSaveStatePrune` (guarded; mandatory backup zip), `Dismount-PocketDrive` (flush + best-effort eject) |
+| Saves / removal | `Backup-PocketSaves`, `Restore-PocketSaves`, `Clear-PocketCard` (guarded), `Invoke-PocketSaveStatePrune` (policy prune; mandatory backup zip), **Memory Cleaner**: `Get-PocketSaveStateInventory` + `Remove-PocketSaveState` (hand-picked delete, traversal-guarded, mandatory backup) + `Export-PocketSaveStateBackup` (local-machine zip), `Dismount-PocketDrive` (flush + best-effort eject) |
 | Config/data | `manifests/*.json` (+ `cores-supplement.json`, `image-sources.json`) |
 | Logging | `New-PocketLogger`, `Write-PocketLog` |
 | Reporting | `New-PocketInstallSummary` |
