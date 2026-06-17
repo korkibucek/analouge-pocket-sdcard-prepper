@@ -74,19 +74,12 @@ function Invoke-PocketSaveStatePrune {
     $files = @(Get-ChildItem -LiteralPath $statesDir -File -Recurse -ErrorAction SilentlyContinue)
     if ($files.Count -eq 0) { return $empty }
 
-    # Group key: directory + base name with ONE trailing numeric counter stripped
-    # ("Game-1", "Game_2", "Game (3)", "Game #4" -> "game"). No suffix -> own group.
-    $groupKey = {
-        param($f)
-        $base = [System.IO.Path]::GetFileNameWithoutExtension($f.Name)
-        $stripped = $base -replace '(\s*[-_#]\s*\d+|\s*\(\d+\))$', ''
-        "$($f.DirectoryName)|$($stripped.Trim().ToLowerInvariant())"
-    }
-
+    # Game grouping is shared with the Memory Cleaner inventory (Get-PocketSaveStateGroupKey):
+    # directory + base name with ONE trailing numeric counter stripped. No suffix -> own group.
     $cutoff = if ($OlderThanDays -gt 0) { (Get-Date).ToUniversalTime().AddDays(-$OlderThanDays) } else { $null }
 
     $toDelete = [System.Collections.Generic.List[object]]::new()
-    foreach ($group in ($files | Group-Object { & $groupKey $_ })) {
+    foreach ($group in ($files | Group-Object { Get-PocketSaveStateGroupKey -Directory $_.DirectoryName -Name $_.Name })) {
         $sorted = @($group.Group | Sort-Object LastWriteTimeUtc -Descending)
         foreach ($i in 0..($sorted.Count - 1)) {
             $f = $sorted[$i]

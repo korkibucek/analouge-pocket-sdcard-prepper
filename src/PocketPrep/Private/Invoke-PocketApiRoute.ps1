@@ -348,6 +348,30 @@ function Invoke-PocketApiRoute {
                     -DryRun:((-not $confirmed) -or [bool]$State.DryRun)
                 return @{ Status = 200; Body = $res }
             }
+            '^GET /api/savestates$' {
+                # Memory Cleaner: read-only inventory of every save state, grouped by game,
+                # with the newest-per-game flag so the UI can offer "keep newest per game".
+                return @{ Status = 200; Body = (Get-PocketSaveStateInventory -Root $State.Root) }
+            }
+            '^POST /api/savestates/delete$' {
+                # Guarded destructive op: deletes the EXPLICIT list of save states the user
+                # picked. WITHOUT confirm=true it is a forced dry-run preview. With confirm,
+                # the selection is backed up into a zip (mandatory, engine-enforced) first.
+                $paths = @($Body.paths | ForEach-Object { [string]$_ } | Where-Object { $_ })
+                $confirmed = [bool]$Body.confirm
+                $res = Remove-PocketSaveState -Root $State.Root -Paths $paths `
+                    -DryRun:((-not $confirmed) -or [bool]$State.DryRun)
+                return @{ Status = 200; Body = $res }
+            }
+            '^POST /api/savestates/backup$' {
+                # Build a zip of the selected save states (or all when none are given) and
+                # return it base64-encoded so the browser can save it to the LOCAL machine
+                # (same in-JSON pattern as /api/images/get - no binary streaming needed).
+                $paths = @($Body.paths | ForEach-Object { [string]$_ } | Where-Object { $_ })
+                $b = if ($paths.Count -gt 0) { Export-PocketSaveStateBackup -Root $State.Root -Paths $paths } else { Export-PocketSaveStateBackup -Root $State.Root }
+                $b64 = if (@($b.Bytes).Count -gt 0) { [Convert]::ToBase64String($b.Bytes) } else { '' }
+                return @{ Status = 200; Body = @{ fileName = $b.FileName; count = $b.Count; dataUrl = "data:application/zip;base64,$b64" } }
+            }
             '^GET /api/healthcheck$' {
                 # One-click read-only audit of the whole card.
                 return @{ Status = 200; Body = (Get-PocketHealthReport -Root $State.Root -SystemsManifest $State.SystemsManifest -CoresManifest $State.CoresManifest) }
