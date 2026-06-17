@@ -123,28 +123,42 @@ function renderNav() {
 }
 /* ---- Action hub: pick a single task or run the full wizard ---- */
 function showMenu() {
-  const acts = [
-    { go: 1, icon: '🧙', label: 'Run the full setup wizard', desc: 'Step through firmware, folders, cores and ROMs in order.' },
-    { go: 1, icon: '💳', label: 'Card overview, breakdown & reorganize ROMs', desc: "See what's installed; split big libraries into folders; onboard a used card." },
-    { go: 2, icon: '🔧', label: 'Firmware', desc: 'Install or update the Analogue Pocket firmware.' },
-    { go: 3, icon: '📁', label: 'Folder structure', desc: 'Create the openFPGA folder structure on the card.' },
-    { go: 4, icon: '🧩', label: 'Cores: install / update', desc: 'Install the whole core set or update installed cores.' },
-    { go: 5, icon: '🎮', label: 'Upload ROMs', desc: 'Copy ROMs for any core (built-in, installed, catalog or custom).' },
-    { go: 'library', icon: '📚', label: 'Game library', desc: 'Browse your games with box art (auto-scraped, no setup).' },
-    { go: 'favorites', icon: '⭐', label: 'Favourites', desc: 'Tag ROMs; surface them in a per-system Favorites folder.' },
-    { go: 'activity', icon: '📝', label: 'Activity log', desc: 'See and download everything done this session.' },
-    { go: 'memories', icon: '🧠', label: 'Memory cleaner', desc: 'Review save states; delete ones you pick (or keep newest per game). Backs up first.' },
-    { go: 'healthcheck', icon: '🩺', label: 'Health check', desc: 'Audit the whole card: BIOS, folder limits, core integrity, space.' },
-    { go: 'profiles', icon: '💾', label: 'Setup profiles', desc: "Export this card's setup, or import one to a fresh card." },
-    { go: 6, icon: '🧾', label: 'Summary', desc: 'Review what was done this session.' }
+  // Grouped so the (now 13-item) hub stays scannable; the buttons themselves are unchanged.
+  const groups = [
+    { title: 'Set up the card', items: [
+      { go: 1, icon: '🧙', label: 'Run the full setup wizard', desc: 'Step through firmware, folders, cores and ROMs in order.' },
+      { go: 1, icon: '💳', label: 'Card overview, breakdown & reorganize ROMs', desc: "See what's installed; split big libraries into folders; onboard a used card." },
+      { go: 2, icon: '🔧', label: 'Firmware', desc: 'Install or update the Analogue Pocket firmware.' },
+      { go: 3, icon: '📁', label: 'Folder structure', desc: 'Create the openFPGA folder structure on the card.' },
+      { go: 4, icon: '🧩', label: 'Cores: install / update', desc: 'Install the whole core set or update installed cores.' },
+      { go: 5, icon: '🎮', label: 'Upload ROMs', desc: 'Copy ROMs for any core (built-in, installed, catalog or custom).' },
+    ] },
+    { title: 'Games & saves', items: [
+      { go: 'library', icon: '📚', label: 'Game library', desc: 'Browse your games with box art (auto-scraped, no setup).' },
+      { go: 'favorites', icon: '⭐', label: 'Favourites', desc: 'Tag ROMs; surface them in a per-system Favorites folder.' },
+      { go: 'memories', icon: '🧠', label: 'Memory cleaner', desc: 'Review save states; delete ones you pick (or keep newest per game). Backs up first.' },
+    ] },
+    { title: 'Maintain & review', items: [
+      { go: 'healthcheck', icon: '🩺', label: 'Health check', desc: 'Audit the whole card: BIOS, folder limits, core integrity, space.' },
+      { go: 'activity', icon: '📝', label: 'Activity log', desc: 'See and download everything done this session.' },
+      { go: 'profiles', icon: '💾', label: 'Setup profiles', desc: "Export this card's setup, or import one to a fresh card." },
+      { go: 6, icon: '🧾', label: 'Summary', desc: 'Review what was done this session.' },
+    ] },
   ];
+  const acts = groups.flatMap(g => g.items);
   const dr = !!(S.health && S.health.dryRun);
+  const listHtml = groups.map(g => {
+    const lis = g.items.map(a => {
+      const i = acts.indexOf(a);
+      return `<li><button class="menu-act" data-i="${i}">${a.icon} <strong>${a.label}</strong><br><span class="meta">${a.desc}</span></button></li>`;
+    }).join('');
+    return `<li class="menu-group" role="presentation">${g.title}</li>${lis}`;
+  }).join('');
   panel(`<h2>What do you want to do?</h2>
     <p class="meta">Pick a single task, or run the full wizard. Return here any time via <strong>☰ Menu</strong>.</p>
     <label class="row card" style="gap:.5rem"><input type="checkbox" id="dry-toggle" ${dr ? 'checked' : ''}>
       <span><strong>Dry-run mode</strong> — preview actions without writing to the card${dr ? ' <span class="tag fixed">ON</span>' : ''}</span></label>
-    <ul class="list" id="menu-list">${acts.map((a, i) =>
-      `<li><button class="menu-act" data-i="${i}">${a.icon} <strong>${a.label}</strong><br><span class="meta">${a.desc}</span></button></li>`).join('')}</ul>`);
+    <ul class="list" id="menu-list">${listHtml}</ul>`);
   document.querySelectorAll('.menu-act').forEach(b => b.onclick = () => go(acts[+b.dataset.i].go));
   $('#dry-toggle').onchange = async (e) => {
     try { const r = await api('/api/dryrun', 'POST', { enabled: e.target.checked }); if (S.health) S.health.dryRun = r.dryRun; setCtx(); showMenu(); }
@@ -225,7 +239,7 @@ async function showMemoryCleaner() {
     </div>
     <p id="mc-summary" class="meta"></p>
     <div id="mc-out"></div>
-    <div id="mc-list" class="list" style="max-height:55vh;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:.5rem"></div>`);
+    <div id="mc-list" class="list scroll-box"></div>`);
 
   const games = inv.Games || [];
   const updateSummary = () => {
@@ -429,7 +443,7 @@ async function showFavorites() {
     <div id="fav-current" class="meta"></div>
     <label class="row">Filter: <input type="text" id="fav-filter" placeholder="type to filter the list">
       <label class="row" style="margin-left:.5rem"><input type="checkbox" id="fav-only"> favourited only</label></label>
-    <div id="fav-list" class="list" style="max-height:50vh;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:.5rem"></div>
+    <div id="fav-list" class="list scroll-box"></div>
     <div class="row"><button id="fav-save">Save favourites</button>
       <button id="fav-syncsaves" class="secondary" title="Reconcile save data between favourites and their originals (newest wins; original is the master)">Sync saves now</button>
       <span id="fav-count" class="meta"></span></div>

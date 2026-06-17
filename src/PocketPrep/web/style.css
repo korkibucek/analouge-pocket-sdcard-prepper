@@ -48,7 +48,12 @@ nav#steps span[data-go]:hover { background:#2d7d4633; color: var(--accent); }
 nav#steps span.active[data-go]:hover { color:#fff; }
 
 /* Action hub buttons: full-width, left-aligned cartridge cards. */
-ul#menu-list { gap:.6rem; }
+ul#menu-list { gap:.45rem; }
+/* Section labels inside the action hub (not buttons — plain pixel headings). */
+#menu-list .menu-group { border:0; background:none; box-shadow:none; padding:.6rem .15rem .05rem; display:block; font-family: var(--pixel-font); text-transform:uppercase; letter-spacing:.08em; font-size:.72rem; color:#888; }
+#menu-list .menu-group:first-child { padding-top:0; }
+/* Scrollable bordered list box (favourites picker, memory cleaner). */
+.scroll-box { max-height:55vh; overflow:auto; border:2px solid var(--line); border-radius:6px; padding:.5rem; }
 button.menu-act { display:block; width:100%; text-align:left; background:#00000008; color:inherit; border:2px solid var(--line); padding:.8rem 1rem; border-radius:6px; font-size:1rem; line-height:1.45; cursor:pointer; box-shadow:3px 3px 0 #00000022; }
 button.menu-act:hover { background:#2d7d4622; border-color: var(--accent); transform: translate(-1px,-1px); box-shadow:4px 4px 0 #2d7d4633; }
 button.menu-act .meta { color:#777; font-size:.85rem; }
