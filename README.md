@@ -368,6 +368,23 @@ pruned file is **always zipped to `pocketprep/save-backups/` first** (no off-swi
 recoverable), Preview is a forced dry-run, and the real prune sits behind a danger-styled
 button + confirmation.
 
+### 🧠 Memory cleaner (pick exactly what to delete)
+
+For hands-on control, the **Memory cleaner** (☰ Menu → 🧠 Memory cleaner) lists **every save
+state grouped by game**, each with a checkbox and the **newest state tagged** so it's obvious
+what would survive. You can:
+
+- **Hand-pick** exactly which memories to delete — the kept ✓ / delete ✗ summary updates live
+  (count + reclaimed size).
+- **Auto-select: keep newest per game** — one click ticks every state *except* each game's
+  newest (the bulk cleaner), so you **visually confirm** the selection before anything happens.
+- **Download a backup to this computer** — zip the selection (or everything) straight to your
+  machine before deleting.
+
+Like the prune, deleting always **zips the selection to `pocketprep/save-backups/` on the card
+first** and is fenced behind an explicit confirmation; paths outside `Memories/Save States` are
+rejected, never touched.
+
 ### De-duplicate by region (1G1R-style)
 
 Got the same game as **USA, Europe and Japan**? Set your **region priority** (e.g.
