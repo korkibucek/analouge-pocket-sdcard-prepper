@@ -77,7 +77,7 @@ jobs:
           test -f /usr/lib/pocketprep/scripts/pocketprep.sh
           pwsh -NoProfile -Command "Import-Module /usr/lib/pocketprep/src/PocketPrep/PocketPrep.psd1 -Force; if (-not (Get-Command Start-PocketPrepServer -ErrorAction SilentlyContinue)) { throw 'module did not import from the installed layout' }; 'package smoke OK'"
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: packages
           path: dist/*
@@ -107,7 +107,7 @@ jobs:
           grep -q '/usr/bin/pocketprep' /tmp/rpm-files.txt
           grep -qi powershell /tmp/rpm-recs.txt
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rpm
           path: dist/*.rpm
