@@ -42,24 +42,38 @@ function Get-PocketInstanceGame {
             Where-Object { $_.Name -ne 'common' -and -not $_.Name.StartsWith('.') })) {
         foreach ($json in (Get-ChildItem -LiteralPath $coreDir.FullName -Filter '*.json' -File -ErrorAction SilentlyContinue)) {
             $dataPath = $null
+            $required = @()
             try {
                 $parsed = Get-Content -LiteralPath $json.FullName -Raw | ConvertFrom-Json -ErrorAction Stop
                 $dataPath = [string]$parsed.instance.data_path
+                # Per-game slot files the core will try to load from <data_path>/ (e.g.
+                # srom/prom/crom0/m1rom/vroma0). A missing one is what triggers the core's
+                # "Missing '<NAME>' ID [n]" launch error, so we surface it.
+                $required = @($parsed.instance.data_slots | ForEach-Object { [string]$_.filename } | Where-Object { $_ })
             } catch {
                 # Not an instance json (or malformed) - skip quietly; this is a scan.
                 $null = $_
             }
             if (-not $dataPath) { continue }
             $gameDir = Join-Path $common $dataPath
-            $installed = (Test-Path -LiteralPath $gameDir -PathType Container) -and
-                (@(Get-ChildItem -LiteralPath $gameDir -File -ErrorAction SilentlyContinue).Count -gt 0)
+            $present = @()
+            if (Test-Path -LiteralPath $gameDir -PathType Container) {
+                $present = @(Get-ChildItem -LiteralPath $gameDir -File -ErrorAction SilentlyContinue | ForEach-Object { $_.Name })
+            }
+            $installed = @($present).Count -gt 0
+            # Case-insensitive presence check (FAT/exFAT are case-insensitive).
+            $presentLower = @($present | ForEach-Object { $_.ToLowerInvariant() })
+            $missing = @($required | Where-Object { $presentLower -notcontains $_.ToLowerInvariant() })
             $games.Add([pscustomobject]@{
-                PSTypeName = 'PocketPrep.InstanceGame'
-                Title      = [System.IO.Path]::GetFileNameWithoutExtension($json.Name)
-                DataPath   = $dataPath
-                CoreFolder = $coreDir.Name
-                JsonPath   = $json.FullName
-                Installed  = [bool]$installed
+                PSTypeName    = 'PocketPrep.InstanceGame'
+                Title         = [System.IO.Path]::GetFileNameWithoutExtension($json.Name)
+                DataPath      = $dataPath
+                CoreFolder    = $coreDir.Name
+                JsonPath      = $json.FullName
+                Installed     = [bool]$installed
+                RequiredFiles = $required
+                # Only meaningful when the game folder exists; an absent game isn't "missing files".
+                MissingFiles  = if ($installed) { $missing } else { @() }
             })
         }
     }
