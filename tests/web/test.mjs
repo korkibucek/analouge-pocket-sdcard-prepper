@@ -230,5 +230,31 @@ assert.ok(calls2.includes('/api/savestates/delete'), 'delete should call /api/sa
 assert.strictEqual(deleteBody.confirm, true, 'delete must be confirm-gated');
 assert.strictEqual(deleteBody.paths.length, 2, 'delete should send exactly the selected paths');
 
-console.log(`OK: web UI bootstrapped, called [${[...new Set(calls)].join(', ')}], rendered the target step; action menu renders on target-ready boot; favourites thumbnails render from cache; memory cleaner select/backup/delete wired; a11y hooks present.`);
+// 10. Neo Geo fix-up (#221): a distinct bottom-of-menu action; renders the repair plan
+//     and applies renames only via /api/folderrom/repair with confirm.
+dom2.window.eval('go("menu")');
+await new Promise((r) => setTimeout(r, 60));
+assert.ok(/Repair/.test(panel2.textContent) && /Neo Geo fix-up/i.test(panel2.textContent), 'the menu should offer a Neo Geo fix-up action under a Repair group');
+let fixConfirm = null;
+API2['/api/folderrom/repair-plan'] = {
+  CoreInstalled: true, OkCount: 1, RenameCount: 1, AttentionCount: 1,
+  Renames: [{ From: 'Metal Slug 4', To: 'mslug4', Title: 'Metal Slug 4' }],
+  Attention: [{ Folder: 'somegame', Kind: 'missing', Detail: 'missing srom', Missing: ['srom'] }],
+};
+API2['/api/folderrom/repair'] = (init) => { fixConfirm = JSON.parse((init && init.body) || '{}'); return { RenamedCount: 1, DryRun: false, Skipped: [], AttentionCount: 1, CoreInstalled: true }; };
+dom2.window.confirm = () => true;
+calls2.length = 0;
+dom2.window.eval('go("ngfix")');
+await new Promise((r) => setTimeout(r, 300));
+assert.ok(/Neo Geo fix-up/i.test(panel2.textContent), 'the Neo Geo fixer panel should render');
+assert.ok(/Metal Slug 4/.test(panel2.textContent) && /mslug4/.test(panel2.textContent), 'planned rename should be shown (from -> to)');
+assert.ok(/missing srom/i.test(panel2.textContent), 'a needs-attention (missing data) folder should be listed');
+const fixBtn = dom2.window.document.getElementById('ngfix-apply');
+assert.ok(fixBtn, 'a Fix-it button should appear when renames are planned');
+fixBtn.click();
+await new Promise((r) => setTimeout(r, 60));
+assert.ok(calls2.includes('/api/folderrom/repair'), 'Fix-it should call /api/folderrom/repair');
+assert.strictEqual(fixConfirm.confirm, true, 'repair must be confirm-gated');
+
+console.log(`OK: web UI bootstrapped, called [${[...new Set(calls)].join(', ')}], rendered the target step; action menu renders on target-ready boot; favourites thumbnails render from cache; memory cleaner select/backup/delete wired; Neo Geo fixer plan/apply wired; a11y hooks present.`);
 process.exit(0);

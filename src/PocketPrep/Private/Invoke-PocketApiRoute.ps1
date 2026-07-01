@@ -348,6 +348,22 @@ function Invoke-PocketApiRoute {
                     -DryRun:((-not $confirmed) -or [bool]$State.DryRun)
                 return @{ Status = 200; Body = $res }
             }
+            '^POST /api/folderrom/repair-plan$' {
+                # Neo Geo (folder-format) fix-up: read-only plan of folder renames + issues.
+                $platId = [string]$Body.platformId
+                if (-not $platId) { return @{ Status = 400; Body = @{ error = 'Missing platformId.' } } }
+                return @{ Status = 200; Body = (Get-PocketFolderRomRepairPlan -Root $State.Root -PlatformId $platId -SystemsManifest $State.SystemsManifest) }
+            }
+            '^POST /api/folderrom/repair$' {
+                # Applies the safe folder renames. WITHOUT confirm=true it's a forced dry-run.
+                # Rename-only; never deletes/converts (missing data + MAME zips are reported).
+                $platId = [string]$Body.platformId
+                if (-not $platId) { return @{ Status = 400; Body = @{ error = 'Missing platformId.' } } }
+                $confirmed = [bool]$Body.confirm
+                $res = Invoke-PocketFolderRomRepair -Root $State.Root -PlatformId $platId -SystemsManifest $State.SystemsManifest `
+                    -DryRun:((-not $confirmed) -or [bool]$State.DryRun)
+                return @{ Status = 200; Body = $res }
+            }
             '^GET /api/savestates$' {
                 # Memory Cleaner: read-only inventory of every save state, grouped by game,
                 # with the newest-per-game flag so the UI can offer "keep newest per game".

@@ -54,6 +54,8 @@
         'Get-PocketCardCleanup',
         'Get-PocketHealthReport',
         'Get-PocketInstanceGame',
+        'Get-PocketFolderRomRepairPlan',
+        'Invoke-PocketFolderRomRepair',
         'Invoke-PocketCardCleanup',
         'Invoke-PocketSaveStatePrune',
         'Get-PocketSaveStateInventory',

@@ -144,6 +144,9 @@ function showMenu() {
       { go: 'profiles', icon: '💾', label: 'Setup profiles', desc: "Export this card's setup, or import one to a fresh card." },
       { go: 6, icon: '🧾', label: 'Summary', desc: 'Review what was done this session.' },
     ] },
+    { title: 'Repair', items: [
+      { go: 'ngfix', icon: '🛠️', label: 'Neo Geo fix-up', desc: 'Fix a wrongly set-up Neo Geo card: rename game folders to the core’s expected names; flag folders missing data.' },
+    ] },
   ];
   const acts = groups.flatMap(g => g.items);
   const dr = !!(S.health && S.health.dryRun);
@@ -214,7 +217,58 @@ function wireEject() {
     finally { busy(false); }
   };
 }
-function go(step) { S.step = step; renderNav(); if (step === 'menu') { showMenu(); } else if (step === 'favorites') { showFavorites(); } else if (step === 'activity') { showActivity(); } else if (step === 'profiles') { showProfiles(); } else if (step === 'healthcheck') { showHealthCheck(); } else if (step === 'library') { showLibrary(); } else if (step === 'memories') { showMemoryCleaner(); } else { RENDER[step](); } }
+function go(step) { S.step = step; renderNav(); if (step === 'menu') { showMenu(); } else if (step === 'favorites') { showFavorites(); } else if (step === 'activity') { showActivity(); } else if (step === 'profiles') { showProfiles(); } else if (step === 'healthcheck') { showHealthCheck(); } else if (step === 'library') { showLibrary(); } else if (step === 'memories') { showMemoryCleaner(); } else if (step === 'ngfix') { showNeoGeoFixer(); } else { RENDER[step](); } }
+
+/* ---- Neo Geo fix-up: repair a wrongly set-up folder-format (Neo Geo) card. Renames
+   game folders to the core's expected data_path; reports folders missing data / that
+   look like un-converted MAME romsets. Rename-only, dry-run preview + confirm. ---- */
+async function showNeoGeoFixer() {
+  const PLAT = 'ng';
+  panel('<h2>🛠️ Neo Geo fix-up</h2><p>Scanning the Neo Geo folders…</p>');
+  let plan;
+  try { plan = await api('/api/folderrom/repair-plan', 'POST', { platformId: PLAT }); }
+  catch (e) { panel('<h2>🛠️ Neo Geo fix-up</h2>' + errLine(e.message)); return; }
+  const esc = v => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  if (!plan.CoreInstalled) {
+    panel(`<h2>🛠️ Neo Geo fix-up</h2><p class="warnote">No Neo Geo core game files found on the card. Install the Neo Geo core first (🧩 Cores), then come back — the fixer matches your game folders against the games the core knows.</p>`);
+    return;
+  }
+  const renames = plan.Renames || [];
+  const attention = plan.Attention || [];
+  const renameRows = renames.length
+    ? `<div class="card"><strong>Will rename (${renames.length})</strong> <span class="meta">so the core recognises them</span>
+        <ul class="list">${renames.map(r => `<li><code>${esc(r.From)}</code> → <code>${esc(r.To)}</code> <span class="meta">${esc(r.Title)}</span></li>`).join('')}</ul></div>`
+    : '';
+  const kindLabel = { missing: '⚠️ missing data', unknown: '❓ unrecognised', conflict: '⛔ name clash' };
+  const attnRows = attention.length
+    ? `<div class="card"><strong>Needs your attention (${attention.length})</strong> <span class="meta">the fixer can’t safely auto-fix these</span>
+        <ul class="list">${attention.map(a => `<li>${kindLabel[a.Kind] || a.Kind} <code>${esc(a.Folder)}</code> — ${esc(a.Detail)}</li>`).join('')}</ul></div>`
+    : '';
+  const okLine = `<p class="ok">${plan.OkCount} game folder(s) are already correct.</p>`;
+  const summary = (!renames.length && !attention.length)
+    ? `<p class="ok">✅ Nothing to fix — every Neo Geo game folder is named correctly.</p>`
+    : `${okLine}${renameRows}${attnRows}`;
+  panel(`<h2>🛠️ Neo Geo fix-up</h2>
+    <p class="meta">Neo Geo games only boot when each folder under <code>Assets/ng/common/</code> is named exactly the core’s short name (its <code>data_path</code>, e.g. <code>mslug4</code>) and contains the DarkSoft files it expects. This renames folders it can identify; it <strong>never</strong> deletes, converts or downloads ROM data.</p>
+    ${summary}
+    <div class="row">
+      ${renames.length ? '<button id="ngfix-apply" class="danger">Fix it — rename ' + renames.length + ' folder(s)</button>' : ''}
+      <button id="ngfix-rescan" class="secondary">Re-scan</button>
+    </div>
+    <div id="ngfix-out"></div>`);
+  $('#ngfix-rescan').onclick = () => showNeoGeoFixer();
+  const apply = $('#ngfix-apply');
+  if (apply) apply.onclick = async () => {
+    if (!window.confirm(`Rename ${renames.length} game folder(s) to the core’s expected names?\n\nThis only renames folders (reversible) — nothing is deleted or converted.`)) return;
+    busy(true); $('#ngfix-out').innerHTML = '<p>Renaming…</p>';
+    try {
+      const r = await api('/api/folderrom/repair', 'POST', { platformId: PLAT, confirm: true });
+      $('#ngfix-out').innerHTML = `<p class="ok">Renamed ${r.RenamedCount} folder(s)${r.DryRun ? ' [dry-run]' : ''}${(r.Skipped || []).length ? `, ${r.Skipped.length} skipped` : ''}. ${r.AttentionCount} still need attention.</p>`;
+      refreshSpace();
+      showNeoGeoFixer();
+    } catch (e) { $('#ngfix-out').innerHTML = errLine(e.message); } finally { busy(false); }
+  };
+}
 
 /* ---- Memory cleaner: review save states, delete a hand-picked selection (or keep
    newest per game), with a local-machine backup. Deletes always back up to the card
