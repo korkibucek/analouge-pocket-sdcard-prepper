@@ -64,9 +64,10 @@ file). Buttons disable while their operation runs, so nothing can be double-subm
   cores, distributed via [jotego's Patreon](https://www.patreon.com/jotego)) install through
   **"Install a core you supply"** on the cores step: point it at the zip you obtained and it's
   validated (openFPGA structure, zip-slip-safe) and merged non-destructively. The core's
-  system then appears in the ROM step automatically, and **Neo Geo Pocket Color** is also a
-  built-in ROM row (`.ngc`/`.ngp` → `Assets/ngpc/common`). This tool never downloads or
-  redistributes Patreon-gated cores.
+  system then appears in the ROM step automatically, and **Neo Geo Pocket / Color** is also a
+  built-in ROM row (`.ngc`/`.ngp` → `Assets/jtngp/common`, the jotego **jtngp** core; carts
+  load via the core's runtime file browser). This tool never downloads or redistributes
+  Patreon-gated cores.
 - It does **not** format cards. If the filesystem is wrong, it tells you how to fix it.
 - It does **not** download ROMs or copyrighted BIOS — it copies ROMs **you** provide and only
   *detects* what's missing. The only files it deletes are inside its own tool-managed folders

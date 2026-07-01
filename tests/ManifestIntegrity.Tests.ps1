@@ -15,6 +15,12 @@ Describe 'Shipped manifests are valid and consistent' {
         ($systems.Id | Sort-Object -Unique).Count | Should -Be @($systems).Count
         foreach ($s in $systems) { $s.PlatformId | Should -Not -BeNullOrEmpty }
     }
+    It 'systems.json: Neo Geo Pocket uses the jtngp platform-id (jotego core), not ngpc (#229)' {
+        # The real community core is jotego.jtngp -> Assets/jtngp/common. A stale 'ngpc'
+        # platformId pointed users at the wrong folder (found via the robs-pocket-sdcard report).
+        $ngp = Get-PocketSystem -Path (Join-Path $script:m 'systems.json') -Id ngpc
+        $ngp.PlatformId | Should -Be 'jtngp'
+    }
     It 'cores.json: identifiers look like Author.CoreName with owner/repo' {
         $cores = Resolve-PocketCore -Manifest (Get-PocketCoreManifest -Path (Join-Path $script:m 'cores.json'))
         foreach ($c in $cores) {
