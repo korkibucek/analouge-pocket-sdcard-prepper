@@ -154,16 +154,16 @@
       "id": "ngpc",
       "displayName": "Neo Geo Pocket Color",
       "manufacturer": "SNK",
-      "platformId": "ngpc",
+      "platformId": "jtngp",
       "supportedExtensions": [
         ".ngc",
         ".ngp"
       ],
       "requiresCore": true,
-      "suggestedCore": "jotego NGPC (Patreon beta)",
+      "suggestedCore": "jotego jtngp (Neo Geo Pocket / Color, Patreon beta)",
       "biosRequired": false,
       "biosFiles": [],
-      "notes": "ROMs go to Assets/ngpc/common (.ngc; .ngp also accepted for NGP back-compat). The community NGPC core is jotego's Patreon beta (https://www.patreon.com/jotego) - it is not publicly downloadable, so install the zip you obtained via 'Install a core you supply' on the cores step. If your core declares a different platform-id, its own ROM row appears automatically after install."
+      "notes": "Neo Geo Pocket / Color runs on jotego's jtngp core (platform-id jtngp). ROMs go to Assets/jtngp/common and load via the core's runtime file browser (the Cartridge slot is unrestricted). jtngp is Patreon-distributed (https://www.patreon.com/jotego) and not publicly downloadable - install the zip you obtained via 'Install a core you supply' on the cores step. The core's ngp.rom/ngpc.rom boot files ship with it. If your core declares a different platform-id, its own ROM row appears automatically after install."
     },
     {
       "id": "atari2600",
