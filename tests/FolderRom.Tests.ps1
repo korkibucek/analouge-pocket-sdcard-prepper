@@ -152,3 +152,57 @@ Describe 'Folder-format integration (summary / rom-list / organizer guard / heal
         $check.Status | Should -Be 'ok'
     }
 }
+
+Describe 'Neo Geo game-data validation (#220)' {
+    BeforeEach {
+        $script:root = Join-Path ([System.IO.Path]::GetTempPath()) ("ngv_" + [System.IO.Path]::GetRandomFileName())
+        $repo = Split-Path -Parent $PSScriptRoot
+        $script:sm = Join-Path $repo 'manifests/systems.json'
+        $script:cm = Join-Path $repo 'manifests/cores.json'
+        $core = Join-Path $script:root 'Assets/ng/Mazamars312.NeoGeo'
+        New-Item -ItemType Directory -Path $core -Force | Out-Null
+        '{"instance":{"data_path":"mslug4","data_slots":[{"id":3,"filename":"srom"},{"id":4,"filename":"prom"},{"id":5,"filename":"crom0"}]}}' |
+            Set-Content (Join-Path $core 'Metal Slug 4.json')
+    }
+    AfterEach { Remove-Item $script:root -Recurse -Force -ErrorAction SilentlyContinue }
+
+    It 'reports RequiredFiles and the MissingFiles for an incomplete game folder' {
+        $gd = Join-Path $script:root 'Assets/ng/common/mslug4'; New-Item -ItemType Directory -Path $gd -Force | Out-Null
+        'p' | Set-Content (Join-Path $gd 'prom')   # srom + crom0 missing
+        $g = @(Get-PocketInstanceGame -Root $script:root -PlatformId ng) | Where-Object DataPath -eq 'mslug4'
+        @($g.RequiredFiles) | Should -Be @('srom', 'prom', 'crom0')
+        @($g.MissingFiles) | Should -Contain 'srom'
+        @($g.MissingFiles) | Should -Contain 'crom0'
+        @($g.MissingFiles) | Should -Not -Contain 'prom'
+    }
+
+    It 'has no MissingFiles when every slot file is present (case-insensitive)' {
+        $gd = Join-Path $script:root 'Assets/ng/common/mslug4'; New-Item -ItemType Directory -Path $gd -Force | Out-Null
+        'a' | Set-Content (Join-Path $gd 'SROM'); 'b' | Set-Content (Join-Path $gd 'prom'); 'c' | Set-Content (Join-Path $gd 'crom0')
+        $g = @(Get-PocketInstanceGame -Root $script:root -PlatformId ng) | Where-Object DataPath -eq 'mslug4'
+        @($g.MissingFiles).Count | Should -Be 0
+    }
+
+    It 'an absent game (no folder) is not reported as missing files' {
+        $g = @(Get-PocketInstanceGame -Root $script:root -PlatformId ng) | Where-Object DataPath -eq 'mslug4'
+        $g.Installed | Should -BeFalse
+        @($g.MissingFiles).Count | Should -Be 0
+    }
+
+    It 'health check flags a game folder missing a required slot file' {
+        $gd = Join-Path $script:root 'Assets/ng/common/mslug4'; New-Item -ItemType Directory -Path $gd -Force | Out-Null
+        'p' | Set-Content (Join-Path $gd 'prom')   # missing srom
+        $rep = Get-PocketHealthReport -Root $script:root -SystemsManifest $script:sm -CoresManifest $script:cm
+        $check = @($rep.Checks) | Where-Object Name -eq 'Neo Geo game data'
+        $check.Status | Should -Be 'warn'
+        $check.Detail | Should -Match 'srom'
+    }
+
+    It 'health check passes game data when the folder is complete' {
+        $gd = Join-Path $script:root 'Assets/ng/common/mslug4'; New-Item -ItemType Directory -Path $gd -Force | Out-Null
+        'a' | Set-Content (Join-Path $gd 'srom'); 'b' | Set-Content (Join-Path $gd 'prom'); 'c' | Set-Content (Join-Path $gd 'crom0')
+        $rep = Get-PocketHealthReport -Root $script:root -SystemsManifest $script:sm -CoresManifest $script:cm
+        $check = @($rep.Checks) | Where-Object Name -eq 'Neo Geo game data'
+        $check.Status | Should -Be 'ok'
+    }
+}

@@ -156,16 +156,26 @@ function Get-PocketHealthReport {
             Where-Object { -not (Test-PocketReservedRomPath -Common $commonFull -FullPath $_.FullName) })
         if ($gameDirs.Count -eq 0) { continue }
         $known = @{}
-        foreach ($g in @(Get-PocketInstanceGame -Root $Root -PlatformId $fsys.PlatformId)) { $known[$g.DataPath.ToLowerInvariant()] = $true }
+        $games = @(Get-PocketInstanceGame -Root $Root -PlatformId $fsys.PlatformId)
+        foreach ($g in $games) { $known[$g.DataPath.ToLowerInvariant()] = $true }
         if ($known.Count -eq 0) {
             & $add "$($fsys.DisplayName) game folders" 'warn' "$($gameDirs.Count) game folder(s) present but no core instance jsons found - install the $($fsys.SuggestedCore) core so its game launch files exist." 'Install the core on the Cores step.'
             continue
         }
         $orphanDirs = @($gameDirs | Where-Object { -not $known.ContainsKey($_.Name.ToLowerInvariant()) })
+        # Installed games whose folder is missing a required slot file - the exact cause of
+        # the core's "Missing '<NAME>' ID [n]" launch error (#220).
+        $incomplete = @($games | Where-Object { $_.Installed -and @($_.MissingFiles).Count -gt 0 })
         if ($orphanDirs.Count -gt 0) {
-            & $add "$($fsys.DisplayName) game folders" 'warn' ("$($orphanDirs.Count) folder(s) match no game the core knows (won't appear in the menu): " + (($orphanDirs | Select-Object -First 8 | ForEach-Object Name) -join ', ') + $(if ($orphanDirs.Count -gt 8) { ', ...' } else { '' }) + '. The folder name must equal the instance json''s data_path (e.g. mslug4).') 'Rename the folder to the core''s expected short name.'
+            & $add "$($fsys.DisplayName) game folders" 'warn' ("$($orphanDirs.Count) folder(s) match no game the core knows (won't appear in the menu): " + (($orphanDirs | Select-Object -First 8 | ForEach-Object Name) -join ', ') + $(if ($orphanDirs.Count -gt 8) { ', ...' } else { '' }) + '. The folder name must equal the instance json''s data_path (e.g. mslug4).') "Use the $($fsys.DisplayName) fix-up tool, or rename the folder to the core's expected short name."
         } else {
             & $add "$($fsys.DisplayName) game folders" 'ok' "All $($gameDirs.Count) game folder(s) match a core launch json."
+        }
+        if ($incomplete.Count -gt 0) {
+            $detail = ($incomplete | Select-Object -First 6 | ForEach-Object { "$($_.DataPath) missing $((@($_.MissingFiles)) -join ', ')" }) -join '; '
+            & $add "$($fsys.DisplayName) game data" 'warn' ("$($incomplete.Count) game(s) are missing required data files (the core fails at launch with a `"Missing '<NAME>' ID`" error): $detail" + $(if ($incomplete.Count -gt 6) { '; ...' } else { '' }) + '.') 'Re-add the game in DarkSoft format (srom/prom/crom0/m1rom/vroma0) - a MAME .zip will not work.'
+        } else {
+            & $add "$($fsys.DisplayName) game data" 'ok' 'Every installed game folder has the slot files its core launch file expects.'
         }
     }
 
